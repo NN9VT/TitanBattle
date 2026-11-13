@@ -141,7 +141,7 @@ html.rot body{position:fixed;left:0;top:0;width:var(--gw);height:var(--gh);trans
 
 <div class="screen" id="menu">
   <div class="card">
-    <h1>Titan <em>Breaker</em> <small class="ver">v1.2</small></h1>
+    <h1>Titan <em>Breaker</em> <small class="ver">v1.3</small></h1>
     <div class="sub">Xe tăng biến hình đấu boss khổng lồ</div>
     <div class="plab">Boss</div>
     <div class="pick" id="bossPick">
@@ -642,8 +642,8 @@ function updatePlayer(dt) {
     pl.yaw += angDiff(pl.yaw, pl.aimYaw) * damp(10, dt);
     if (has) { const am = robot ? (pl.grounded ? 1 : 1.25) : 1; tvx = dx * spd * am; tvz = dz * spd * am; }
   }
-  if (IN.pressed.space && !robot && !heliMode && !trans && pl.en >= 50 && pl.dashT <= 0 && pl.dashCd <= 0 && !frozen) {
-    pl.en -= 50; pl.dashT = 0.24; pl.invuln = 0.12; pl.dashCd = 0.34; pl.burst = false;
+  if (IN.pressed.space && !robot && !heliMode && !trans && pl.en >= 35 && pl.dashT <= 0 && pl.dashCd <= 0 && !frozen) {
+    pl.en -= 35; pl.dashT = 0.3; pl.dashCd = 0.4; pl.burst = false;
     if (has) pl.dashDir.set(dx, 0, dz); else pl.dashDir.set(Math.sin(pl.yaw), 0, Math.cos(pl.yaw));
     burst(pCenter(), 20, 12, 0x7af0ff, 0.4, 0); shake(0.2);
   }
@@ -916,6 +916,11 @@ const armRot = { gat: { x: 0, z: 0 }, art: { x: 0, z: 0 } };
 function armTarget(key, x, z) { armRot[key].x = x; armRot[key].z = z; }
 function setWarn(t) { const w = $('warn'); if (t) { w.textContent = t; w.classList.add('on'); } else w.classList.remove('on'); }
 
+function leadAim(mp, sp, frac) {
+  const pc = pCenter(); let t = pc.distanceTo(mp) / sp, tg = pc.clone();
+  for (let i = 0; i < 3; i++) { tg.copy(pc).addScaledVector(pl.vel, t * frac); t = tg.distanceTo(mp) / sp; }
+  return tg.sub(mp).normalize();
+}
 function atkBarrage() {
   const waves = PH([3, 4, 5]) + XTRA(), n = PH([5, 7, 9]), gap = PH([0.55, 0.44, 0.36]) / SPD(), sp = PH([36, 42, 48]) * SPD();
   const a = { type: 'bar', t: 0, w: 0, next: 1.0 / SPD(), tele: 1.0 / SPD() };
@@ -926,10 +931,9 @@ function atkBarrage() {
     if (a.t < a.tele) { emit(mp.x, mp.y, mp.z, rnd(-3, 3), rnd(-3, 3), rnd(-3, 3), 0xff8a30, 0.3, 0); setWarn(''); return false; }
     if (a.w < waves && a.t >= a.next) {
       a.w++; a.next += gap;
-      const pc = pCenter(), tgt = pc.clone().addScaledVector(pl.vel, 0.35);
-      const base = tgt.sub(mp).normalize();
+      const base = leadAim(mp, sp, [0.6, 0.75, 0.9][G.diff]);
       for (let i = 0; i < n; i++) {
-        const off = (i - (n - 1) / 2) * (0.9 / n) * (a.w % 2 ? 1 : -1) * 1.1, c = Math.cos(off), s = Math.sin(off);
+        const off = (i - (n - 1) / 2) * (0.5 / n) * (a.w % 2 ? 1 : -1) * 1.1, c = Math.cos(off), s = Math.sin(off);
         const d = V3(base.x * c + base.z * s, base.y, -base.x * s + base.z * c).normalize();
         spawnBullet(mp, d, sp, 10);
       }
@@ -987,42 +991,37 @@ function beamBetween(a, b, radius, opacity) {
   m.quaternion.setFromUnitVectors(V3(0, 1, 0), d.normalize()); m.material.opacity = opacity; m.visible = true;
 }
 function atkLaser() {
-  const vel = PH([0.5, 0.68, 0.85]) * SPD(), a = { type: 'las', t: 0, P: V3(), dir: 1, ang: 0, r: 30, tick: 0, fireT: 1.7, tele: 1.4 / SPD(), py: 0 };
+  const half = PH([0.5, 0.55, 0.6]), dur = PH([1.0, 0.85, 0.7]), a = { type: 'las', t: 0, tele: 1.1 / SPD(), th0: 0, dir: 1, tick: 0, py: 1, fan: getFan(), set: false };
+  const clean = () => { freeFan(a.fan); if (laserBeam) laserBeam.visible = false; setWarn(''); };
   a.update = dt => {
-    if (!B.parts.head.alive) { if (laserBeam) laserBeam.visible = false; setWarn(''); return true; }
+    if (!B.parts.head.alive) { clean(); return true; }
     a.t += dt;
-    const eye = arms.gatMuz && B.eyeM.getWorldPosition(V3());
-    const gy = pl.pos.y > 5 ? pl.pos.y + 1.2 : 0;
+    const eye = B.eyeM.getWorldPosition(V3());
     if (a.t < a.tele) {
-      setWarn('Tia laser xuyên khiên: né!');
-      a.P.set(lerp(a.P.x, pl.pos.x, damp(6, dt)), lerp(a.P.y, gy, damp(6, dt)), lerp(a.P.z, pl.pos.z, damp(6, dt)));
-      if (a.t < dt * 1.5) a.P.set(pl.pos.x, gy, pl.pos.z);
-      beamBetween(eye, a.P, 0.12, 0.5 + 0.4 * Math.sin(a.t * 30));
-      if (a.t >= a.tele - dt) {
-        a.py = a.P.y; a.r = clamp(Math.hypot(a.P.x, a.P.z), 14, 56); a.dir = Math.random() < 0.5 ? 1 : -1;
-        a.ang = Math.atan2(a.P.z, a.P.x) - a.dir * vel * 0.8;
-      }
+      setWarn('Tia laser quét: thoát khỏi vùng đỏ!');
+      if (a.t < a.tele - 0.3) { a.th0 = Math.atan2(pl.pos.x - B.pos.x, pl.pos.z - B.pos.z); a.py = pl.pos.y > 5 ? pl.pos.y + 1 : 1; }
+      setFan(a.fan, B.pos.x, B.pos.z, a.th0, half, ARENA_R + 4, 0.12 + 0.2 * Math.abs(Math.sin(a.t * 12)));
+      emit(eye.x, eye.y, eye.z, rnd(-3, 3), rnd(-3, 3), rnd(-3, 3), 0xff4020, 0.25, 0);
       return false;
     }
-    const f = a.t - a.tele; setWarn('');
-    a.ang += a.dir * vel * dt;
-    a.P.set(Math.cos(a.ang) * a.r, a.py, Math.sin(a.ang) * a.r);
-    beamBetween(eye, a.P, 0.9 + Math.sin(a.t * 40) * 0.2, 0.9); shake(0.12);
-    emit(a.P.x, a.py + 0.5, a.P.z, rnd(-8, 8), rnd(6, 18), rnd(-8, 8), 0xffb050, 0.5, a.py > 1 ? 0 : 14); emit(a.P.x, a.py + 0.5, a.P.z, rnd(-4, 4), rnd(2, 8), rnd(-4, 4), 0xff4020, 0.6, a.py > 1 ? 0 : 6);
-    if (a.py < 1 && Math.random() < 0.5) flatRing(a.P.x, a.P.z, 0.5, 4, 0xff6a30, 0.3, 0.6);
+    if (!a.set) { a.set = true; a.dir = Math.random() < 0.5 ? 1 : -1; setWarn(''); }
+    const f = Math.min(1, (a.t - a.tele) / dur), ang = a.th0 - a.dir * half + a.dir * 2 * half * f, sx = Math.sin(ang), sz = Math.cos(ang);
+    setFan(a.fan, B.pos.x, B.pos.z, a.th0, half, ARENA_R + 4, 0.08);
+    const S = V3(B.pos.x + sx * 6, a.py, B.pos.z + sz * 6), E = V3(B.pos.x + sx * (ARENA_R + 4), a.py, B.pos.z + sz * (ARENA_R + 4));
+    beamBetween(S, E, 0.9 + Math.sin(a.t * 40) * 0.2, 0.9); shake(0.12);
+    for (let i = 0; i < 6; i++) { const s = rnd(8, ARENA_R); emit(B.pos.x + sx * s, a.py + 0.5, B.pos.z + sz * s, rnd(-6, 6), rnd(4, 12), rnd(-6, 6), Math.random() < 0.5 ? 0xffb050 : 0xff4020, 0.4, a.py > 2 ? 0 : 10); }
     a.tick -= dt;
     if (a.tick <= 0) {
-      a.tick = 0.2;
-      const pc = pCenter(), ab = a.P.clone().sub(eye), t = clamp(pc.clone().sub(eye).dot(ab) / ab.lengthSq(), 0, 1);
-      if (pc.distanceTo(eye.clone().addScaledVector(ab, t)) < 2.6) hurtPlayer(11, { pierce: true, noInv: true });
+      a.tick = 0.1;
+      const rx = pl.pos.x - B.pos.x, rz = pl.pos.z - B.pos.z, along = rx * sx + rz * sz, perp = Math.abs(rx * sz - rz * sx), pc = pCenter();
+      if (along > 6 && along < ARENA_R + 6 && perp < 3.4 && Math.abs(pc.y - a.py) < 5) hurtPlayer(16, { pierce: true, noInv: true });
     }
-    if (f >= a.fireT) { laserBeam.visible = false; return true; }
+    if (f >= 1) { clean(); return true; }
     return false;
   };
-  a.cancel = () => { if (laserBeam) laserBeam.visible = false; setWarn(''); };
+  a.cancel = clean;
   return a;
 }
-
 function atkMissiles(o) {
   o = o || {};
   const n = (o.aa ? PH([3, 4, 5]) : PH([4, 6, 8])) + (o.aa ? XTRA() : XTRA() * 2), tele = (o.aa ? 0.6 : 0.8) / SPD(), gap = 0.14 / SPD(), a = { type: 'mis', t: 0, c: 0 };
@@ -1168,7 +1167,7 @@ function updateAA(dt) {
     const t = AA[key];
     if (!B.parts[key].alive) { t.pv.rotation.x = lerp(t.pv.rotation.x, 0.6, damp(3, dt)); continue; }
     if (!air) { t.charge = 0; t.burst = 0; t.pv.rotation.x = lerp(t.pv.rotation.x, -0.2, damp(4, dt)); t.g.rotation.y = lerp(t.g.rotation.y, 0, damp(4, dt)); continue; }
-    const mp = t.muz.getWorldPosition(V3()), pc = pCenter().addScaledVector(pl.vel, 0.25), d = pc.clone().sub(mp), L = d.length();
+    const mp = t.muz.getWorldPosition(V3()), d = leadAim(mp, 62 * SPD(), [0.6, 0.75, 0.9][G.diff]), L = 1;
     t.g.rotation.y = lerp(t.g.rotation.y, angDiff(B.yaw, Math.atan2(d.x, d.z)), damp(9, dt));
     t.pv.rotation.x = lerp(t.pv.rotation.x, -Math.asin(clamp(d.y / Math.max(L, 0.01), -1, 1)), damp(9, dt));
     if (t.cd > 0) { t.cd -= dt; continue; }
@@ -1177,7 +1176,7 @@ function updateAA(dt) {
     t.burst -= dt;
     if (t.burst <= 0) {
       t.burst = 0.13 / SPD(); t.n = (t.n || 0) + 1;
-      spawnBullet(mp, d.normalize(), 56 * SPD(), 6); burst(mp, 3, 8, 0xffb050, 0.15, 0);
+      { const dd = d.clone(); dd.x += rnd(-0.03, 0.03); dd.y += rnd(-0.03, 0.03); dd.z += rnd(-0.03, 0.03); spawnBullet(mp, dd.normalize(), 62 * SPD(), 6); } burst(mp, 3, 8, 0xffb050, 0.15, 0);
       if (t.n >= 6) { t.n = 0; t.cd = 1.4 / SPD(); t.charge = 0; }
     }
   }
@@ -1240,10 +1239,10 @@ const B2 = {
   phaseMsg: { 2: 'Bọ Cạp Gai cuộn thành quả cầu gai', 3: 'Giáp gai vỡ, bọ cạp nổi điên' }, ringHex: 0x7dff3a,
   root: new THREE.Group(), yaw: Math.PI, phase: 1, alive: true, state: 'idle', timer: 2, atk: null, last: '', stagger: 0, dying: 0, vuln: 1, rolling: false, walk: 0,
   parts: {
-    core: { name: 'LÕI', hp: 2400, max: 2400, r: 5.5, alive: true, flash: 0 },
-    clawL: { name: 'CÀNG GAI 1', hp: 567, max: 567, r: 5.5, alive: true, flash: 0 },
-    clawR: { name: 'CÀNG GAI 2', hp: 567, max: 567, r: 5.5, alive: true, flash: 0 },
-    tail: { name: 'ĐUÔI', hp: 567, max: 567, r: 4.8, alive: true, flash: 0 },
+    core: { name: 'LÕI', hp: 2760, max: 2760, r: 5.5, alive: true, flash: 0 },
+    clawL: { name: 'CÀNG GAI 1', hp: 680, max: 680, r: 5.5, alive: true, flash: 0 },
+    clawR: { name: 'CÀNG GAI 2', hp: 680, max: 680, r: 5.5, alive: true, flash: 0 },
+    tail: { name: 'ĐUÔI', hp: 680, max: 680, r: 4.8, alive: true, flash: 0 },
   },
   pp: { core: V3(), clawL: V3(), clawR: V3(), tail: V3() },
 };
@@ -1772,7 +1771,7 @@ function mouthPos() { return B3m.mouth.getWorldPosition(V3()); }
 
 /* --- attacks --- */
 function atkFire() {
-  const T = 0.9 / SPD(), half = PH3([0.6, 0.8, 1.0]), dur = PH3([1.5, 1.7, 1.9]), a = { type: 'fire', t: 0, phase: 0, y0: 0, dir: Math.random() < 0.5 ? -1 : 1, tick: 0, fan: getFan() }, line = getChargeLine();
+  const T = 0.65 / SPD(), half = PH3([0.6, 0.8, 1.0]), dur = PH3([1.5, 1.7, 1.9]), a = { type: 'fire', t: 0, phase: 0, y0: 0, dir: Math.random() < 0.5 ? -1 : 1, tick: 0, fan: getFan() }, line = getChargeLine();
   a.update = dt => {
     a.t += dt;
     if (a.phase === 0) {
@@ -1785,12 +1784,12 @@ function atkFire() {
       const L = 66, sx = Math.sin(beam), sz = Math.cos(beam);
       line.position.set(B3.pos.x + sx * (10 + L / 2), 0.3, B3.pos.z + sz * (10 + L / 2)); line.rotation.y = beam; line.scale.set(9, 1, L);
       line.material.opacity = 0.35 + 0.2 * Math.random(); line.visible = true;
-      for (let i = 0; i < 7; i++) { const s = rnd(8, 76); emit(B3.pos.x + sx * s + rnd(-2, 2), rnd(0.5, 3), B3.pos.z + sz * s + rnd(-2, 2), rnd(-2, 2), rnd(2, 7), rnd(-2, 2), Math.random() < 0.5 ? 0xff6a20 : 0xffd060, 0.5, -1); }
+      for (let i = 0; i < 7; i++) { const s = rnd(8, 76); emit(B3.pos.x + sx * s + rnd(-2, 2), Math.random() < 0.5 ? rnd(0.5, 3) : rnd(3, 26), B3.pos.z + sz * s + rnd(-2, 2), rnd(-2, 2), rnd(2, 7), rnd(-2, 2), Math.random() < 0.5 ? 0xff6a20 : 0xffd060, 0.5, -1); }
       const mp = mouthPos(); for (let i = 0; i < 4; i++) emit(mp.x, mp.y, mp.z, sx * 30 + rnd(-4, 4), rnd(-14, -6), sz * 30 + rnd(-4, 4), 0xffb040, 0.4, 0);
       shake(0.12); crushRocks(B3.pos.x + sx * 40, B3.pos.z + sz * 40, 6);
       a.tick -= dt;
       const rx = pl.pos.x - B3.pos.x, rz = pl.pos.z - B3.pos.z, along = rx * sx + rz * sz, perp = Math.abs(rx * sz - rz * sx);
-      if (a.tick <= 0 && along > 8 && along < 78 && perp < 5.5 && pl.pos.y < 18) { a.tick = 0.2; hurtPlayer(11, { shieldMul: 1.2 }); }
+      if (a.tick <= 0 && along > 8 && along < 78 && perp < 5.5 && pl.pos.y < 45) { a.tick = 0.2; hurtPlayer(11, { shieldMul: 1.2 }); }
       if (a.t >= dur) { line.visible = false; a.phase = 2; a.t = 0; }
     } else return a.t >= 0.5;
     return false;
@@ -1799,10 +1798,10 @@ function atkFire() {
   return a;
 }
 function atkBolt() {
-  const N = PH3([5, 7, 9]) + XTRA() * 2, T = 0.95 / SPD(), a = { type: 'bolt', t: 0, spawned: 0, strikes: [] };
+  const N = PH3([5, 7, 9]) + XTRA() * 2, T = 0.7 / SPD(), a = { type: 'bolt', t: 0, spawned: 0, strikes: [] };
   a.update = dt => {
     a.t += dt; b3Face(dt, 3); b3Alt(34, dt, 3); setWarn(a.t < 1.4 / SPD() ? 'Sấm sét giáng xuống!' : '');
-    if (a.spawned < N && a.t >= a.spawned * 0.3 / SPD()) {
+    if (a.spawned < N && a.t >= a.spawned * 0.22 / SPD()) {
       a.spawned++;
       const aimed = a.spawned % 2 === 1;
       let ox = aimed ? pl.pos.x + pl.vel.x * 0.5 : pl.pos.x + rnd(-18, 18), oz = aimed ? pl.pos.z + pl.vel.z * 0.5 : pl.pos.z + rnd(-18, 18);
@@ -1829,7 +1828,7 @@ function atkBolt() {
   return a;
 }
 function atkDive() {
-  const T = 0.8 / SPD(), a = { type: 'dive', t: 0, phase: 0, yaw: B3.yaw, hit: false, trav: 0 }, line = getChargeLine();
+  const T = 0.6 / SPD(), a = { type: 'dive', t: 0, phase: 0, yaw: B3.yaw, hit: false, trav: 0 }, line = getChargeLine();
   a.update = dt => {
     a.t += dt;
     if (a.phase === 0) {
@@ -1840,7 +1839,7 @@ function atkDive() {
       line.material.opacity = 0.2 + 0.3 * Math.abs(Math.sin(a.t * 12)); line.visible = true;
       if (a.t >= T) { a.phase = 1; a.t = 0; line.visible = false; setWarn(''); }
     } else if (a.phase === 1) {
-      const sp = 85 * SPD(); B3.pos.x += Math.sin(a.yaw) * sp * dt; B3.pos.z += Math.cos(a.yaw) * sp * dt; a.trav += sp * dt;
+      const sp = 105 * SPD(); B3.pos.x += Math.sin(a.yaw) * sp * dt; B3.pos.z += Math.cos(a.yaw) * sp * dt; a.trav += sp * dt;
       b3Alt(7, dt, 7); B3.pitch = lerp(B3.pitch, 0.35, damp(8, dt)); crushRocks(B3.pos.x, B3.pos.z, 10); shake(0.3);
       emit(B3.pos.x + rnd(-6, 6), 1, B3.pos.z + rnd(-6, 6), rnd(-3, 3), rnd(2, 6), rnd(-3, 3), 0xb0a090, 0.7, 2);
       if (!a.hit && b3Dist() < 10 && Math.abs(pl.pos.y + 1.5 - B3.alt) < 14) { a.hit = true; if (hurtPlayer(34, { shieldMul: 1.5 })) b3Knock(30); }
@@ -1856,7 +1855,7 @@ function atkDive() {
   return a;
 }
 function atkGust() {
-  const T = 0.7 / SPD(), R = 46, a = { type: 'gust', t: 0, phase: 0, tele: getTele() };
+  const T = 0.5 / SPD(), R = 46, a = { type: 'gust', t: 0, phase: 0, tele: getTele() };
   a.update = dt => {
     a.t += dt;
     if (a.phase === 0) {
@@ -1867,7 +1866,7 @@ function atkGust() {
     } else if (a.phase === 1) {
       if (a.t === dt || a.t < dt * 1.5) {
         flatRing(B3.pos.x, B3.pos.z, 4, R, 0xdfe8ff, 0.5, 3); shake(0.8); burst(V3(B3.pos.x, 4, B3.pos.z), 40, 40, 0xdfe8ff, 0.7, 0);
-        const d = b3Dist(); if (d < R) { const k = (1 - d / R * 0.5) * 36; b3Knock(k); if (pl.pos.y < 12) hurtPlayer(10, { shieldMul: 1.2 }); }
+        const d = b3Dist(); if (d < R) { const k = (1 - d / R * 0.5) * 36; b3Knock(k); if (pl.pos.y < 35) hurtPlayer(10, { shieldMul: 1.2 }); }
       }
       a.phase = 2; a.t = 0;
     } else return a.t >= 0.5;
@@ -1887,27 +1886,27 @@ function updatePools(dt) {
   }
 }
 function atkBomb() {
-  const N = PH3([3, 4, 5]) + XTRA(), T = 1.1 / SPD(), a = { type: 'bomb', t: 0, spawned: 0, balls: [] };
+  const N = PH3([3, 4, 5]) + XTRA(), T = 0.85 / SPD(), a = { type: 'bomb', t: 0, spawned: 0, balls: [] };
   a.update = dt => {
     a.t += dt; b3Face(dt, 3); b3Alt(B3.mode === 'ground' ? 5 : 26, dt, 3); setWarn(a.t < 1.2 ? 'Cầu lửa!' : '');
-    if (a.spawned < N && a.t >= 0.5 / SPD() + a.spawned * 0.4 / SPD()) {
+    if (a.spawned < N && a.t >= 0.35 / SPD() + a.spawned * 0.3 / SPD()) {
       a.spawned++; const mp = mouthPos();
       let ox = pl.pos.x + pl.vel.x * 0.7 + rnd(-6, 6), oz = pl.pos.z + pl.vel.z * 0.7 + rnd(-6, 6);
       const lim = ARENA_R - 6, r = Math.hypot(ox, oz), k = r > lim ? lim / r : 1; ox *= k; oz *= k;
       const m = new THREE.Mesh(ballGeo3, ballMat3); m.position.copy(mp); scene.add(m);
-      a.balls.push({ m, sx: mp.x, sy: mp.y, sz: mp.z, x: ox, z: oz, t: 0, R: 8.5, done: false, tele: getTele() }); burst(mp, 8, 10, 0xffb040, 0.3, 0);
+      a.balls.push({ m, sx: mp.x, sy: mp.y, sz: mp.z, x: ox, z: oz, ty: pl.pos.y > 5 ? pl.pos.y + 1.5 : 0.5, t: 0, R: 8.5, done: false, tele: getTele() }); burst(mp, 8, 10, 0xffb040, 0.3, 0);
     }
     let alive = false;
     for (const b of a.balls) {
       if (b.done) continue; alive = true; b.t += dt; const f = Math.min(1, b.t / T);
-      b.m.position.set(lerp(b.sx, b.x, f), lerp(b.sy, 0.5, f) + Math.sin(f * Math.PI) * 18, lerp(b.sz, b.z, f));
+      b.m.position.set(lerp(b.sx, b.x, f), lerp(b.sy, b.ty, f) + Math.sin(f * Math.PI) * 18, lerp(b.sz, b.z, f));
       emit(b.m.position.x, b.m.position.y, b.m.position.z, rnd(-1, 1), rnd(-1, 1), rnd(-1, 1), 0xff8a30, 0.4, 0);
       setRing(b.tele.a, b.x, b.z, b.R - 0.5, b.R, 0.8); setRing(b.tele.b, b.x, b.z, 0, b.R * f, 0.2 + 0.3 * f);
       if (f >= 1) {
         b.done = true; freeTele(b.tele); scene.remove(b.m);
-        const c = V3(b.x, 0, b.z); explode(c, 3, 0xff8a30); burst(c, 30, 22, 0xffd060, 0.6, 3); flatRing(b.x, b.z, 2, b.R + 3, 0xff8a30, 0.5, 2); crushRocks(b.x, b.z, b.R); shake(0.6);
-        const pc = pCenter(); if (Math.hypot(pc.x - b.x, pc.z - b.z) < b.R && pl.pos.y < 18) hurtPlayer(26, { shieldMul: 1.4 });
-        addPool(b.x, b.z, b.R * 0.85);
+        const c = V3(b.x, b.ty, b.z); explode(c, 3, 0xff8a30); burst(c, 30, 22, 0xffd060, 0.6, 3); flatRing(b.x, b.z, 2, b.R + 3, 0xff8a30, 0.5, 2); crushRocks(b.x, b.z, b.R); shake(0.6);
+        const pc = pCenter(); if (pc.distanceTo(c) < b.R) hurtPlayer(26, { shieldMul: 1.4 });
+        if (b.ty < 3) addPool(b.x, b.z, b.R * 0.85);
       }
     }
     return a.spawned >= N && !alive;
@@ -1916,7 +1915,7 @@ function atkBomb() {
   return a;
 }
 function atkBite() {
-  const T = 0.45 / SPD(), a = { type: 'bite', t: 0, phase: 0, hit: false, fan: getFan() };
+  const T = 0.35 / SPD(), a = { type: 'bite', t: 0, phase: 0, hit: false, fan: getFan() };
   a.update = dt => {
     a.t += dt;
     if (a.phase === 0) {
@@ -1939,7 +1938,7 @@ function atkBite() {
 }
 let b3SpinRing = null;
 function atkTailSweep() {
-  const T = 0.55 / SPD(), a = { type: 'tail', t: 0, phase: 0, hit: false, y0: 0 };
+  const T = 0.42 / SPD(), a = { type: 'tail', t: 0, phase: 0, hit: false, y0: 0 };
   if (!b3SpinRing) b3SpinRing = makeRing(0xff3a2a);
   a.update = dt => {
     if (!B3.parts.tail.alive) { b3SpinRing.visible = false; return true; }
@@ -1979,7 +1978,7 @@ function startAttack3(t) {
   B3.last = t; B3.state = 'atk';
   B3.atk = t === 'fire' ? atkFire() : t === 'bolt' ? atkBolt() : t === 'dive' ? atkDive() : t === 'gust' ? atkGust() : t === 'bomb' ? atkBomb() : t === 'bite' ? atkBite() : atkTailSweep();
 }
-function endAttack3() { if (B3.atk && B3.atk.cancel) B3.atk.cancel(); B3.atk = null; B3.state = 'idle'; B3.timer = (Math.random() < PH3([0.2, 0.35, 0.5]) ? 0.15 : PH3([1.0, 0.75, 0.55])) / SPD(); B3.vuln = B3.groundT > 0 ? 1.5 : 1; }
+function endAttack3() { if (B3.atk && B3.atk.cancel) B3.atk.cancel(); B3.atk = null; B3.state = 'idle'; B3.timer = (Math.random() < PH3([0.3, 0.45, 0.6]) ? 0.12 : PH3([0.6, 0.45, 0.3])) / SPD(); B3.vuln = B3.groundT > 0 ? 1.5 : 1; }
 
 /* --- animation --- */
 function idle3(dt, moving) {
@@ -2026,15 +2025,15 @@ function updateBoss3(dt) {
     B3.timer -= dt; b3Face(dt, PH3([2.4, 3, 3.6]) * SPD());
     if (B3.mode === 'fly') {
       b3Alt(32 + Math.sin(G.time * 0.8) * 3, dt, 2); B3.pitch = lerp(B3.pitch, 0, damp(3, dt));
-      B3.orb += dt * 0.35;
+      B3.orb += dt * 0.5;
       let tx = pl.pos.x + Math.sin(B3.orb) * 55, tz = pl.pos.z + Math.cos(B3.orb) * 55;
       const lim = ARENA_R - 14, r = Math.hypot(tx, tz); if (r > lim) { tx *= lim / r; tz *= lim / r; }
-      const dx = tx - B3.pos.x, dz = tz - B3.pos.z, dd = Math.hypot(dx, dz), sp = Math.min(dd * 1.2, PH3([22, 27, 32]) * SPD()), step = sp * dt;
+      const dx = tx - B3.pos.x, dz = tz - B3.pos.z, dd = Math.hypot(dx, dz), sp = Math.min(dd * 1.2, PH3([30, 36, 42]) * SPD()), step = sp * dt;
       if (dd > 0.5) { B3.pos.x += dx / dd * step; B3.pos.z += dz / dd * step; moving = sp; }
     } else {
       b3Alt(5, dt, 3); B3.pitch = lerp(B3.pitch, 0, damp(3, dt));
       const d = b3Dist(), stop = 20;
-      if (d > stop) { const sp = PH3([13, 17, 21]) * SPD(), step = Math.min(sp * dt, d - stop + 0.5); B3.pos.x += (pl.pos.x - B3.pos.x) / d * step; B3.pos.z += (pl.pos.z - B3.pos.z) / d * step; moving = sp; crushRocks(B3.pos.x, B3.pos.z, 9); b3Clamp(); }
+      if (d > stop) { const sp = PH3([17, 21, 25]) * SPD(), step = Math.min(sp * dt, d - stop + 0.5); B3.pos.x += (pl.pos.x - B3.pos.x) / d * step; B3.pos.z += (pl.pos.z - B3.pos.z) / d * step; moving = sp; crushRocks(B3.pos.x, B3.pos.z, 9); b3Clamp(); }
     }
     if (B3.timer <= 0) startAttack3(pick3());
   } else if (B3.atk) {
