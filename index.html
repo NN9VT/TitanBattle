@@ -167,7 +167,7 @@ button.cta:disabled{opacity:.5;cursor:not-allowed}
 
 <div class="screen" id="menu">
   <div class="card">
-    <h1>Titan <em>Breaker</em> <small class="ver">v2.5</small></h1>
+    <h1>Titan <em>Breaker</em> <small class="ver">v2.6</small></h1>
     <div class="sub">Xe tăng biến hình đấu boss khổng lồ</div>
     <div id="mpBar" hidden><span id="mpBarT"></span><button id="mpLeave">Rời phòng</button></div>
     <div class="plab">Boss</div>
@@ -660,7 +660,7 @@ function fireArty() {
 }
 function artySplash(s, direct) {
   const p = s.pos; explode(p, s.splash * 0.14, 0xffa040); burst(p, 26, 16, 0xffd070, 0.5, 3); flatRing(p.x, p.z, 1, s.splash, 0xffa040, 0.4, 1); shake(0.35);
-  for (const k of B.keys) { const pt = B.parts[k]; if (!pt.alive || k === direct) continue; if (B.pp[k].distanceTo(p) < s.splash + pt.r) bossDamage(k, s.sdmg, p); }
+  for (const k of B.keys) { const pt = B.parts[k]; if ((!pt.alive && !B.regen) || k === direct) continue; if (B.pp[k].distanceTo(p) < s.splash + pt.r) bossDamage(k, s.sdmg, p); }
 }
 function fireShot() {
   if (pl.char === 'arty') return fireArty();
@@ -850,7 +850,7 @@ function updatePlayer(dt) {
     saberPivot.visible = true; saberPivot.rotation.set(-Math.asin(clamp(pl.stabDir.y, -1, 1)), 0, 0); pl.root.updateMatrixWorld(true);
     const a0 = saberPivot.getWorldPosition(V3()), a1 = a0.clone().addScaledVector(pl.stabDir, 7.5), ab = a1.clone().sub(a0);
     for (const key of B.keys) {
-      const b = B.parts[key]; if ((!b.alive && key !== 'core') || (pl.stabHit && pl.stabHit[key])) continue;
+      const b = B.parts[key]; if ((!b.alive && key !== 'core' && !B.regen) || (pl.stabHit && pl.stabHit[key])) continue;
       const wp = bossPartPos(key), t = clamp(wp.clone().sub(a0).dot(ab) / ab.lengthSq(), 0, 1), cp = a0.clone().addScaledVector(ab, t);
       if (wp.distanceTo(cp) < b.r + 1.8) { pl.stabHit[key] = 1; bossDamage(key, 156, wp.clone().lerp(cp, 0.5)); burst(wp, 36, 22, 0x9aeaff, 0.6, 2); shake(0.7); }
     }
@@ -886,7 +886,7 @@ function fireRocket(side) {
 function doMelee() {
   const c = pCenter(), fwd = V3(Math.sin(pl.yaw), 0, Math.cos(pl.yaw));
   for (const key of B.keys) {
-    const b = B.parts[key]; if (!b.alive && key !== 'core') continue;
+    const b = B.parts[key]; if (!b.alive && key !== 'core' && !B.regen) continue;
     const wp = bossPartPos(key), to = wp.clone().sub(c);
     const dist = to.length() - b.r;
     to.y = 0; to.normalize();
@@ -981,7 +981,7 @@ function bossTest(p, r) {
   if (!B.alive && B.dying <= 0) return null;
   for (const k of B.keys) {
     const pt = B.parts[k];
-    if (p.distanceToSquared(B.pp[k]) < (pt.r + r) * (pt.r + r)) return pt.alive && !B.rolling ? k : 'body';
+    if (p.distanceToSquared(B.pp[k]) < (pt.r + r) * (pt.r + r)) return (pt.alive || B.regen) && !B.rolling ? k : 'body';
   }
   if (B.bodyTest(p)) return 'body';
   return null;
@@ -990,7 +990,7 @@ function bossDamage(key, dmg, pos) {
   burst(pos, key === 'body' ? 5 : 12, 10, key === 'body' ? 0xaaaaaa : 0xffb060, 0.35, 4);
   if (key === 'body' || !B.alive || G.intro > 0) return;
   const pt = B.parts[key];
-  if (key !== 'core' && !pt.alive) return;
+  if (key !== 'core' && !pt.alive && !B.regen) return;
   G.hitT = 0.12; pt.flash = 0.12; dmg *= (B.vuln || 1);
   if (key === 'core') {
     dmg *= B.coreMult(); pt.hp -= dmg;
@@ -1002,7 +1002,7 @@ function bossDamage(key, dmg, pos) {
     if (pt.hp <= 0) { pt.hp = 0; bossDie(); }
   } else {
     if (B === B1 && pt.hp > pt.max * 0.5) dmg *= 0.6;
-    pt.hp -= dmg;
+    pt.hp -= dmg; if (B.regen) { pt.pauseT = 0.5; if (!pt.alive && pt.hp < 0) pt.hp = 0; }
     if (pt.hp <= 0 && pt.alive) {
       pt.hp = 0; pt.alive = false;
       const minor = B.minor.includes(key);
@@ -1011,7 +1011,7 @@ function bossDamage(key, dmg, pos) {
       B.mats[key].color.setHex(0x14161b); B.mats[key].emissive.setRGB(0, 0, 0);
       if (B.onDestroy) B.onDestroy(key);
       say('ĐÃ PHÁ ' + pt.name, minor ? '' : (B.destroyMsg && B.destroyMsg[key]) || 'Lõi lộ ra, sát thương lên lõi tăng', 2.2);
-      if (G.target === key) G.target = 'core';
+      if (G.target === key && !B.regen) G.target = 'core';
     }
   }
 }
@@ -1415,7 +1415,7 @@ const B2 = {
   phaseMsg: { 2: 'Bọ Cạp Gai cuộn thành quả cầu gai', 3: 'Giáp gai vỡ, bọ cạp nổi điên' }, ringHex: 0x7dff3a,
   root: new THREE.Group(), yaw: Math.PI, phase: 1, alive: true, state: 'idle', timer: 2, atk: null, last: '', stagger: 0, dying: 0, vuln: 1, rolling: false, walk: 0,
   parts: {
-    core: { name: 'LÕI', hp: 2760, max: 2760, r: 5.5, alive: true, flash: 0 },
+    core: { name: 'LÕI', hp: 2484, max: 2484, r: 5.5, alive: true, flash: 0 },
     clawL: { name: 'CÀNG GAI 1', hp: 680, max: 680, r: 5.5, alive: true, flash: 0 },
     clawR: { name: 'CÀNG GAI 2', hp: 680, max: 680, r: 5.5, alive: true, flash: 0 },
     tail: { name: 'ĐUÔI', hp: 680, max: 680, r: 4.8, alive: true, flash: 0 },
@@ -1507,6 +1507,7 @@ function refreshPP2() {
 }
 B2.refresh = refreshPP2;
 B2.bodyTest = p => { const dx = p.x - B2.pos.x, dz = p.z - B2.pos.z; return Math.hypot(dx, dz) < (B2.rolling ? 7.6 : 8.5) && p.y < (B2.rolling ? 14.5 : 12.5); };
+B2.regen = true;
 B2.coreMult = () => (B2.parts.clawL.alive || B2.parts.clawR.alive || B2.parts.tail.alive) ? 0.1 : 1.5;
 B2.destroyMsg = { clawL: 'Phần bị phá sẽ hồi lại dần', clawR: 'Phần bị phá sẽ hồi lại dần', tail: 'Phần bị phá sẽ hồi lại dần' };
 /* ===== Boss 2: AI, movement, attacks ===== */
@@ -1814,7 +1815,7 @@ B2.idle = dt => idle2(dt, 0);
 
 function updateBoss2(dt) {
   refreshPP2();
-  if (B2.alive && G.intro <= 0) for (const k of ['clawL', 'clawR', 'tail']) { const p = B2.parts[k]; if (!p.alive) { p.hp += p.max * 0.03 * dt; if (p.hp >= p.max) { p.hp = p.max; p.alive = true; A2[k].color.setHex(0x3d2733); burst(B2.pp[k], 20, 14, 0x7dff3a, 0.6, 2); say('PHỤC HỒI ' + p.name, 'Lõi lại kháng sát thương', 1.6); } } }
+  if (B2.alive && G.intro <= 0) for (const k of ['clawL', 'clawR', 'tail']) { const p = B2.parts[k]; if (!p.alive) { if ((p.pauseT || 0) > 0) { p.pauseT -= dt; continue; } p.hp += p.max * 0.03 * dt; if (p.hp >= p.max) { p.hp = p.max; p.alive = true; A2[k].color.setHex(0x3d2733); burst(B2.pp[k], 20, 14, 0x7dff3a, 0.6, 2); say('PHỤC HỒI ' + p.name, 'Lõi lại kháng sát thương', 1.6); } } }
   for (const k of B2.keys) { const p = B2.parts[k]; p.flash = Math.max(0, p.flash - dt); const f = p.flash > 0 ? 0.55 : 0; if (p.alive) A2[k].emissive.setRGB(f * 0.6, f, f * 0.4); }
   if (!B2.alive) {
     B2.dying -= dt;
@@ -2446,6 +2447,7 @@ function mpOnSnap() {
     for (const k in s.p) {
       const q = B.parts[k]; if (!q) continue; const hp = s.p[k][0], al = s.p[k][1];
       if (k !== 'core' && q.alive && !al) { _bossDamage(k, 1e9, B.pp[k]); continue; }
+      if (!q.alive && k !== 'core') { if (al) q.hp = q.max; else if (Math.abs(q.hp - hp) > q.max * 0.06) q.hp = Math.max(0, hp); continue; }
       if (q.alive && Math.abs(q.hp - hp) > q.max * 0.06) { q.hp = Math.max(1, hp); if (k === 'core') coreSet = true; }
     }
     if (coreSet || s.ph > B.phase) _bossDamage('core', 0.001, B.pp.core);
@@ -2829,14 +2831,14 @@ function comTick(dt) {
 const camPosS = V3(0, 8, -60), camLookS = V3(0, 10, 0), _d = V3();
 let bannerT = 0;
 function say(t, s, dur) { $('bt').textContent = t; $('bs').textContent = s || ''; $('banner').classList.add('on'); bannerT = dur || 2; }
-function aliveTargets() { return B.keys.filter(k => k === 'core' || B.parts[k].alive); }
+function aliveTargets() { return B.keys.filter(k => k === 'core' || B.parts[k].alive || B.regen); }
 function cycleTarget(dir) { const l = aliveTargets(); let i = l.indexOf(G.target); if (i < 0) i = 0; G.target = l[(i + dir + l.length) % l.length]; G.lockOn = true; }
 
 function updateCamera(dt) {
   if (IN.pressed.lock) G.lockOn = !G.lockOn;
   if (IN.pressed.next) cycleTarget(1);
   if (IN.pressed.prev) cycleTarget(-1);
-  if (G.target !== 'core' && !B.parts[G.target].alive) G.target = 'core';
+  if (G.target !== 'core' && !B.parts[G.target].alive && !B.regen) G.target = 'core';
   const pc = pCenter(), tp = B.pp[G.target], dist = pl.k > 0.5 ? 19 : 16;
   let wantPos, wantLook;
   if (G.lockOn) {
