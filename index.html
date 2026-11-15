@@ -172,7 +172,7 @@ button.cta:disabled{opacity:.5;cursor:not-allowed}
 
 <div class="screen" id="menu">
   <div class="card">
-    <h1>Titan <em>Breaker</em> <small class="ver">v3.2</small></h1>
+    <h1>Titan <em>Breaker</em> <small class="ver">v3.3</small></h1>
     <div class="sub">Xe tăng biến hình đấu boss khổng lồ</div>
     <div id="mpBar" hidden><span id="mpBarT"></span><button id="mpLeave">Rời phòng</button></div>
     <div class="plab">Boss</div>
@@ -2497,7 +2497,7 @@ async function mpHostGo() {
   } catch (e) { mpMsg(mpErr(e), true); }
 }
 function mpBackToLobby() {
-  mpDetach(); MP.on = false; MP.lastGo = 0; ghostG.visible = false; ghostShield.visible = false; ghostBar.visible = false; $('mate').hidden = true;
+  mpDetach(); MP.on = false; MP.lastGo = MP.host ? 0 : ((MP.lobby && MP.lobby.go) || MP.lastGo); ghostG.visible = false; ghostShield.visible = false; ghostBar.visible = false; $('mate').hidden = true;
   if (MP.lref) { if (MP.host) MP.lref.update({ go: 0 }); else MP.lref.update({ gr: 0 }); }
   mpUpdateUI();
 }
