@@ -99,6 +99,10 @@ html.compact .opt{padding:6px 10px}html.compact .opt span{font-size:11px}html.co
 html.rot body{position:fixed;left:0;top:0;width:var(--gw);height:var(--gh);transform-origin:0 0;transform:translate(var(--rw),0) rotate(90deg)}
 #rotBtn{position:fixed;z-index:30;right:max(14px,env(safe-area-inset-right,0px));top:max(10px,env(safe-area-inset-top,0px));width:42px;height:42px;border-radius:50%;border:2px solid var(--line);background:rgba(10,16,28,.7);color:var(--fg);font:700 20px var(--font);cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0}
 #sndBtn{position:fixed;z-index:30;right:calc(max(14px,env(safe-area-inset-right,0px)) + 50px);top:max(10px,env(safe-area-inset-top,0px));width:42px;height:42px;border-radius:50%;border:2px solid var(--line);background:rgba(10,16,28,.7);color:var(--fg);font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0}
+#quitBtn{position:fixed;z-index:30;right:calc(max(14px,env(safe-area-inset-right,0px)) + 100px);top:max(10px,env(safe-area-inset-top,0px));height:42px;padding:0 14px;border-radius:21px;border:2px solid var(--line);background:rgba(10,16,28,.7);color:var(--fg);font:700 12px var(--font);letter-spacing:.14em;cursor:pointer}
+#quitBtn[hidden]{display:none}
+#quitDlg{z-index:60;align-items:center}
+#quitDlg button.alt,#quit2{font-family:var(--font);font-size:14px;letter-spacing:.14em;font-weight:700;color:var(--fg);background:transparent;border:2px solid var(--line);padding:12px 24px;cursor:pointer;margin:10px 6px 0}
 #rotBtn:focus-visible{outline:3px solid var(--cyan)}
 input,textarea{-webkit-user-select:text;user-select:text;touch-action:auto}
 .mpin{font-family:var(--font);font-size:22px;letter-spacing:.3em;text-transform:uppercase;width:140px;text-align:center;padding:10px;background:rgba(255,255,255,.08);color:var(--fg);border:1px solid var(--line)}
@@ -128,6 +132,7 @@ button.cta:disabled{opacity:.5;cursor:not-allowed}
 <body>
 <canvas id="game"></canvas>
 <button id="rotBtn" title="Xoay màn hình" aria-label="Xoay màn hình">⟳</button>
+<button id="quitBtn" hidden>THOÁT</button>
 <button id="sndBtn" title="Âm thanh" aria-label="Tắt âm thanh">🔊</button>
 <div class="hud" id="bossbar" hidden>
   <div id="bossname"><span id="bossnm">Titan Hủy Diệt</span><span id="phase">Giai đoạn 1</span></div>
@@ -167,7 +172,7 @@ button.cta:disabled{opacity:.5;cursor:not-allowed}
 
 <div class="screen" id="menu">
   <div class="card">
-    <h1>Titan <em>Breaker</em> <small class="ver">v3.0</small></h1>
+    <h1>Titan <em>Breaker</em> <small class="ver">v3.1</small></h1>
     <div class="sub">Xe tăng biến hình đấu boss khổng lồ</div>
     <div id="mpBar" hidden><span id="mpBarT"></span><button id="mpLeave">Rời phòng</button></div>
     <div class="plab">Boss</div>
@@ -236,7 +241,10 @@ button.cta:disabled{opacity:.5;cursor:not-allowed}
   </div>
 </div>
 <div class="screen" id="pause" hidden>
-  <div class="card"><h1>Tạm dừng</h1><div class="sub">Bấm P hoặc nút dưới để tiếp tục</div><button class="cta" id="resumeBtn">Tiếp tục</button></div>
+  <div class="card"><h1>Tạm dừng</h1><div class="sub">Bấm P hoặc nút dưới để tiếp tục</div><button class="cta" id="resumeBtn">Tiếp tục</button><br><button id="quit2">Thoát</button></div>
+</div>
+<div class="screen" id="quitDlg" hidden>
+  <div class="card"><h1>Thoát ván?</h1><div class="sub" id="quitSub"></div><button class="cta" id="quitYes">Thoát</button><button class="alt" id="quitNo">Tiếp tục chơi</button></div>
 </div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script>
@@ -710,7 +718,7 @@ function fireShot() {
   const m = new THREE.Mesh(shellGeo, robot ? beamMat : shellMat);
   if (robot) m.scale.set(1.4, 1.4, 2.4); else if (hg) m.scale.set(0.7, 0.7, 0.8); else m.scale.set(1.7, 1.7, 1.8);
   m.position.copy(mp); m.lookAt(mp.clone().add(d)); scene.add(m);
-  shots.push({ mesh: m, pos: mp.clone(), vel: d.multiplyScalar(robot ? 170 : hg ? 150 : 125), dmg: robot ? 30 : hg ? 2.8 : 33, life: 1.6, r: hg ? 1.3 : 0.7, coreMul: hg ? 0.85 : 1 });
+  shots.push({ mesh: m, pos: mp.clone(), vel: d.multiplyScalar(robot ? 170 : hg ? 210 : 125), dmg: robot ? 30 : hg ? 2.8 : 33, life: 1.6, r: hg ? 1.3 : 0.7, coreMul: hg ? 0.85 : 1 });
   burst(mp, hg ? 2 : 5, 8, robot ? 0x7af0ff : 0xffd070, 0.18, 0);
   if (hg) { pl.heat += 0.01; if (pl.heat >= 1) { pl.heat = 1; pl.ohT = 3; } }
   pl.fireCd = robot ? 0.55 : hg ? 0.08 : 1.0; shake(hg ? 0.02 : 0.05);
@@ -778,7 +786,8 @@ function killPlayer() {
 const aimPoint = V3(0, 10, 0);
 function updatePlayer(dt) {
   if (!pl.alive) return;
-  const frozen = G.intro > 0;
+  pl.hstun = Math.max(0, (pl.hstun || 0) - dt);
+  const frozen = G.intro > 0 || pl.hstun > 0;
   pl.invuln = Math.max(0, pl.invuln - dt); pl.slowT = Math.max(0, (pl.slowT || 0) - dt); pl.parT = Math.max(0, (pl.parT || 0) - dt); pl.dashCd = Math.max(0, (pl.dashCd || 0) - dt); pl.fireCd -= dt; pl.castT = Math.max(0, (pl.castT || 0) - dt); if (pl.ohT > 0) { pl.ohT -= dt; pl.heat = Math.max(0, pl.ohT / 3); } else if (pl.heat > 0 && !IN.fire) pl.heat = Math.max(0, pl.heat - 0.3 * dt); pl.meleeCd -= dt; pl.transCd -= dt; pl.stun = Math.max(0, pl.stun - dt);
   /* transform */
   if (IN.pressed.transform && pl.transCd <= 0 && pl.k === pl.kTarget && !frozen) {
@@ -2529,10 +2538,11 @@ function mpOnEvent(e) {
   if (!e || e.f === MP.me || !MP.on) return;
   if (e.t === 'd') { const h = G.hitT; MP.applying = true; try { _bossDamage(e.k, e.d, V3(e.x, e.y, e.z)); } finally { MP.applying = false; } G.hitT = h; }
   else if (e.t === 'r') { const k = rocks[e.i]; if (k) rockDamage(k, e.d, false); }
+  else if (e.t === 'q') quitToMenu(true);
   else if (e.t === 'a' && !MP.host) mpOnAtk(e);
   else if (e.t === 'c') comRecv(e);
   else if (e.t === 'rv' && e.to === MP.me) {
-    pl.alive = true; pl.hp = pl.maxHp * 0.5; pl.sh = pl.shMax; pl.shState = 'ready'; pl.shTimer = 0; pl.root.visible = true; pl.invuln = 2.5; pl.vel.set(0, 0, 0); pl.stun = 0;
+    pl.alive = true; pl.hp = pl.maxHp * 0.5; pl.sh = pl.shMax; pl.shState = 'ready'; pl.shTimer = 0; pl.root.visible = true; pl.invuln = 2.5; pl.vel.set(0, 0, 0); pl.stun = 0; pl.hstun = 0;
     MP.revUsed[MP.me]++; say('ĐƯỢC HỒI SINH', 'Đồng đội đã cứu bạn', 1.8); burst(pCenter(), 40, 16, 0x6dff9a, 0.8, 3);
   }
 }
@@ -2656,7 +2666,7 @@ function mpTracer() {
   const ch = gh.ch, rb = gh.k > 0.5, h = lerp(ch === 'heli' ? 2.4 : 2.0, 3.8, gh.k), ca = Math.cos(gh.ap);
   const d = V3(Math.sin(gh.ay) * ca, Math.sin(gh.ap), Math.cos(gh.ay) * ca), p = V3(gh.pos.x, gh.pos.y + h, gh.pos.z).addScaledVector(d, 3.5);
   const m = new THREE.Mesh(trGeo, trMats[ch] || trMats.tank); m.position.copy(p); const sc = ch === 'heli' && !rb ? 0.5 : ch === 'arty' ? 1.5 : 1; m.scale.setScalar(sc); scene.add(m);
-  mpTr.push({ m, v: d.multiplyScalar(ch === 'heli' ? 120 : ch === 'arty' ? 62 : 90), life: 0.7 });
+  mpTr.push({ m, v: d.multiplyScalar(ch === 'heli' ? 168 : ch === 'arty' ? 62 : 90), life: 0.7 });
 }
 function mpUpdateGhost(dt) {
   const f = 1 - Math.exp(-14 * dt), ox = gh.pos.x, oy = gh.pos.y, oz = gh.pos.z;
@@ -3343,15 +3353,16 @@ function jugMG(f, st, wp, dt, ok) {
   if (st.n <= 0) st.cd = rnd(1.0, 1.6) / SPD();
 }
 function jugSlam(f) {
-  const a = { type: 'slam', t: 0, hit: false }, tl = b4Tele(8);
+  const a = { type: 'slam', t: 0, hit: false, sx: f.pos.x, sz: f.pos.z }, tl = b4Tele(8);
   a.update = dt => {
     a.t += dt;
-    const sx = f.pos.x + Math.sin(f.yaw) * 7, sz = f.pos.z + Math.cos(f.yaw) * 7;
+    if (a.t < 0.6) { a.sx = f.pos.x + Math.sin(f.yaw) * 7; a.sz = f.pos.z + Math.cos(f.yaw) * 7; }   // aim follows the player, then locks at 0.6s
+    const sx = a.sx, sz = a.sz;
     if (a.t < 1.0) { setWarn('Đập! Lùi ra xa hoặc lướt'); setRing(tl.a, sx, sz, 10, 11.4, 0.3 + 0.3 * Math.abs(Math.sin(a.t * 14))); setRing(tl.b, sx, sz, 0, 10, 0.12); return false; }
     if (!a.hit) {
       a.hit = true; setWarn(''); tl.a.visible = false; tl.b.visible = false;
       flatRing(sx, sz, 4, 14, 0xffffff, 0.5, 2); burst(V3(sx, 1, sz), 40, 24, 0x9aa0b0, 0.7, 3); shake(1.0); S4('stomp'); rockSplash(V3(sx, 1, sz), 10, 400, false);
-      mpHit(() => { if (Math.hypot(pl.pos.x - sx, pl.pos.z - sz) < 11 && pl.pos.y < 8) { if (hurtPlayer(60, { shieldMul: 3.0 }) && !pl.lastBlocked) { pl.stun = Math.max(pl.stun, 1.5); pl.vel.x += (pl.pos.x - sx) * 1.2; pl.vel.z += (pl.pos.z - sz) * 1.2; } } });
+      mpHit(() => { if (Math.hypot(pl.pos.x - sx, pl.pos.z - sz) < 11 && pl.pos.y < 8) { if (pl.invuln > 0 && pl.invuln <= 0.13) pl.invuln = 0; if (hurtPlayer(60, { shieldMul: 3.0 }) && !pl.lastBlocked) { pl.hstun = 1.5; pl.vel.x += (pl.pos.x - sx) * 1.2; pl.vel.z += (pl.pos.z - sz) * 1.2; say('BỊ CHOÁNG', 'Không thể hành động 1,5 giây', 1.4); } } });
     }
     return a.t > 2.0;
   };
@@ -3585,10 +3596,10 @@ function updateTouchLabels() {
   if (tl.d !== d) { tl.d = d; $('t-dash').textContent = d; }
   if (tl.dn !== dn) { tl.dn = dn; $('t-down').style.display = heli ? 'flex' : 'none'; $('t-evade').style.display = heli ? 'flex' : 'none'; }
 }
-function showHud(on) { for (const id of ['bossbar', 'player', 'mode']) $(id).hidden = !on; $('cross').style.display = on ? '' : 'none'; if (!on) { $('lock').style.display = $('lockl').style.display = 'none'; setWarn(''); } }
+function showHud(on) { $('quitBtn').hidden = !on; for (const id of ['bossbar', 'player', 'mode']) $(id).hidden = !on; $('cross').style.display = on ? '' : 'none'; if (!on) { $('lock').style.display = $('lockl').style.display = 'none'; setWarn(''); } }
 function resetGame() {
   pl.char = G.char; applyChar();
-  Object.assign(pl, { hp: pl.maxHp, sh: pl.shMax, shState: 'ready', shTimer: 0, shHit: 0, shFlash: 0, en: 100, k: 0, kTarget: 0, transCd: 0, fireCd: 0, dashT: 0, invuln: 0, meleeT: 0, meleeCd: 0, vy: 0, boosting: false, boostLock: false, alive: true, stun: 0, yaw: 0, aimYaw: 0, mode: 'tank', rockets: 0, rocketT: 0, lean: 0, roll: 0, dashVy: 0, heat: 0, ohT: 0, slowT: 0, parT: 0, dashCd: 0, burst: false });
+  Object.assign(pl, { hp: pl.maxHp, sh: pl.shMax, shState: 'ready', shTimer: 0, shHit: 0, shFlash: 0, en: 100, k: 0, kTarget: 0, transCd: 0, fireCd: 0, dashT: 0, invuln: 0, meleeT: 0, meleeCd: 0, vy: 0, boosting: false, boostLock: false, alive: true, stun: 0, hstun: 0, yaw: 0, aimYaw: 0, mode: 'tank', rockets: 0, rocketT: 0, lean: 0, roll: 0, dashVy: 0, heat: 0, ohT: 0, slowT: 0, parT: 0, dashCd: 0, burst: false });
   pl.pos.set(B.start.x, 0, B.start.z); pl.vel.set(0, 0, 0); pl.root.visible = true; saberPivot.visible = false;
   B.reset(); mpAfterReset();
   clearProjectiles(); hideTele(); for (const s of shots.slice()) removeShot(s, shots);
@@ -3625,6 +3636,26 @@ $('againBtn').addEventListener('click', startGame);
 $('homeBtn').addEventListener('click', () => { setBoss(G.boss); resetGame(); G.state = 'menu'; $('end').hidden = true; $('menu').hidden = false; showHud(false); if (MP.room) mpBackToLobby(); });
 $('nextBtn').addEventListener('click', () => { G.boss = Math.min(4, G.boss + 1); syncPick(); startGame(); });
 $('resumeBtn').addEventListener('click', () => setPaused(false));
+let quitPaused = false;
+function quitAsk() {
+  if (G.state !== 'playing' && G.state !== 'paused') return;
+  quitPaused = false; if (G.state === 'playing' && !MP.on) { setPaused(true); quitPaused = true; }
+  $('quitSub').textContent = MP.on ? 'Ván online sẽ đóng cho cả hai người và quay về màn hình chính' : 'Ván hiện tại sẽ kết thúc và quay về màn hình chính';
+  $('quitDlg').hidden = false;
+}
+function quitToMenu(remote) {
+  $('quitDlg').hidden = true; if (G.state === 'menu') return;
+  const mp = MP.on; if (mp && !remote) { try { mpSend({ t: 'q' }); } catch (_) { } }
+  try { document.exitPointerLock(); } catch (_) { } try { if (typeof bedStop === 'function') bedStop(); } catch (_) { }
+  $('pause').hidden = true; $('end').hidden = true; $('menu').hidden = false; showHud(false); setWarn('');
+  setBoss(G.boss); resetGame(); G.state = 'menu';
+  if (MP.room) { if (mp && !remote) setTimeout(() => { if (MP.room) mpLeave(); }, 500); else mpLeave(); }
+  if (remote) say('ĐỒNG ĐỘI ĐÃ THOÁT VÁN', 'Ván online đã đóng', 3);
+}
+$('quitBtn').addEventListener('click', e => { e.stopPropagation(); quitAsk(); });
+$('quit2').addEventListener('click', quitAsk);
+$('quitYes').addEventListener('click', () => quitToMenu(false));
+$('quitNo').addEventListener('click', () => { $('quitDlg').hidden = true; if (quitPaused) { quitPaused = false; setPaused(false); } });
 $('codeBtn').addEventListener('click', () => {
   const v = $('codeIn').value.trim().toLowerCase();
   if (v === 'titanmatrix') { unlocked2 = unlocked3 = unlocked4 = true; try { localStorage.setItem('tb_u2', '1'); localStorage.setItem('tb_u3', '1'); localStorage.setItem('tb_u4', '1'); } catch (_) { } syncPick(); $('codeMsg').textContent = 'Đã mở khóa Boss 2, 3 và 4'; $('codeMsg').style.color = '#6dff9a'; }
