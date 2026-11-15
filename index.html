@@ -167,7 +167,7 @@ button.cta:disabled{opacity:.5;cursor:not-allowed}
 
 <div class="screen" id="menu">
   <div class="card">
-    <h1>Titan <em>Breaker</em> <small class="ver">v2.7</small></h1>
+    <h1>Titan <em>Breaker</em> <small class="ver">v2.8</small></h1>
     <div class="sub">Xe tăng biến hình đấu boss khổng lồ</div>
     <div id="mpBar" hidden><span id="mpBarT"></span><button id="mpLeave">Rời phòng</button></div>
     <div class="plab">Boss</div>
@@ -502,6 +502,7 @@ const G = { state: 'menu', time: 0, lockOn: true, target: 'core', camYaw: 0, cam
 const M = {
   white: new THREE.MeshStandardMaterial({ color: 0xe9eef6, roughness: 0.45, metalness: 0.3 }),
   blue: new THREE.MeshStandardMaterial({ color: 0x2b5db8, roughness: 0.5, metalness: 0.35 }),
+  mint: new THREE.MeshStandardMaterial({ color: 0x9fdc9a, roughness: 0.5, metalness: 0.3 }),
   red: new THREE.MeshStandardMaterial({ color: 0xd23a3a, roughness: 0.5, metalness: 0.3 }),
   yellow: new THREE.MeshStandardMaterial({ color: 0xf3c431, roughness: 0.4, metalness: 0.4 }),
   dark: new THREE.MeshStandardMaterial({ color: 0x262b36, roughness: 0.6, metalness: 0.5 }),
@@ -554,10 +555,31 @@ const ARTY = [
 const barrier = { active: false, hp: 0, max: 350, t: 0, life: 4, pos: V3(), yaw: 0, grow: 0, push: 0 };
 const barrierMesh = new THREE.Group(); barrierMesh.visible = false; scene.add(barrierMesh);
 const barrierMat = new THREE.MeshBasicMaterial({ color: 0x66e6ff, transparent: true, opacity: 0.35, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide });
-{ const w = new THREE.Mesh(UB, barrierMat); w.scale.set(21, 16, 0.8); w.position.y = 8; barrierMesh.add(w);
-  const fm = new THREE.MeshStandardMaterial({ color: 0xe2b04a, roughness: 0.4, metalness: 0.6 });
-  for (const s of [-1, 1]) { const p = new THREE.Mesh(UB, fm); p.scale.set(0.9, 16.6, 1.3); p.position.set(s * 10.6, 8, 0); barrierMesh.add(p); }
-  const t = new THREE.Mesh(UB, fm); t.scale.set(22, 0.9, 1.3); t.position.y = 16; barrierMesh.add(t); }
+/* Shield look: curved energy-grid arc (transparent, no flat mirror slab). Hitbox is unchanged. */
+const barrierTex = (() => {
+  const c = document.createElement('canvas'); c.width = 256; c.height = 256; const g = c.getContext('2d');
+  g.strokeStyle = 'rgba(255,255,255,0.95)'; g.lineWidth = 3;
+  const r = 32, w = r * Math.sqrt(3), h = r * 1.5;
+  for (let row = -1; row < 7; row++) for (let col = -1; col < 6; col++) {
+    const cx = col * w + (row & 1 ? w / 2 : 0), cy = row * h;
+    g.beginPath(); for (let i = 0; i < 6; i++) { const a = Math.PI / 6 + i * Math.PI / 3; g.lineTo(cx + r * 0.92 * Math.cos(a), cy + r * 0.92 * Math.sin(a)); } g.closePath(); g.stroke();
+  }
+  const t = new THREE.CanvasTexture(c); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(3, 2); return t;
+})();
+{
+  const SG = 2.6, CH = 10.5, BR = (CH * CH + SG * SG) / (2 * SG), TH = 2 * Math.asin(CH / BR), OFF = BR - SG / 2;
+  const grid = new THREE.Mesh(new THREE.CylinderGeometry(BR, BR, 16, 24, 1, true, -TH / 2, TH), new THREE.MeshBasicMaterial({ map: barrierTex, color: 0x66e6ff, transparent: true, opacity: 0.55, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide }));
+  grid.position.set(0, 8, -OFF); barrierMesh.add(grid); barrierMesh.userData.grid = grid;
+  const haze = new THREE.Mesh(new THREE.CylinderGeometry(BR - 0.05, BR - 0.05, 16, 24, 1, true, -TH / 2, TH), barrierMat);
+  haze.position.set(0, 8, -OFF); barrierMesh.add(haze);
+  const em = new THREE.MeshBasicMaterial({ color: 0xbff4ff, transparent: true, opacity: 0.9, blending: THREE.AdditiveBlending, depthWrite: false });
+  const N = 14;
+  for (const y of [0.25, 15.8]) for (let i = 0; i < N; i++) {
+    const a = -TH / 2 + TH * (i + 0.5) / N, m = new THREE.Mesh(UB, em);
+    m.scale.set(2 * BR * Math.sin(TH / N / 2) * 1.02, 0.3, 0.3); m.position.set(BR * Math.sin(a), y, BR * Math.cos(a) - OFF); m.rotation.y = a; barrierMesh.add(m);
+  }
+  for (const s of [-1, 1]) { const m = new THREE.Mesh(UB, em), a = s * TH / 2; m.scale.set(0.3, 16, 0.3); m.position.set(BR * Math.sin(a), 8, BR * Math.cos(a) - OFF); barrierMesh.add(m); }
+}
 function barrierBlocksSeg(x0, z0, x1, z1) {
   if (!barrier.active || barrier.grow < 1) return false;
   const s = Math.sin(barrier.yaw), c = Math.cos(barrier.yaw);
@@ -588,9 +610,9 @@ function applyChar() {
   const H = pl.char === 'heli', A = pl.char === 'arty';
   parts.forEach((p, i) => {
     if (H && HELI[i]) { p.tp.copy(HELI[i][0]); p.ts.copy(HELI[i][1]); } else if (A && ARTY[i]) { p.tp.copy(ARTY[i][0]); p.ts.copy(ARTY[i][1]); } else { p.tp.copy(p.tpT); p.ts.copy(p.tsT); }
-    p.mesh.material = A ? ((i === 4 || i === 5) ? ART.red : p.m0 === M.white ? ART.olive : p.m0 === M.blue ? ART.brown : p.m0 === M.red ? ART.red : p.m0) : p.m0;
+    p.mesh.material = A ? ((i === 4 || i === 5) ? ART.red : p.m0 === M.white ? ART.olive : p.m0 === M.blue ? ART.brown : p.m0 === M.red ? ART.red : p.m0) : (!H && p.m0 === M.blue) ? M.mint : p.m0;
   });
-  pl.maxHp = H ? 180 : A ? 260 : 220; pl.shMax = H ? 100 : A ? 150 : 120;
+  applySaber(); pl.maxHp = H ? 180 : A ? 260 : 220; pl.shMax = H ? 100 : A ? 150 : 120;
 }
 const gunPivot = new THREE.Group(); turret.add(gunPivot);
 const barrel = bx(M.dark, gunPivot);
@@ -608,7 +630,14 @@ bx(M.white, head).scale.set(0.95, 0.9, 0.95);
 const visor = bx(M.glow, head); visor.scale.set(0.7, 0.18, 0.1); visor.position.set(0, 0.05, 0.5);
 for (const s of [-1, 1]) { const f = bx(M.yellow, head); f.scale.set(0.1, 0.7, 0.1); f.position.set(s * 0.32, 0.75, 0.3); f.rotation.z = -s * 0.5; }
 const saberPivot = new THREE.Group(); pl.root.add(saberPivot); saberPivot.position.set(1.8, 3.3, 0.8); saberPivot.visible = false;
+const SABER = {
+  tank: { len: 7, reach: 7.5, dmg: 75, cd: 0.95, mat: new THREE.MeshBasicMaterial({ color: 0xffffff }) },
+  heli: { len: 11, reach: 11, dmg: 60, cd: 0.76, mat: M.glow },
+  arty: { len: 5, reach: 5.5, dmg: 112.5, cd: 2.375, mat: new THREE.MeshBasicMaterial({ color: 0xff8a1a }) }
+};
+const SB = () => SABER[pl.char] || SABER.tank;
 const saber = new THREE.Mesh(UB, M.glow); saber.scale.set(0.3, 0.3, 7); saber.position.z = 3.5; saberPivot.add(saber);
+function applySaber() { const s = SB(); saber.material = s.mat; saber.scale.z = s.len; saber.position.z = s.len / 2; }
 scene.add(pl.root);
 const shieldMesh = new THREE.Group();
 const shieldMat = new THREE.MeshBasicMaterial({ color: 0x4fd8ff, transparent: true, opacity: 0.12, side: THREE.DoubleSide, depthWrite: false, blending: THREE.AdditiveBlending });
@@ -848,7 +877,7 @@ function updatePlayer(dt) {
   if (IN.fire && !up && !trans && pl.fireCd <= 0 && !(pl.ohT > 0) && !frozen && G.state === 'playing') fireShot();
   if (IN.pressed.melee && heliMode && pl.en >= 50 && pl.rockets <= 0 && !up && !frozen) { pl.en -= 50; pl.rockets = 6; pl.rocketT = 0; }
   if (pl.rockets > 0) { pl.rocketT -= dt; if (pl.rocketT <= 0) { fireRocket(pl.rockets % 2 ? 1 : -1); pl.rockets--; pl.rocketT = 0.07; } }
-  if (IN.pressed.melee && robot && !trans && pl.meleeCd <= 0 && !up && !frozen) { const md = pl.char === 'heli' ? 0.32 : 0.4; pl.meleeT = md; pl.meleeDur = md; pl.meleeCd = 0.95 * md / 0.4; pl.meleeHit = false; }
+  if (IN.pressed.melee && robot && !trans && pl.meleeCd <= 0 && !up && !frozen) { const md = pl.char === 'heli' ? 0.32 : 0.4; pl.meleeT = md; pl.meleeDur = md; pl.meleeCd = SB().cd * md / (pl.char === 'heli' ? 0.32 : 0.4); pl.meleeHit = false; }
   if (pl.meleeT > 0) {
     pl.meleeT -= dt; const f = 1 - pl.meleeT / (pl.meleeDur || 0.4);
     saberPivot.visible = pl.meleeT > 0; saberPivot.rotation.y = lerp(1.1, -1.1, f); saberPivot.rotation.x = -0.15;
@@ -856,7 +885,7 @@ function updatePlayer(dt) {
   } else saberPivot.visible = false;
   if (pl.stab && pl.dashT > 0) {
     saberPivot.visible = true; saberPivot.rotation.set(-Math.asin(clamp(pl.stabDir.y, -1, 1)), 0, 0); pl.root.updateMatrixWorld(true);
-    const a0 = saberPivot.getWorldPosition(V3()), a1 = a0.clone().addScaledVector(pl.stabDir, 7.5), ab = a1.clone().sub(a0);
+    const a0 = saberPivot.getWorldPosition(V3()), a1 = a0.clone().addScaledVector(pl.stabDir, SB().len + 0.5), ab = a1.clone().sub(a0);
     for (const key of B.keys) {
       const b = B.parts[key]; if ((!b.alive && key !== 'core' && !B.regen) || (pl.stabHit && pl.stabHit[key])) continue;
       const wp = bossPartPos(key), t = clamp(wp.clone().sub(a0).dot(ab) / ab.lengthSq(), 0, 1), cp = a0.clone().addScaledVector(ab, t);
@@ -869,7 +898,7 @@ function updatePlayer(dt) {
   if (barrier.active) {
     barrier.t += dt; barrier.grow = Math.min(1, barrier.grow + dt / 0.4);
     barrierMesh.position.copy(barrier.pos); barrierMesh.rotation.y = barrier.yaw; barrierMesh.scale.set(1, Math.max(0.05, barrier.grow), 1);
-    barrierMat.opacity = 0.18 + 0.3 * Math.max(0, barrier.hp / barrier.max) + 0.06 * Math.sin(G.time * 8); barrierMat.color.setHex(barrier.hp / barrier.max < 0.3 ? 0xff7050 : 0x66e6ff);
+    barrierMat.opacity = 0.06 + 0.08 * Math.max(0, barrier.hp / barrier.max) + 0.03 * Math.sin(G.time * 8); barrierTex.offset.set(0, -(G.time * 0.15) % 1); barrierMesh.userData.grid.material.color.setHex(barrier.hp / barrier.max < 0.3 ? 0xff7050 : 0x66e6ff); barrierMat.color.setHex(barrier.hp / barrier.max < 0.3 ? 0xff7050 : 0x66e6ff);
     if (barrier.t >= barrier.life) barrierBreak();
   }
   /* shield visual */
@@ -899,9 +928,9 @@ function doMelee() {
     const wp = bossPartPos(key), to = wp.clone().sub(c);
     const dist = to.length() - b.r;
     to.y = 0; to.normalize();
-    if (dist < 12 && to.dot(fwd) > 0.2) { bossDamage(key, pl.char === 'heli' ? 60 : 75, wp.clone().lerp(c, 0.3)); burst(wp, 30, 20, 0x9aeaff, 0.6, 2); shake(0.5); }
+    if (dist < SB().reach && to.dot(fwd) > 0.2) { bossDamage(key, SB().dmg, wp.clone().lerp(c, 0.3)); burst(wp, 30, 20, 0x9aeaff, 0.6, 2); shake(0.5); }
   }
-  for (const k of rocks) if (k.alive && rockDist(k, c.x, c.z) < 9 && V3(k.x - c.x, 0, k.z - c.z).normalize().dot(fwd) > 0.2) { rockDamage(k, pl.char === 'heli' ? 60 : 75, true); burst(V3(k.x, 2, k.z), 14, 12, 0x9aeaff, 0.4, 2); shake(0.3); }
+  for (const k of rocks) if (k.alive && rockDist(k, c.x, c.z) < SB().reach && V3(k.x - c.x, 0, k.z - c.z).normalize().dot(fwd) > 0.2) { rockDamage(k, SB().dmg, true); burst(V3(k.x, 2, k.z), 14, 12, 0x9aeaff, 0.4, 2); shake(0.3); }
   for (const e of eproj.slice()) if (e.pos.distanceTo(c) < 11) missileOrBulletCut(e);
 }
 /* ===== Boss: model, parts, damage ===== */
@@ -1580,7 +1609,7 @@ function refreshPP2() {
 B2.refresh = refreshPP2;
 B2.bodyTest = p => { const dx = p.x - B2.pos.x, dz = p.z - B2.pos.z; return Math.hypot(dx, dz) < (B2.rolling ? 7.6 : 8.5) && p.y < (B2.rolling ? 14.5 : 12.5); };
 B2.regen = true;
-B2.coreMult = () => (B2.parts.clawL.alive || B2.parts.clawR.alive || B2.parts.tail.alive) ? 0.1 : 1.5;
+B2.coreMult = () => (B2.parts.clawL.alive || B2.parts.clawR.alive || B2.parts.tail.alive) ? 0.15 : 1.5;
 B2.destroyMsg = { clawL: 'Phần bị phá sẽ hồi lại dần', clawR: 'Phần bị phá sẽ hồi lại dần', tail: 'Phần bị phá sẽ hồi lại dần' };
 /* ===== Boss 2: AI, movement, attacks ===== */
 B2.pos.y = 0;
@@ -1887,7 +1916,7 @@ B2.idle = dt => idle2(dt, 0);
 
 function updateBoss2(dt) {
   refreshPP2();
-  if (B2.alive && G.intro <= 0) for (const k of ['clawL', 'clawR', 'tail']) { const p = B2.parts[k]; if (!p.alive) { if ((p.pauseT || 0) > 0) { p.pauseT -= dt; continue; } p.hp += p.max * 0.03 * dt; if (p.hp >= p.max) { p.hp = p.max; p.alive = true; A2[k].color.setHex(0x3d2733); burst(B2.pp[k], 20, 14, 0x7dff3a, 0.6, 2); say('PHỤC HỒI ' + p.name, 'Lõi lại kháng sát thương', 1.6); } } }
+  if (B2.alive && G.intro <= 0) for (const k of ['clawL', 'clawR', 'tail']) { const p = B2.parts[k]; if (!p.alive) { if ((p.pauseT || 0) > 0) { p.pauseT -= dt; continue; } p.hp += p.max * 0.02 * dt; if (p.hp >= p.max) { p.hp = p.max; p.alive = true; A2[k].color.setHex(0x3d2733); burst(B2.pp[k], 20, 14, 0x7dff3a, 0.6, 2); say('PHỤC HỒI ' + p.name, 'Lõi lại kháng sát thương', 1.6); } } }
   for (const k of B2.keys) { const p = B2.parts[k]; p.flash = Math.max(0, p.flash - dt); const f = p.flash > 0 ? 0.55 : 0; if (p.alive) A2[k].emissive.setRGB(f * 0.6, f, f * 0.4); }
   if (!B2.alive) {
     B2.dying -= dt;
@@ -2570,8 +2599,8 @@ const GV = {};
 function mkp(mat, parent, sx, sy, sz, x, y, z) { const m = bx(mat, parent); m.scale.set(sx, sy, sz); m.position.set(x, y, z); return m; }
 function grp(parent, x, y, z) { const g = new THREE.Group(); g.position.set(x, y, z); g.rotation.order = 'YXZ'; parent.add(g); return g; }
 GV.tank = grp(ghostG, 0, 0, 0);
-mkp(M.blue, GV.tank, 1, .9, 4.2, -1.5, .45, 0); mkp(M.blue, GV.tank, 1, .9, 4.2, 1.5, .45, 0); mkp(M.white, GV.tank, 2.4, .8, 3.8, 0, 1.15, 0);
-GV.tankT = grp(GV.tank, 0, 1.75, 0); mkp(M.blue, GV.tankT, 1.7, .7, 2, 0, .2, 0); mkp(M.dark, GV.tankT, .32, .32, 3, 0, .2, 2.2);
+mkp(M.mint, GV.tank, 1, .9, 4.2, -1.5, .45, 0); mkp(M.mint, GV.tank, 1, .9, 4.2, 1.5, .45, 0); mkp(M.white, GV.tank, 2.4, .8, 3.8, 0, 1.15, 0);
+GV.tankT = grp(GV.tank, 0, 1.75, 0); mkp(M.mint, GV.tankT, 1.7, .7, 2, 0, .2, 0); mkp(M.dark, GV.tankT, .32, .32, 3, 0, .2, 2.2);
 GV.heli = grp(ghostG, 0, 0, 0);
 mkp(M.white, GV.heli, 1.9, 1.6, 3.8, 0, 1.9, 0); mkp(M.white, GV.heli, .45, .5, 3.6, 0, 2.2, -3); mkp(M.white, GV.heli, .12, 1.1, .8, 0, 2.9, -4.6);
 mkp(M.dark, GV.heli, .14, .14, 3.4, -1.1, .3, .2); mkp(M.dark, GV.heli, .14, .14, 3.4, 1.1, .3, .2); mkp(M.dark, GV.heli, .1, 1.4, .1, -1, 1, .2); mkp(M.dark, GV.heli, .1, 1.4, .1, 1, 1, .2);
@@ -2582,7 +2611,7 @@ mkp(ART.olive, GV.arty, 2.6, .9, 5.2, 0, 1.2, 0); mkp(ART.brown, GV.arty, .9, .5
 for (const s of [-1, 1]) for (const z of [-1.9, 0, 1.9]) mkp(M.dark, GV.arty, .55, 1.3, 1.3, s * 1.85, .68, z);
 GV.artyT = grp(GV.arty, 0, 2.0, -.3); mkp(ART.olive, GV.artyT, 1.9, 1, 1.3, 0, .3, 0); mkp(M.dark, GV.artyT, .42, .42, 4.4, -.5, .3, 2.4); mkp(M.dark, GV.artyT, .42, .42, 4.4, .5, .3, 2.4);
 GV.robot = grp(ghostG, 0, 0, 0);
-mkp(M.blue, GV.robot, .95, 2.3, 1.2, -.75, 1.15, 0); mkp(M.blue, GV.robot, .95, 2.3, 1.2, .75, 1.15, 0);
+GV.legs = [mkp(M.blue, GV.robot, .95, 2.3, 1.2, -.75, 1.15, 0), mkp(M.blue, GV.robot, .95, 2.3, 1.2, .75, 1.15, 0)];
 GV.torsoW = mkp(M.white, GV.robot, 1.9, 1.5, 1.2, 0, 2.95, 0); GV.torsoA = mkp(ART.olive, GV.robot, 2.3, 1.7, 1.5, 0, 2.95, 0);
 mkp(M.white, GV.robot, .75, 1.9, .85, -1.55, 3.3, 0); mkp(M.white, GV.robot, .75, 1.9, .85, 1.55, 3.3, 0);
 mkp(M.white, GV.robot, .95, .9, .95, 0, 4.2, 0); mkp(M.glow, GV.robot, .7, .18, .1, 0, 4.25, .5);
@@ -2613,7 +2642,7 @@ function mpUpdateGhost(dt) {
     GV.tankT.rotation.set(-gh.ap, rel, 0); GV.artyT.rotation.set(-gh.ap, rel, 0); GV.heliG.rotation.set(-gh.ap, rel, 0); GV.robG.rotation.set(-gh.ap, rel, 0);
     GV.heliR.rotation.y += dt * 30;
     GV.torsoW.visible = ch !== 'arty'; GV.torsoA.visible = ch === 'arty'; GV.robShield.visible = ch === 'arty'; GV.robot.scale.setScalar(ch === 'arty' ? 1.3 : 1.05);
-    GV.saber.visible = !!gh.m && rb;
+    GV.saber.visible = !!gh.m && rb; { const sb = SABER[ch] || SABER.tank; GV.saber.material = sb.mat; GV.saber.scale.z = sb.len; GV.saber.position.z = 0.7 + sb.len / 2; const lm = ch === 'tank' ? M.mint : M.blue; for (const l of GV.legs) l.material = lm; }
     ghostShield.visible = !!gh.sh; ghostShield.position.set(gh.pos.x, gh.pos.y + 2.4, gh.pos.z);
   } else ghostShield.visible = false;
   if (gh.bar) { ghostBar.visible = true; ghostBar.position.set(gh.bar[0], 0, gh.bar[1]); ghostBar.rotation.y = gh.bar[2]; } else ghostBar.visible = false;
