@@ -83,7 +83,7 @@ button.cta:focus-visible{outline:3px solid var(--cyan);outline-offset:3px}
 #t-lock{right:max(24px,env(safe-area-inset-right,0px));top:66px;width:50px;height:50px}
 #t-next{right:max(80px,env(safe-area-inset-right,0px));top:66px;width:50px;height:50px}
 #t-melee{right:max(178px,env(safe-area-inset-right,0px));bottom:max(96px,env(safe-area-inset-bottom,0px));width:52px;height:52px}
-html.compact #parts .part{font-size:9px}html.compact #bossbar .bar{height:12px}html.compact #player{width:calc(var(--vw,1vw)*24);bottom:auto;top:calc(max(10px,env(safe-area-inset-top,0px)) + 40px)}html.compact .lab{font-size:9px}html.compact .bar{height:9px}html.compact #banner{top:18%}html.compact h1{font-size:clamp(28px,calc(var(--vw,1vw)*6),52px)}html.compact .keys{font-size:12px;gap:3px 14px;margin-bottom:10px}html.compact .sub{margin:4px 0 10px}
+html.compact #parts .part{font-size:9px}html.compact #bossbar .bar{height:12px}html.compact #player{width:calc(var(--vw,1vw)*24);bottom:auto;top:calc(max(10px,env(safe-area-inset-top,0px)) + 100px)}html.compact .lab{font-size:9px}html.compact .bar{height:9px}html.compact #banner{top:18%}html.compact h1{font-size:clamp(28px,calc(var(--vw,1vw)*6),52px)}html.compact .keys{font-size:12px;gap:3px 14px;margin-bottom:10px}html.compact .sub{margin:4px 0 10px}
 .pick{display:flex;gap:10px;margin:0 0 12px;flex-wrap:wrap}
 .opt{font-family:var(--font);color:var(--fg);background:rgba(255,255,255,.05);border:1px solid var(--line);padding:10px 14px;cursor:pointer;text-align:left;flex:1;min-width:150px}
 .opt b{display:block;font-size:16px;letter-spacing:.12em;text-transform:uppercase}
@@ -99,7 +99,7 @@ html.compact .opt{padding:6px 10px}html.compact .opt span{font-size:11px}html.co
 html.rot body{position:fixed;left:0;top:0;width:var(--gw);height:var(--gh);transform-origin:0 0;transform:translate(var(--rw),0) rotate(90deg)}
 #rotBtn{position:fixed;z-index:30;right:max(14px,env(safe-area-inset-right,0px));top:max(10px,env(safe-area-inset-top,0px));width:42px;height:42px;border-radius:50%;border:2px solid var(--line);background:rgba(10,16,28,.7);color:var(--fg);font:700 20px var(--font);cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0}
 #sndBtn{position:fixed;z-index:30;right:calc(max(14px,env(safe-area-inset-right,0px)) + 50px);top:max(10px,env(safe-area-inset-top,0px));width:42px;height:42px;border-radius:50%;border:2px solid var(--line);background:rgba(10,16,28,.7);color:var(--fg);font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0}
-#quitBtn{position:fixed;z-index:30;right:calc(max(14px,env(safe-area-inset-right,0px)) + 100px);top:max(10px,env(safe-area-inset-top,0px));height:42px;padding:0 14px;border-radius:21px;border:2px solid var(--line);background:rgba(10,16,28,.7);color:var(--fg);font:700 12px var(--font);letter-spacing:.14em;cursor:pointer}
+#quitBtn{position:fixed;z-index:30;left:max(14px,env(safe-area-inset-left,0px));top:max(10px,env(safe-area-inset-top,0px));height:42px;padding:0 14px;border-radius:21px;border:2px solid var(--line);background:rgba(10,16,28,.7);color:var(--fg);font:700 12px var(--font);letter-spacing:.14em;cursor:pointer}
 #quitBtn[hidden]{display:none}
 #quitDlg{z-index:60;align-items:center}
 #quitDlg button.alt,#quit2{font-family:var(--font);font-size:14px;letter-spacing:.14em;font-weight:700;color:var(--fg);background:transparent;border:2px solid var(--line);padding:12px 24px;cursor:pointer;margin:10px 6px 0}
@@ -110,7 +110,7 @@ input,textarea{-webkit-user-select:text;user-select:text;touch-action:auto}
 #mpBar[hidden]{display:none}
 #mpBar{display:flex;align-items:center;gap:12px;justify-content:space-between;border:1px solid var(--cyan);background:rgba(79,216,255,.1);padding:8px 12px;margin:0 0 14px;font-size:13px;letter-spacing:.1em}
 #mpBar button{font-family:var(--font);background:#3a4658;color:#fff;border:0;padding:6px 12px;cursor:pointer}
-#mate{left:max(14px,env(safe-area-inset-left,0px));top:max(10px,env(safe-area-inset-top,0px));width:min(190px,calc(var(--vw,1vw)*28))}
+#mate{left:max(14px,env(safe-area-inset-left,0px));top:calc(max(10px,env(safe-area-inset-top,0px)) + 50px);width:min(190px,calc(var(--vw,1vw)*28))}
 .comm{position:fixed;z-index:12;pointer-events:auto}
 #comBtn{left:50%;transform:translateX(-50%);bottom:max(14px,env(safe-area-inset-bottom,0px));font:700 12px var(--font);letter-spacing:.18em;color:var(--fg);background:rgba(10,16,28,.7);border:2px solid var(--line);border-radius:22px;padding:10px 18px;cursor:pointer}
 #comBtn[hidden],#comWheel[hidden]{display:none}
@@ -135,7 +135,7 @@ button.cta:disabled{opacity:.5;cursor:not-allowed}
 <button id="quitBtn" hidden>THOÁT</button>
 <button id="sndBtn" title="Âm thanh" aria-label="Tắt âm thanh">🔊</button>
 <div class="hud" id="bossbar" hidden>
-  <div id="bossname"><span id="bossnm">Titan Hủy Diệt</span><span id="phase">Giai đoạn 1</span></div>
+  <div id="bossname"><span id="bossnm">Guardian</span><span id="phase">Giai đoạn 1</span></div>
   <div class="bar" id="coreBar"><i></i></div>
   <div id="parts"></div>
 </div>
@@ -172,15 +172,15 @@ button.cta:disabled{opacity:.5;cursor:not-allowed}
 
 <div class="screen" id="menu">
   <div class="card">
-    <h1>Titan <em>Breaker</em> <small class="ver">v3.1</small></h1>
+    <h1>Titan <em>Breaker</em> <small class="ver">v3.2</small></h1>
     <div class="sub">Xe tăng biến hình đấu boss khổng lồ</div>
     <div id="mpBar" hidden><span id="mpBarT"></span><button id="mpLeave">Rời phòng</button></div>
     <div class="plab">Boss</div>
     <div class="pick" id="bossPick">
-      <button class="opt" data-b="1" aria-pressed="true"><b>Boss 1: Titan</b><span>Khổng lồ, đứng một chỗ, nhiều bộ phận</span></button>
-      <button class="opt" data-b="2" aria-pressed="false" id="boss2Btn"><b>Boss 2: Bọ Cạp Gai</b><span id="b2sub">Hạ Boss 1 để mở khóa</span></button>
-      <button class="opt" data-b="3" aria-pressed="false" id="boss3Btn"><b>Boss 3: Thiên Long Cơ</b><span id="b3sub">Hạ Boss 2 để mở khóa</span></button>
-      <button class="opt" data-b="4" aria-pressed="false" id="boss4Btn"><b>Boss 4: Jet &amp; Juggernaut</b><span id="b4sub">Hạ Boss 3 để mở khóa</span></button>
+      <button class="opt" data-b="1" aria-pressed="true"><b>Boss 1: Guardian</b><span>Khổng lồ, đứng một chỗ, nhiều bộ phận</span></button>
+      <button class="opt" data-b="2" aria-pressed="false" id="boss2Btn"><b>Boss 2: Dread-Scorp</b><span id="b2sub">Hạ Boss 1 để mở khóa</span></button>
+      <button class="opt" data-b="3" aria-pressed="false" id="boss3Btn"><b>Boss 3: Incendium</b><span id="b3sub">Hạ Boss 2 để mở khóa</span></button>
+      <button class="opt" data-b="4" aria-pressed="false" id="boss4Btn"><b>Boss 4: Valkyrie &amp; Juggernaut</b><span id="b4sub">Hạ Boss 3 để mở khóa</span></button>
     </div>
     <div class="plab">Nhân vật</div>
     <div class="pick" id="charPick">
@@ -718,7 +718,7 @@ function fireShot() {
   const m = new THREE.Mesh(shellGeo, robot ? beamMat : shellMat);
   if (robot) m.scale.set(1.4, 1.4, 2.4); else if (hg) m.scale.set(0.7, 0.7, 0.8); else m.scale.set(1.7, 1.7, 1.8);
   m.position.copy(mp); m.lookAt(mp.clone().add(d)); scene.add(m);
-  shots.push({ mesh: m, pos: mp.clone(), vel: d.multiplyScalar(robot ? 170 : hg ? 210 : 125), dmg: robot ? 30 : hg ? 2.8 : 33, life: 1.6, r: hg ? 1.3 : 0.7, coreMul: hg ? 0.85 : 1 });
+  shots.push({ mesh: m, pos: mp.clone(), vel: d.multiplyScalar(robot ? 170 : hg ? 190 : 125), dmg: robot ? 30 : hg ? 2.8 : 33, life: 1.6, r: hg ? 1.3 : 0.7, coreMul: hg ? 0.85 : 1 });
   burst(mp, hg ? 2 : 5, 8, robot ? 0x7af0ff : 0xffd070, 0.18, 0);
   if (hg) { pl.heat += 0.01; if (pl.heat >= 1) { pl.heat = 1; pl.ohT = 3; } }
   pl.fireCd = robot ? 0.55 : hg ? 0.08 : 1.0; shake(hg ? 0.02 : 0.05);
@@ -946,8 +946,8 @@ function doMelee() {
 }
 /* ===== Boss: model, parts, damage ===== */
 const B1 = {
-  title: 'Titan Hủy Diệt', pos: V3(0, 0, 0), colR: 11, colH: 16, keys: ['core', 'gat', 'art', 'head', 'aa1', 'aa2'], minor: ['aa1', 'aa2'],
-  start: { x: 0, z: -44, yaw: 0 }, phaseMsg: { 2: 'Titan kích hoạt tên lửa và sập sàn', 3: 'Titan nổi điên' }, ringHex: 0xff6a2a,
+  title: 'Guardian', pos: V3(0, 0, 0), colR: 11, colH: 16, keys: ['core', 'gat', 'art', 'head', 'aa1', 'aa2'], minor: ['aa1', 'aa2'],
+  start: { x: 0, z: -44, yaw: 0 }, phaseMsg: { 2: 'Guardian kích hoạt tên lửa và sập sàn', 3: 'Guardian nổi điên' }, ringHex: 0xff6a2a,
   root: new THREE.Group(), yaw: 0, phase: 1, alive: true, state: 'idle', timer: 3, atk: null, last: '', stagger: 0, dying: 0,
   parts: {
     core: { name: 'LÕI', hp: 2200, max: 2200, r: 5.0, alive: true, flash: 0 },
@@ -1069,7 +1069,7 @@ function bossDamage(key, dmg, pos) {
 function bossDie() {
   if (B.atk && B.atk.cancel) B.atk.cancel();
   B.alive = false; B.dying = 5; B.atk = null; clearProjectiles(); hideTele(); if (B.onDie) B.onDie();
-  say(B.dieMsg || 'TITAN SỤP ĐỔ', '', 3);
+  say(B.dieMsg || 'GUARDIAN SỤP ĐỔ', '', 3);
 }
 
 /* ===== enemy projectiles ===== */
@@ -1545,11 +1545,11 @@ B1.reset = function () {
   if (laserBeam) laserBeam.visible = false; if (stompRing) stompRing.visible = false;
 };
 B1.intro = 'Phá tay và đầu để lộ lõi';
-/* ===== Boss 2: Bọ Cạp Gai (model) ===== */
+/* ===== Boss 2: Dread-Scorp (model) ===== */
 const B2 = {
-  title: 'Bọ Cạp Gai', intro: 'Nhanh, đầy gai, cận chiến rất đau. Bắn vào mặt hoặc đuôi', pos: V3(0, 0, 40), colR: 10, colH: 14,
+  title: 'Dread-Scorp', intro: 'Nhanh, đầy gai, cận chiến rất đau. Bắn vào mặt hoặc đuôi', pos: V3(0, 0, 40), colR: 10, colH: 14,
   keys: ['core', 'clawL', 'clawR', 'tail'], minor: [], start: { x: 0, z: -85, yaw: 0 },
-  phaseMsg: { 2: 'Bọ Cạp Gai cuộn thành quả cầu gai', 3: 'Giáp gai vỡ, bọ cạp nổi điên' }, ringHex: 0x7dff3a,
+  phaseMsg: { 2: 'Dread-Scorp cuộn thành quả cầu gai', 3: 'Giáp gai vỡ, bọ cạp nổi điên' }, ringHex: 0x7dff3a,
   root: new THREE.Group(), yaw: Math.PI, phase: 1, alive: true, state: 'idle', timer: 2, atk: null, last: '', stagger: 0, dying: 0, vuln: 1, rolling: false, walk: 0,
   parts: {
     core: { name: 'LÕI', hp: 2484, max: 2484, r: 5.5, alive: true, flash: 0 },
@@ -1993,11 +1993,11 @@ B2.reset = function () {
   B2.root.visible = true; B2.root.rotation.set(0, Math.PI, 0); B2.root.position.set(0, 0, 40);
   for (const L of B2m.legs) { L.hip.rotation.y = L.base; L.up.rotation.x = -0.6; }
 };
-/* ===== Boss 3: Thiên Long Cơ (rồng cơ khí bay) — model + AI ===== */
+/* ===== Boss 3: Incendium (rồng cơ khí bay) — model + AI ===== */
 const B3 = {
-  title: 'Thiên Long Cơ', intro: 'Rồng cơ khí bay lượn. Phá cánh để hạ nó xuống đất', pos: V3(0, 0, 45), alt: 32, colR: 9, colH: 0, dieMsg: 'RỒNG CƠ SỤP ĐỔ',
+  title: 'Incendium', intro: 'Rồng cơ khí bay lượn. Phá cánh để hạ nó xuống đất', pos: V3(0, 0, 45), alt: 32, colR: 9, colH: 0, dieMsg: 'RỒNG CƠ SỤP ĐỔ',
   keys: ['core', 'wingL', 'wingR', 'head', 'tail'], minor: [], start: { x: 0, z: -95, yaw: 0 },
-  phaseMsg: { 2: 'Thiên Long Cơ gầm lên, lửa rực hơn', 3: 'Giáp vỡ, rồng cơ nổi điên' }, ringHex: 0xff8a2a,
+  phaseMsg: { 2: 'Incendium gầm lên, lửa rực hơn', 3: 'Giáp vỡ, rồng cơ nổi điên' }, ringHex: 0xff8a2a,
   destroyMsg: { wingL: 'Rồng rơi xuống! Đánh mạnh lúc này', wingR: 'Rồng rơi xuống! Đánh mạnh lúc này', head: 'Hết phun lửa', tail: 'Mất đuôi' },
   root: new THREE.Group(), yaw: Math.PI, phase: 1, alive: true, state: 'idle', timer: 2, atk: null, last: '', stagger: 0, dying: 0, vuln: 1, rolling: false,
   mode: 'fly', groundT: 0, orb: 0, pitch: 0, pools: [],
@@ -2666,7 +2666,7 @@ function mpTracer() {
   const ch = gh.ch, rb = gh.k > 0.5, h = lerp(ch === 'heli' ? 2.4 : 2.0, 3.8, gh.k), ca = Math.cos(gh.ap);
   const d = V3(Math.sin(gh.ay) * ca, Math.sin(gh.ap), Math.cos(gh.ay) * ca), p = V3(gh.pos.x, gh.pos.y + h, gh.pos.z).addScaledVector(d, 3.5);
   const m = new THREE.Mesh(trGeo, trMats[ch] || trMats.tank); m.position.copy(p); const sc = ch === 'heli' && !rb ? 0.5 : ch === 'arty' ? 1.5 : 1; m.scale.setScalar(sc); scene.add(m);
-  mpTr.push({ m, v: d.multiplyScalar(ch === 'heli' ? 168 : ch === 'arty' ? 62 : 90), life: 0.7 });
+  mpTr.push({ m, v: d.multiplyScalar(ch === 'heli' ? 152 : ch === 'arty' ? 62 : 90), life: 0.7 });
 }
 function mpUpdateGhost(dt) {
   const f = 1 - Math.exp(-14 * dt), ox = gh.pos.x, oy = gh.pos.y, oz = gh.pos.z;
@@ -2975,14 +2975,14 @@ function comTick(dt) {
 })();
 /* ===== Boss 4: Jet + Juggernaut (two person-sized robots, no sub-parts) ===== */
 const B4 = {
-  title: 'Jet & Juggernaut', intro: 'Hai robot phối hợp. Hạ cả hai để thắng', pos: V3(0, 0, 50), colR: 0, colH: 0, dieMsg: 'CẢ HAI ĐÃ GỤC',
+  title: 'Valkyrie & Juggernaut', intro: 'Hai robot phối hợp. Hạ cả hai để thắng', pos: V3(0, 0, 50), colR: 0, colH: 0, dieMsg: 'CẢ HAI ĐÃ GỤC',
   keys: ['jet', 'jug'], minor: ['jet', 'jug'], start: { x: 0, z: -120, yaw: 0 }, noCore: true, noPush: true,
   phaseMsg: { 2: 'Hai robot phối hợp chặt hơn', 3: 'Chúng liều mạng' }, ringHex: 0xffffff,
-  destroyMsg: { jet: 'Jet rơi xuống', jug: 'Juggernaut gục' },
+  destroyMsg: { jet: 'Valkyrie rơi xuống', jug: 'Juggernaut gục' },
   root: new THREE.Group(), yaw: Math.PI, phase: 1, alive: true, state: 'idle', timer: 2, atk: null, last: '', stagger: 0, dying: 0, vuln: 1,
   parts: {
     core: { name: 'TỔNG', hp: 6000, max: 6000, r: 0.01, alive: true, flash: 0 },
-    jet: { name: 'JET', hp: 1800, max: 1800, r: 3.2, alive: true, flash: 0 },
+    jet: { name: 'VALKYRIE', hp: 1800, max: 1800, r: 3.2, alive: true, flash: 0 },
     jug: { name: 'JUGGERNAUT', hp: 4200, max: 4200, r: 5.4, alive: true, flash: 0 },
   },
   pp: { core: V3(0, -999, 0), jet: V3(), jug: V3() },
@@ -3093,7 +3093,7 @@ function jetToRobot(f, secs) {
   if (f.mode === 'robot') { f.rt = Math.max(f.rt, secs); return; }
   f.mode = 'robot'; f.rt = secs; if (f.atk && f.atk.cancel) f.atk.cancel(); f.atk = null; f.acc = 0; f.wpT = 0; f.shootT = 1.2;
   burst(V3(f.pos.x, f.y + 2, f.pos.z), 30, 16, 0xff6fae, 0.6, 2); flatRing(f.pos.x, f.pos.z, 2, 14, 0xff9ac0, 0.5, 1.5); shake(0.5); S4('transform');
-  say('JET BỊ ÉP XUỐNG', 'Nhiễu sóng! Đánh ngay lúc này', 1.8);
+  say('VALKYRIE BỊ ÉP XUỐNG', 'Nhiễu sóng! Đánh ngay lúc này', 1.8);
 }
 function jetToFly(f) {
   f.mode = 'fly'; f.cdBomb = Math.max(f.cdBomb, 6); f.cdMs = Math.max(f.cdMs, 2);
@@ -3349,7 +3349,7 @@ function jugMG(f, st, wp, dt, ok) {
   st.g = 0.12 / SPD(); st.n--;
   const dir = leadAim(wp, 90 * SPD(), [0.6, 0.75, 0.9][G.diff]);
   dir.x += rnd(-0.05, 0.05); dir.y += rnd(-0.04, 0.04); dir.z += rnd(-0.05, 0.05);
-  spawnBullet(wp, dir.normalize(), 90 * SPD(), 2.4, false, { scale: 0.2, hr: 1.0, sm: 0.8 }); S4('mg');
+  spawnBullet(wp, dir.normalize(), 90 * SPD(), 2.688, false, { scale: 0.2, hr: 1.0, sm: 0.8 }); S4('mg');
   if (st.n <= 0) st.cd = rnd(1.0, 1.6) / SPD();
 }
 function jugSlam(f) {
@@ -3624,7 +3624,7 @@ function endGame(win) {
   $('nextBtn').hidden = !(win && G.boss < 4); $('nextBtn').textContent = 'Đấu Boss ' + (G.boss + 1);
   $('endt').textContent = win ? 'Chiến thắng' : 'Thất bại';
   $('stats').textContent = win ? 'Thời gian ' + m + ':' + s + '  ·  Giáp còn ' + Math.ceil(pl.hp) + '/' + pl.maxHp
-    : 'Titan còn ' + Math.ceil(B.parts.core.hp / B.parts.core.max * 100) + '% lõi  ·  Cầm cự ' + m + ':' + s;
+    : 'Guardian còn ' + Math.ceil(B.parts.core.hp / B.parts.core.max * 100) + '% lõi  ·  Cầm cự ' + m + ':' + s;
   $('end').hidden = false; if (MP.on) mpEnded();
 }
 function setPaused(on) {
