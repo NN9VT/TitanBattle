@@ -167,7 +167,7 @@ button.cta:disabled{opacity:.5;cursor:not-allowed}
 
 <div class="screen" id="menu">
   <div class="card">
-    <h1>Titan <em>Breaker</em> <small class="ver">v2.6</small></h1>
+    <h1>Titan <em>Breaker</em> <small class="ver">v2.7</small></h1>
     <div class="sub">Xe tăng biến hình đấu boss khổng lồ</div>
     <div id="mpBar" hidden><span id="mpBarT"></span><button id="mpLeave">Rời phòng</button></div>
     <div class="plab">Boss</div>
@@ -263,14 +263,16 @@ renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(62, 1, 0.5, 400);
 
-(function sky() {
+function skyTex(st) {
   const c = document.createElement('canvas'); c.width = 8; c.height = 256;
   const g = c.getContext('2d'), gr = g.createLinearGradient(0, 0, 0, 256);
-  gr.addColorStop(0, '#0b1230'); gr.addColorStop(0.55, '#5a3a5e'); gr.addColorStop(0.8, '#d98652'); gr.addColorStop(1, '#f0b070');
+  gr.addColorStop(0, st[0]); gr.addColorStop(0.55, st[1]); gr.addColorStop(0.8, st[2]); gr.addColorStop(1, st[3]);
   g.fillStyle = gr; g.fillRect(0, 0, 8, 256);
-  scene.background = new THREE.CanvasTexture(c);
-  scene.fog = new THREE.Fog(0x7a5662, 90, 260);
-})();
+  return new THREE.CanvasTexture(c);
+}
+const SKIES = [null, skyTex(['#0b1230', '#5a3a5e', '#d98652', '#f0b070']), skyTex(['#1a1408', '#6b5226', '#e0a83a', '#ffd98a']), skyTex(['#1a0508', '#5e1a22', '#d1432b', '#ff7a4a'])];
+const FOGS = [0, 0x7a5662, 0x8a6a36, 0x6a2420];
+scene.background = SKIES[1]; scene.fog = new THREE.Fog(FOGS[1], 90, 260);
 
 scene.add(new THREE.HemisphereLight(0xffd9b0, 0x2a2f45, 0.85));
 const sun = new THREE.DirectionalLight(0xffcf9a, 1.15);
@@ -282,20 +284,26 @@ sun.shadow.bias = -0.0006;
 scene.add(sun);
 
 const arenas = {};
-function buildArena(R, nP) {
+const THEMES = {
+  1: { bg: '#2a2d3a', c: [40, 42, 55], line: 'rgba(120,200,255,.35)', outer: 0x3a3340, rim: 0x4fd8ff },
+  2: { bg: '#8a6a30', c: [140, 105, 45], line: 'rgba(255,215,120,.28)', outer: 0x4a3a1c, rim: 0xffcc33 },
+  3: { bg: '#2a0e0e', c: [55, 18, 16], line: 'rgba(255,80,60,.35)', outer: 0x3a1210, rim: 0xff3b2a }
+};
+function buildArena(R, nP, n) {
+  const th = THEMES[n];
   const grp = new THREE.Group();
   const c = document.createElement('canvas'); c.width = c.height = 512;
   const g = c.getContext('2d');
-  g.fillStyle = '#2a2d3a'; g.fillRect(0, 0, 512, 512);
-  for (let i = 0; i < 1800; i++) { g.fillStyle = 'rgba(' + (40 + Math.random() * 30 | 0) + ',' + (42 + Math.random() * 30 | 0) + ',' + (55 + Math.random() * 30 | 0) + ',.35)'; g.fillRect(Math.random() * 512, Math.random() * 512, rnd(2, 14), rnd(2, 14)); }
-  g.strokeStyle = 'rgba(120,200,255,.35)'; g.lineWidth = 2;
+  g.fillStyle = th.bg; g.fillRect(0, 0, 512, 512);
+  for (let i = 0; i < 1800; i++) { g.fillStyle = 'rgba(' + (th.c[0] + Math.random() * 30 | 0) + ',' + (th.c[1] + Math.random() * 30 | 0) + ',' + (th.c[2] + Math.random() * 30 | 0) + ',.35)'; g.fillRect(Math.random() * 512, Math.random() * 512, rnd(2, 14), rnd(2, 14)); }
+  g.strokeStyle = th.line; g.lineWidth = 2;
   for (let i = 0; i <= 512; i += 64) { g.beginPath(); g.moveTo(i, 0); g.lineTo(i, 512); g.stroke(); g.beginPath(); g.moveTo(0, i); g.lineTo(512, i); g.stroke(); }
   const tex = new THREE.CanvasTexture(c); tex.wrapS = tex.wrapT = THREE.RepeatWrapping; tex.repeat.set(14 * R / 62, 14 * R / 62);
   const ground = new THREE.Mesh(new THREE.CircleGeometry(R + 6, 72), new THREE.MeshStandardMaterial({ map: tex, roughness: 0.9, metalness: 0.1 }));
   ground.rotation.x = -Math.PI / 2; ground.receiveShadow = true; grp.add(ground);
-  const outer = new THREE.Mesh(new THREE.RingGeometry(R + 6, 420, 48), new THREE.MeshLambertMaterial({ color: 0x3a3340 }));
+  const outer = new THREE.Mesh(new THREE.RingGeometry(R + 6, 420, 48), new THREE.MeshLambertMaterial({ color: th.outer }));
   outer.rotation.x = -Math.PI / 2; outer.position.y = -0.05; grp.add(outer);
-  const rim = new THREE.Mesh(new THREE.TorusGeometry(R + 3, 0.5, 8, 120), new THREE.MeshBasicMaterial({ color: 0x4fd8ff }));
+  const rim = new THREE.Mesh(new THREE.TorusGeometry(R + 3, 0.5, 8, 120), new THREE.MeshBasicMaterial({ color: th.rim }));
   rim.rotation.x = Math.PI / 2; rim.position.y = 0.5; grp.add(rim);
   const pm = new THREE.MeshStandardMaterial({ color: 0x555d70, roughness: 0.7 });
   for (let i = 0; i < nP; i++) {
@@ -306,8 +314,8 @@ function buildArena(R, nP) {
   }
   scene.add(grp); return grp;
 }
-arenas[1] = buildArena(62, 18); arenas[2] = buildArena(110, 30); arenas[2].visible = false; arenas[3] = buildArena(120, 34); arenas[3].visible = false;
-function setArena(n) { arenas[1].visible = n === 1; arenas[2].visible = n === 2; arenas[3].visible = n === 3; ARENA_R = n === 1 ? 62 : n === 2 ? 110 : 120; }
+arenas[1] = buildArena(62, 0, 1); arenas[2] = buildArena(110, 0, 2); arenas[2].visible = false; arenas[3] = buildArena(135, 34, 3); arenas[3].visible = false;
+function setArena(n) { arenas[1].visible = n === 1; arenas[2].visible = n === 2; arenas[3].visible = n === 3; ARENA_R = n === 1 ? 62 : n === 2 ? 110 : 135; scene.background = SKIES[n]; scene.fog.color.setHex(FOGS[n]); }
 scene.add(sun.target);
 
 let ROT = false, VW = window.innerWidth, VH = window.innerHeight, manualRot = null;
@@ -659,7 +667,7 @@ function fireArty() {
   pl.fireCd = robot ? 1.4 : 4.3; shake(robot ? 0.12 : 0.3);
 }
 function artySplash(s, direct) {
-  const p = s.pos; explode(p, s.splash * 0.14, 0xffa040); burst(p, 26, 16, 0xffd070, 0.5, 3); flatRing(p.x, p.z, 1, s.splash, 0xffa040, 0.4, 1); shake(0.35);
+  const p = s.pos; explode(p, s.splash * 0.14, 0xffa040); burst(p, 26, 16, 0xffd070, 0.5, 3); flatRing(p.x, p.z, 1, s.splash, 0xffa040, 0.4, 1); shake(0.35); rockSplash(p, s.splash, s.sdmg, true);
   for (const k of B.keys) { const pt = B.parts[k]; if ((!pt.alive && !B.regen) || k === direct) continue; if (B.pp[k].distanceTo(p) < s.splash + pt.r) bossDamage(k, s.sdmg, p); }
 }
 function fireShot() {
@@ -688,7 +696,7 @@ function updateShots(dt) {
       const h = bossTest(s.pos, s.r || 0.7);
       if (h) { bossDamage(h, s.dmg * (h === 'core' && s.coreMul ? s.coreMul : 1), s.pos); dead = true; hk = h; }
       else if (s.pos.y < 0.2 || s.pos.length() > ARENA_R * 2.3) { burst(s.pos, 4, 5, 0xffc070, 0.3); dead = true; }
-      else if (rockHit(s.pos)) { burst(s.pos, 6, 7, 0xb0a090, 0.3, 4); dead = true; }
+      else if (rockHit(s.pos, s.dmg, true)) { burst(s.pos, 6, 7, 0xb0a090, 0.3, 4); dead = true; }
       else {
         for (const e of eproj) if (e.kind === 'missile' && e.pos.distanceTo(s.pos) < 1.8) { missileDie(e); dead = true; break; }
       }
@@ -854,6 +862,7 @@ function updatePlayer(dt) {
       const wp = bossPartPos(key), t = clamp(wp.clone().sub(a0).dot(ab) / ab.lengthSq(), 0, 1), cp = a0.clone().addScaledVector(ab, t);
       if (wp.distanceTo(cp) < b.r + 1.8) { pl.stabHit[key] = 1; bossDamage(key, 156, wp.clone().lerp(cp, 0.5)); burst(wp, 36, 22, 0x9aeaff, 0.6, 2); shake(0.7); }
     }
+    rockSeg(a0, a1, 156, pl.stabHit || (pl.stabHit = {}));
     emit(a1.x, a1.y, a1.z, rnd(-2, 2), rnd(-2, 2), rnd(-2, 2), 0x9aeaff, 0.3, 0);
   }
   if (pl.charging) { saberPivot.visible = true; saberPivot.rotation.set(-1.1, 0, 0); }
@@ -892,6 +901,7 @@ function doMelee() {
     to.y = 0; to.normalize();
     if (dist < 12 && to.dot(fwd) > 0.2) { bossDamage(key, pl.char === 'heli' ? 60 : 75, wp.clone().lerp(c, 0.3)); burst(wp, 30, 20, 0x9aeaff, 0.6, 2); shake(0.5); }
   }
+  for (const k of rocks) if (k.alive && rockDist(k, c.x, c.z) < 9 && V3(k.x - c.x, 0, k.z - c.z).normalize().dot(fwd) > 0.2) { rockDamage(k, pl.char === 'heli' ? 60 : 75, true); burst(V3(k.x, 2, k.z), 14, 12, 0x9aeaff, 0.4, 2); shake(0.3); }
   for (const e of eproj.slice()) if (e.pos.distanceTo(c) < 11) missileOrBulletCut(e);
 }
 /* ===== Boss: model, parts, damage ===== */
@@ -1063,7 +1073,7 @@ function updateEproj(dt) {
       else if (hurtPlayer(e.dmg)) { burst(e.pos, 10, 10, 0xff8030, 0.4, 2); killE(e); }
       continue;
     }
-    if (e.pos.y < 0.3 || e.pos.length() > ARENA_R * 2.3 || rockHit(e.pos)) { if (e.kind === 'missile') explode(e.pos, 0.8, 0xffa040); else burst(e.pos, 6, 7, 0xff8030, 0.3, 2); killE(e); }
+    if (e.pos.y < 0.3 || e.pos.length() > ARENA_R * 2.3 || rockHit(e.pos, (e.dmg || 10) * 3, false)) { if (e.kind === 'missile') explode(e.pos, 0.8, 0xffa040); else burst(e.pos, 6, 7, 0xff8030, 0.3, 2); killE(e); }
   }
 }
 
@@ -1343,7 +1353,7 @@ function updateAA(dt) {
     const t = AA[key];
     if (!B.parts[key].alive) { t.pv.rotation.x = lerp(t.pv.rotation.x, 0.6, damp(3, dt)); continue; }
     if (!air) { t.charge = 0; t.burst = 0; t.pv.rotation.x = lerp(t.pv.rotation.x, -0.2, damp(4, dt)); t.g.rotation.y = lerp(t.g.rotation.y, 0, damp(4, dt)); continue; }
-    const mp = t.muz.getWorldPosition(V3()), d = leadAim(mp, 86 * SPD(), [0.6, 0.75, 0.9][G.diff]), L = 1;
+    const mp = t.muz.getWorldPosition(V3()), d = leadAim(mp, 77.4 * SPD(), [0.6, 0.75, 0.9][G.diff]), L = 1;
     t.g.rotation.y = lerp(t.g.rotation.y, angDiff(B.yaw, Math.atan2(d.x, d.z)), damp(9, dt));
     t.pv.rotation.x = lerp(t.pv.rotation.x, -Math.asin(clamp(d.y / Math.max(L, 0.01), -1, 1)), damp(9, dt));
     if (t.cd > 0) { t.cd -= dt; continue; }
@@ -1352,51 +1362,113 @@ function updateAA(dt) {
     t.burst -= dt;
     if (t.burst <= 0) {
       t.burst = 0.13 / SPD(); t.n = (t.n || 0) + 1;
-      { const dd = d.clone(); dd.x += rnd(-0.03, 0.03); dd.y += rnd(-0.03, 0.03); dd.z += rnd(-0.03, 0.03); spawnBullet(mp, dd.normalize(), 86 * SPD(), 6); } burst(mp, 3, 8, 0xffb050, 0.15, 0);
+      { const dd = d.clone(); dd.x += rnd(-0.03, 0.03); dd.y += rnd(-0.03, 0.03); dd.z += rnd(-0.03, 0.03); spawnBullet(mp, dd.normalize(), 77.4 * SPD(), 6); } burst(mp, 3, 8, 0xffb050, 0.15, 0);
       if (t.n >= 6) { t.n = 0; t.cd = 1.4 / SPD(); t.charge = 0; }
     }
   }
 }
 /* ===== multi-boss glue, rocks (cover) ===== */
 const rocks = [];
-const rockMat = new THREE.MeshStandardMaterial({ color: 0x5c5662, roughness: 0.95, flatShading: true });
-const rockGeo = new THREE.DodecahedronGeometry(1, 0);
-function clearRocks() { for (const r of rocks) scene.remove(r.mesh); rocks.length = 0; }
+const rockGeo = new THREE.DodecahedronGeometry(1, 0), wallGeo = new THREE.BoxGeometry(1, 1, 1);
+const ROCK_HP = 200, WALL_HP = 600, CRUSH_DMG = 400;
+const barGeo = new THREE.PlaneGeometry(1, 1), barBg = new THREE.MeshBasicMaterial({ color: 0x111111, transparent: true, opacity: 0.7, depthTest: false }), barFg = new THREE.MeshBasicMaterial({ color: 0x6dff9a, depthTest: false });
+function clearRocks() { for (const r of rocks) { scene.remove(r.mesh); scene.remove(r.bar); } rocks.length = 0; }
+function mkBar(k, y, w) {
+  const g = new THREE.Group(), bg = new THREE.Mesh(barGeo, barBg), fg = new THREE.Mesh(barGeo, barFg.clone());
+  bg.scale.set(w, 0.8, 1); fg.scale.set(w, 0.8, 1); bg.renderOrder = 20; fg.renderOrder = 21; g.add(bg); g.add(fg);
+  g.position.set(k.x, y, k.z); g.visible = false; scene.add(g); k.bar = g; k.fg = fg; k.bw = w;
+}
+function addRock(x, z, r, h) {
+  const m = new THREE.Mesh(rockGeo, new THREE.MeshStandardMaterial({ color: 0x5c5662, roughness: 0.95, flatShading: true }));
+  m.scale.set(r * 1.1, h / 2, r * 1.1); m.position.set(x, h / 2, z); m.rotation.y = rnd(0, TAU); m.castShadow = true; m.receiveShadow = true; scene.add(m);
+  const k = { x, z, r, h, mesh: m, alive: true, hp: ROCK_HP, max: ROCK_HP, cd: 0, base: 0x5c5662, hy: h / 2 };
+  mkBar(k, h + 2.5, 5); rocks.push(k);
+}
+function addWall(x, z, hx, hz, h) {
+  const m = new THREE.Mesh(wallGeo, new THREE.MeshStandardMaterial({ color: 0x8a2a26, roughness: 0.9, flatShading: true, emissive: 0x200404 }));
+  m.scale.set(hx * 2, h, hz * 2); m.position.set(x, h / 2, z); m.castShadow = true; m.receiveShadow = true; scene.add(m);
+  const k = { x, z, r: Math.max(hx, hz), h, box: true, hx, hz, mesh: m, alive: true, hp: WALL_HP, max: WALL_HP, cd: 0, base: 0x8a2a26, hy: h / 2 };
+  mkBar(k, h + 3, 12); rocks.push(k);
+}
 function buildRocks() {
   clearRocks();
+  if (G.boss === 3) { addWall(-62, 0, 3.5, 20, 12); addWall(62, 0, 3.5, 20, 12); return; }
   const spots = [[0, -85, 24], [0, 40, 28]];
   for (let tries = 0; tries < 400 && rocks.length < 16; tries++) {
     const a = rnd(0, TAU), d = rnd(26, ARENA_R - 12), x = Math.sin(a) * d, z = Math.cos(a) * d, r = rnd(3.2, 6.2);
     if (spots.some(s => Math.hypot(x - s[0], z - s[1]) < s[2] + r)) continue;
     if (rocks.some(o => Math.hypot(x - o.x, z - o.z) < o.r + r + 10)) continue;
-    const h = rnd(6, 10.5), m = new THREE.Mesh(rockGeo, rockMat);
-    m.scale.set(r * 1.1, h / 2, r * 1.1); m.position.set(x, h / 2, z); m.rotation.y = rnd(0, TAU);
-    m.castShadow = true; m.receiveShadow = true; scene.add(m);
-    rocks.push({ x, z, r, h, mesh: m, alive: true });
+    addRock(x, z, r, rnd(6, 10.5));
   }
 }
-function rockHit(p) {
-  for (const k of rocks) { if (!k.alive || p.y > k.h) continue; const dx = p.x - k.x, dz = p.z - k.z; if (dx * dx + dz * dz < k.r * k.r * 0.9) return true; }
+function inRock(k, p, pad) {
+  if (k.box) return Math.abs(p.x - k.x) < k.hx + pad && Math.abs(p.z - k.z) < k.hz + pad;
+  const dx = p.x - k.x, dz = p.z - k.z, l = k.r * (pad ? 1 : 0.95) + pad; return dx * dx + dz * dz < l * l;
+}
+function rockDist(k, x, z) {
+  if (k.box) { const dx = Math.max(Math.abs(x - k.x) - k.hx, 0), dz = Math.max(Math.abs(z - k.z) - k.hz, 0); return Math.hypot(dx, dz); }
+  return Math.max(0, Math.hypot(x - k.x, z - k.z) - k.r);
+}
+function rockBreak(k) {
+  k.alive = false; k.mesh.visible = false; k.bar.visible = false;
+  const c = V3(k.x, k.h * 0.5, k.z), n = k.box ? 3 : 1;
+  for (let i = 0; i < n; i++) { const q = k.box ? V3(k.x, k.h * 0.5, k.z + (i - 1) * k.hz * 0.8) : c; burst(q, 30, 16, k.box ? 0xb04a3a : 0x8a8090, 0.9, 10); burst(q, 14, 9, 0x4a4650, 1.2, 6); }
+  flatRing(k.x, k.z, 1, k.r + 6, k.box ? 0xff6a50 : 0xb0a090, 0.5, 1); shake(0.3);
+}
+function rockDamage(k, d, net) {
+  if (!k.alive || d <= 0) return;
+  if (net && typeof MP !== 'undefined' && MP.on) mpSend({ t: 'r', i: rocks.indexOf(k), d: r1(d) });
+  k.hp -= d; k.flash = 0.12;
+  if (k.hp <= 0) { k.hp = 0; rockBreak(k); }
+  else { const f = k.hp / k.max; k.bar.visible = true; k.fg.scale.x = Math.max(0.02, k.bw * f); k.fg.position.x = -(k.bw - k.fg.scale.x) / 2; k.fg.material.color.setHex(f > 0.5 ? 0x6dff9a : f > 0.25 ? 0xffd23d : 0xff5a4a); }
+}
+function updateRocks(dt) {
+  for (const k of rocks) {
+    if (k.cd > 0) k.cd -= dt;
+    if (!k.alive) continue;
+    const f = k.hp / k.max, m = k.mesh.material, fl = k.flash > 0; if (fl) k.flash -= dt;
+    m.emissive.setRGB(fl ? 0.5 : (k.box ? 0.125 : 0), fl ? 0.4 : (k.box ? 0.016 : 0), fl ? 0.3 : (k.box ? 0.016 : 0));
+    const dk = f > 0.5 ? 1 : f > 0.25 ? 0.78 : 0.55; m.color.setHex(k.base).multiplyScalar(dk);
+    if (k.bar.visible) { k.bar.quaternion.copy(camera.quaternion); }
+  }
+}
+/* damage from the player's weapons (net=true: synced to the partner) */
+function rockHit(p, dmg, net) {
+  for (const k of rocks) {
+    if (!k.alive || p.y > k.h) continue;
+    if (inRock(k, p, 0)) { if (dmg) rockDamage(k, dmg, net); return true; }
+  }
   return false;
+}
+function rockSplash(p, rad, dmg, net) { for (const k of rocks) if (k.alive && rockDist(k, p.x, p.z) < rad) rockDamage(k, dmg, net); }
+function rockSeg(a0, a1, dmg, hit) {
+  for (let i = 0; i < rocks.length; i++) {
+    const k = rocks[i]; if (!k.alive || hit[i]) continue;
+    for (let t = 0; t <= 1; t += 0.25) { const q = a0.clone().lerp(a1, t); if (q.y < k.h + 1 && rockDist(k, q.x, q.z) < 2) { hit[i] = 1; rockDamage(k, dmg, true); burst(q, 14, 12, 0x9aeaff, 0.4, 2); break; } }
+  }
 }
 function collideRocks(p) {
   for (const k of rocks) {
     if (!k.alive || p.y > k.h + 1) continue;
+    if (k.box) {
+      const lx = k.hx + 2.6, lz = k.hz + 2.6, dx = p.x - k.x, dz = p.z - k.z;
+      if (Math.abs(dx) < lx && Math.abs(dz) < lz) { if (lx - Math.abs(dx) < lz - Math.abs(dz)) p.x = k.x + Math.sign(dx || 1) * lx; else p.z = k.z + Math.sign(dz || 1) * lz; }
+      continue;
+    }
     const dx = p.x - k.x, dz = p.z - k.z, d = Math.hypot(dx, dz), lim = k.r + 2.6;
     if (d < lim) { const f = lim / Math.max(d, 0.01); p.x = k.x + dx * f; p.z = k.z + dz * f; }
   }
 }
 function crushRocks(x, z, rad) {
   for (const k of rocks) {
-    if (!k.alive || Math.hypot(k.x - x, k.z - z) > rad + k.r) continue;
-    k.alive = false; k.mesh.visible = false;
-    const c = V3(k.x, k.h * 0.5, k.z); burst(c, 30, 16, 0x8a8090, 0.9, 10); burst(c, 14, 9, 0x4a4650, 1.2, 6); flatRing(k.x, k.z, 1, k.r + 6, 0xb0a090, 0.5, 1); shake(0.3);
+    if (!k.alive || k.cd > 0 || rockDist(k, x, z) > rad) continue;
+    k.cd = 0.6; rockDamage(k, CRUSH_DMG, false);
   }
 }
 
 /* boss 1 glue */
 function refreshPP() { B.refresh(); }
-function updateBoss(dt) { mpBossUpdate(dt); }
+function updateBoss(dt) { mpBossUpdate(dt); updateRocks(dt); }
 B1.refresh = refreshPP1; B1.update = updateBoss1;
 B1.idle = dt => { idleAnim(dt, 1); B.root.rotation.y = B.yaw; };
 B1.reset = function () {
@@ -1715,7 +1787,7 @@ function atkRoll() {
       B2m.ball.scale.setScalar(clamp((f - 0.4) * 2, 0.05, 1));
       if (a.t >= T) { a.phase = 1; a.t = 0; a.yaw = Math.atan2(pl.pos.x - B2.pos.x, pl.pos.z - B2.pos.z); a.speed = 0; a.trav = 0; a.hit = false; setWarn(''); }
     } else if (a.phase === 1) {
-      B2.yaw = a.yaw; a.speed = lerp(a.speed, 91 * SPD(), damp(3, dt));
+      B2.yaw = a.yaw; a.speed = lerp(a.speed, 118.3 * SPD(), damp(3, dt));
       B2.pos.x += Math.sin(a.yaw) * a.speed * dt; B2.pos.z += Math.cos(a.yaw) * a.speed * dt; a.trav += a.speed * dt;
       B2m.ball.rotation.x += a.speed * dt / 6.4; crushRocks(B2.pos.x, B2.pos.z, 8); shake(0.25);
       emit(B2.pos.x + rnd(-5, 5), 0.6, B2.pos.z + rnd(-5, 5), rnd(-3, 3), rnd(1, 5), rnd(-3, 3), 0xb0a090, 0.6, 2);
@@ -2018,7 +2090,7 @@ function atkDive() {
       line.material.opacity = 0.2 + 0.3 * Math.abs(Math.sin(a.t * 12)); line.visible = true;
       if (a.t >= T) { a.phase = 1; a.t = 0; line.visible = false; setWarn(''); }
     } else if (a.phase === 1) {
-      const sp = 135 * SPD(); B3.pos.x += Math.sin(a.yaw) * sp * dt; B3.pos.z += Math.cos(a.yaw) * sp * dt; a.trav += sp * dt;
+      const sp = 209 * SPD(); B3.pos.x += Math.sin(a.yaw) * sp * dt; B3.pos.z += Math.cos(a.yaw) * sp * dt; a.trav += sp * dt;
       b3Alt(7, dt, 7); B3.pitch = lerp(B3.pitch, 0.35, damp(8, dt)); crushRocks(B3.pos.x, B3.pos.z, 14); shake(0.3);
       emit(B3.pos.x + rnd(-6, 6), 1, B3.pos.z + rnd(-6, 6), rnd(-3, 3), rnd(2, 6), rnd(-3, 3), 0xb0a090, 0.7, 2);
       mpHit(() => { if (!a.hit && b3Dist() < 15 && Math.abs(pl.pos.y + 1.5 - B3.alt) < 16) { a.hit = true; if (hurtPlayer(34, { shieldMul: 1.5 })) b3Knock(30); } });
@@ -2400,6 +2472,7 @@ function mpSend(o) { if (!MP.on || !MP.evRef) return; o.f = MP.me; MP.evRef.push
 function mpOnEvent(e) {
   if (!e || e.f === MP.me || !MP.on) return;
   if (e.t === 'd') { const h = G.hitT; MP.applying = true; try { _bossDamage(e.k, e.d, V3(e.x, e.y, e.z)); } finally { MP.applying = false; } G.hitT = h; }
+  else if (e.t === 'r') { const k = rocks[e.i]; if (k) rockDamage(k, e.d, false); }
   else if (e.t === 'a' && !MP.host) mpOnAtk(e);
   else if (e.t === 'c') comRecv(e);
   else if (e.t === 'rv' && e.to === MP.me) {
