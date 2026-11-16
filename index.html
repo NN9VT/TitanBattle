@@ -173,7 +173,7 @@ button.cta:disabled{opacity:.5;cursor:not-allowed}
 
 <div class="screen" id="menu">
   <div class="card">
-    <h1>Titan <em>Breaker</em> <small class="ver">v3.7</small></h1>
+    <h1>Titan <em>Breaker</em> <small class="ver">v3.8</small></h1>
     <div class="sub">Xe tăng biến hình đấu boss khổng lồ</div>
     <div id="mpBar" hidden><span id="mpBarT"></span><button id="mpLeave">Rời phòng</button></div>
     <div class="plab">Boss</div>
@@ -755,6 +755,7 @@ function shieldUp() { return IN.shield && pl.shState === 'ready' && pl.alive && 
 function hurtPlayer(amount, o) {
   o = o || {}; if (MP.swapped) return false; amount *= DIFFS[G.diff].dmg * (G.boss === 1 ? 0.9 : 1.1); if (pl.char === 'arty' && pl.k > 0.5) amount *= 0.75; pl.lastBlocked = false;
   if (!pl.alive || pl.invuln > 0 || G.state !== 'playing') return false;
+  { const dk = domeAt(pl.pos, pl.pos.y); if (dk) { domeAbsorb(dk, amount, true); pl.lastBlocked = true; return true; } }
   if (!o.air && B.alive && barrierBlocksSeg(B.pos.x, B.pos.z, pl.pos.x, pl.pos.z)) {
     barrier.hp -= amount * (o.shieldMul || 1); pl.lastBlocked = true; burst(V3(barrier.pos.x, 5, barrier.pos.z), 10, 10, 0x9aeaff, 0.4, 0); shake(0.15);
     if (barrier.hp <= 0) barrierBreak();
@@ -1443,25 +1444,28 @@ function addWall(x, z, hx, hz, h, col) {
   mkBar(k, h + 3, 12); rocks.push(k);
 }
 function addDome(x, z, r) {
-  const g = new THREE.Group(), m = new THREE.Mesh(new THREE.SphereGeometry(r, 20, 10, 0, TAU, 0, Math.PI / 2), new THREE.MeshBasicMaterial({ color: 0xcfe9ff, transparent: true, opacity: 0.2, side: THREE.DoubleSide, depthWrite: false }));
-  const ring = new THREE.Mesh(new THREE.TorusGeometry(r, 0.4, 6, 32), new THREE.MeshBasicMaterial({ color: 0x9fd8ff })); ring.rotation.x = Math.PI / 2; ring.position.y = 0.3;
+  const g = new THREE.Group(), m = new THREE.Mesh(new THREE.SphereGeometry(r, 20, 10, 0, TAU, 0, Math.PI / 2), new THREE.MeshBasicMaterial({ color: 0xcfe9ff, transparent: true, opacity: 0.1, side: THREE.DoubleSide, depthWrite: false }));
+  const ring = new THREE.Mesh(new THREE.TorusGeometry(r, 0.4, 6, 32), new THREE.MeshBasicMaterial({ color: 0x9fd8ff, transparent: true, opacity: 0.4 })); ring.rotation.x = Math.PI / 2; ring.position.y = 0.3;
   g.add(m); g.add(ring); g.position.set(x, 0, z); scene.add(g);
-  const k = { x, z, r, hp: 900, max: 900, alive: true, mesh: g, m, flash: 0 }; mkBar(k, r + 3, 10); domes.push(k);
+  const k = { x, z, r, hp: DOME_HP, max: DOME_HP, alive: true, mesh: g, m, flash: 0, since: 0, rt: 0 }; mkBar(k, r + 3, 10); domes.push(k);
 }
-function domeDamage(x, z, rad, dmg) {
-  for (const k of domes) {
-    if (!k.alive || Math.hypot(k.x - x, k.z - z) > rad + k.r) continue;
-    k.hp -= dmg; k.flash = 0.15; k.bar.visible = true; const f = Math.max(0, k.hp / k.max); k.fg.scale.x = Math.max(0.02, k.bw * f); k.fg.position.x = -(k.bw - k.fg.scale.x) / 2; k.fg.material.color.setHex(f > 0.5 ? 0x6dff9a : f > 0.25 ? 0xffd23d : 0xff5a4a);
-    if (k.hp <= 0) { k.alive = false; k.mesh.visible = false; k.bar.visible = false; burst(V3(k.x, 5, k.z), 40, 18, 0xcfe9ff, 0.9, 6); flatRing(k.x, k.z, 2, k.r + 8, 0x9fd8ff, 0.6, 1.5); shake(0.5); }
-  }
+const DOME_HP = 400, DOME_REGEN = 0.04, DOME_DELAY = 5, DOME_RESPAWN = 25;
+function domeBar(k) { const f = Math.max(0, k.hp / k.max); k.bar.visible = k.alive && f < 0.999; k.fg.scale.x = Math.max(0.02, k.bw * f); k.fg.position.x = -(k.bw - k.fg.scale.x) / 2; k.fg.material.color.setHex(f > 0.5 ? 0x6dff9a : f > 0.25 ? 0xffd23d : 0xff5a4a); }
+function domeApply(k, dmg) {
+  if (!k.alive) return;
+  k.hp -= dmg; k.flash = 0.15; k.since = 0; domeBar(k);
+  if (k.hp <= 0) { k.hp = 0; k.alive = false; k.rt = DOME_RESPAWN; k.mesh.visible = false; k.bar.visible = false; burst(V3(k.x, 5, k.z), 20, 14, 0xcfe9ff, 0.7, 5); flatRing(k.x, k.z, 2, k.r + 6, 0x9fd8ff, 0.3, 1.2); shake(0.2); }
 }
+function domeDamage(x, z, rad, dmg) { for (const k of domes) if (k.alive && Math.hypot(k.x - x, k.z - z) <= rad + k.r) domeApply(k, dmg); }
+function domeAt(p, y) { for (const k of domes) if (k.alive && Math.hypot(p.x - k.x, p.z - k.z) < k.r - 0.5 && (y === undefined ? p.y : y) < k.r * 0.85) return k; return null; }
+function domeAbsorb(k, d, net) { domeApply(k, d); if (net && typeof MP !== 'undefined' && MP.on) mpSend({ t: 'dm', i: domes.indexOf(k), d: r1(d) }); }
 function inDome(p) { for (const k of domes) if (k.alive && Math.hypot(p.x - k.x, p.z - k.z) < k.r - 0.5) return true; return false; }
 function buildRocks() {
   clearRocks();
   if (G.boss === 4) {
     for (const [x, z, r] of [[-70, -30, 6], [75, -45, 5], [-105, 40, 6], [100, 55, 5], [-25, 95, 6], [40, -95, 5], [-55, -100, 4.5], [115, -10, 5.5]]) addRock(x, z, r, rnd(6, 10.5));
     for (const [x, z, hx, hz] of [[-40, 20, 20, 3], [40, -20, 20, 3], [-115, -70, 3, 18], [115, 75, 3, 18]]) addWall(x, z, hx, hz, 12, 0x59606e);
-    for (const [x, z] of [[-85, -90], [85, -90], [-85, 85], [85, 85]]) addDome(x, z, 11);
+    for (const [x, z] of [[-85, -90], [85, 85]]) addDome(x, z, 11);
     return;
   }
   if (G.boss === 3) { addWall(-62, 0, 3.5, 20, 12); addWall(62, 0, 3.5, 20, 12); return; }
@@ -1495,7 +1499,12 @@ function rockDamage(k, d, net) {
   else { const f = k.hp / k.max; k.bar.visible = true; k.fg.scale.x = Math.max(0.02, k.bw * f); k.fg.position.x = -(k.bw - k.fg.scale.x) / 2; k.fg.material.color.setHex(f > 0.5 ? 0x6dff9a : f > 0.25 ? 0xffd23d : 0xff5a4a); }
 }
 function updateRocks(dt) {
-  for (const d of domes) { if (d.alive && d.bar.visible) d.bar.quaternion.copy(camera.quaternion); if (d.flash > 0) { d.flash -= dt; d.m.material.opacity = d.flash > 0 ? 0.45 : 0.2; } }
+  for (const d of domes) {
+    if (!d.alive) { d.rt -= dt; if (d.rt <= 0) { d.alive = true; d.hp = d.max; d.since = 0; d.mesh.visible = true; domeBar(d); flatRing(d.x, d.z, 2, d.r + 4, 0x9fd8ff, 0.25, 1.0); } continue; }
+    if (d.hp < d.max) { d.since += dt; if (d.since > DOME_DELAY) { d.hp = Math.min(d.max, d.hp + d.max * DOME_REGEN * dt); domeBar(d); } }
+    if (d.bar.visible) d.bar.quaternion.copy(camera.quaternion);
+    if (d.flash > 0) d.flash -= dt; d.m.material.opacity = d.flash > 0 ? 0.24 : 0.1;
+  }
   for (const k of rocks) {
     if (k.cd > 0) k.cd -= dt;
     if (!k.alive) continue;
@@ -2547,6 +2556,7 @@ function mpOnEvent(e) {
   if (e.t === 'd') { const h = G.hitT; MP.applying = true; try { _bossDamage(e.k, e.d, V3(e.x, e.y, e.z)); } finally { MP.applying = false; } G.hitT = h; }
   else if (e.t === 'r') { const k = rocks[e.i]; if (k) rockDamage(k, e.d, false); }
   else if (e.t === 'q') quitToMenu(true);
+  else if (e.t === 'dm') { const k = domes[e.i]; if (k) domeApply(k, e.d); }
   else if (e.t === 'a' && !MP.host) mpOnAtk(e);
   else if (e.t === 'c') comRecv(e);
   else if (e.t === 'rv' && e.to === MP.me) {
@@ -3446,6 +3456,7 @@ bossDamage = function (key, dmg, pos) {
       if (U.guard && U.mode === 'tank') { const dx = pos.x - U.pos.x, dz = pos.z - U.pos.z, d = Math.hypot(dx, dz) || 1; if ((dx / d) * Math.sin(U.yaw) + (dz / d) * Math.cos(U.yaw) > 0.3) { dmg *= 0.4; burst(pos, 6, 10, 0x9aeaff, 0.3, 0); } }
       if (U.tr > 0 && U.mode === 'robot') dmg *= 1.3;
     }
+    if (key === 'jet' || key === 'jug') { const f = F4[key], dk = domeAt(f.pos, key === 'jet' && f.mode === 'fly' ? f.y : 1); if (dk) { domeAbsorb(dk, dmg, true); return; } }
   }
   return _bossDamage4.call(this, key, dmg, pos);
 };
