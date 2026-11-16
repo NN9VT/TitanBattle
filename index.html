@@ -173,7 +173,7 @@ button.cta:disabled{opacity:.5;cursor:not-allowed}
 
 <div class="screen" id="menu">
   <div class="card">
-    <h1>Titan <em>Breaker</em> <small class="ver">v3.10</small></h1>
+    <h1>Titan <em>Breaker</em> <small class="ver">v4.0</small></h1>
     <div class="sub">Robot biến hình đấu boss khổng lồ</div>
     <div id="mpBar" hidden><span id="mpBarT"></span><button id="mpLeave">Rời phòng</button></div>
     <div class="plab">Boss</div>
@@ -506,7 +506,9 @@ function readInput(dt) {
   const l = Math.hypot(mx, my); if (l > 1) { mx /= l; my /= l; }
   IN.mx = mx; IN.my = my;
   IN.fire = !!(keys.Mouse0 || keys.KeyJ || touch.held.fire || (autoLock.fire && pl.char === 'heli' && pl.k < 0.5));
-  IN.shield = !!(keys.ShiftLeft || keys.ShiftRight || keys.KeyK || keys.Mouse2 || touch.held.shield || autoLock.shield);
+  const rawSh = !!(keys.ShiftLeft || keys.ShiftRight || keys.KeyK || keys.Mouse2 || touch.held.shield);
+  if (!rawSh) pl.shCut = false;
+  IN.shield = (rawSh && !pl.shCut) || autoLock.shield;
   IN.boost = !!(keys.Space || touch.held.space);
   IN.dyaw += ((keys.ArrowLeft ? 1 : 0) - (keys.ArrowRight ? 1 : 0)) * 2.2 * dt;
   IN.dpitch += ((keys.ArrowDown ? 1 : 0) - (keys.ArrowUp ? 1 : 0)) * 1.6 * dt;
@@ -836,7 +838,7 @@ function updatePlayer(dt) {
     burst(pCenter(), 20, 12, 0x7af0ff, 0.4, 0); shake(0.2);
   }
   if (pl.char === 'tank' && robot && !trans) {
-    if (!pl.charging && IN.pressed.space && pl.en >= 70 && pl.dashT <= 0 && pl.dashCd <= 0 && !frozen && !up) { pl.charging = true; pl.chargeT = 0; burst(pCenter(), 16, 10, 0x9aeaff, 0.4, 0); }
+    if (!pl.charging && IN.pressed.space && pl.en >= 70 && pl.dashT <= 0 && pl.dashCd <= 0 && !frozen) { if (up) { pl.shCut = true; setLock('shield', false, autoLock.shield ? 'KHÓA KHIÊN: TẮT' : ''); } pl.charging = true; pl.chargeT = 0; burst(pCenter(), 16, 10, 0x9aeaff, 0.4, 0); }
     if (pl.charging) {
       pl.chargeT += dt;
       if (frozen || pl.parT > 0) pl.charging = false;
