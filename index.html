@@ -76,6 +76,7 @@ button.cta:focus-visible{outline:3px solid var(--cyan);outline-offset:3px}
 #knob{position:absolute;left:35px;top:35px;width:50px;height:50px;border-radius:50%;background:rgba(79,216,255,.45)}
 .tb{position:absolute;pointer-events:auto;border-radius:50%;border:2px solid var(--line);background:rgba(10,16,28,.6);color:var(--fg);font:700 11px var(--font);letter-spacing:.08em;display:flex;align-items:center;justify-content:center;text-align:center}
 .tb.down{background:rgba(255,178,62,.55)}
+.tb.lock{background:rgba(255,226,170,.22);border-style:dashed;border-color:rgba(255,226,170,.8);color:rgba(255,236,200,.75)}
 #t-fire{right:max(24px,env(safe-area-inset-right,0px));bottom:max(30px,env(safe-area-inset-bottom,0px));width:92px;height:92px;font-size:14px}
 #t-shield{right:max(126px,env(safe-area-inset-right,0px));bottom:max(24px,env(safe-area-inset-bottom,0px));width:64px;height:64px}
 #t-dash{right:max(30px,env(safe-area-inset-right,0px));bottom:max(134px,env(safe-area-inset-bottom,0px));width:64px;height:64px}
@@ -172,7 +173,7 @@ button.cta:disabled{opacity:.5;cursor:not-allowed}
 
 <div class="screen" id="menu">
   <div class="card">
-    <h1>Titan <em>Breaker</em> <small class="ver">v3.3</small></h1>
+    <h1>Titan <em>Breaker</em> <small class="ver">v3.7</small></h1>
     <div class="sub">Xe tăng biến hình đấu boss khổng lồ</div>
     <div id="mpBar" hidden><span id="mpBarT"></span><button id="mpLeave">Rời phòng</button></div>
     <div class="plab">Boss</div>
@@ -457,6 +458,9 @@ window.addEventListener('mousemove', e => { if (locked) { IN.dyaw -= e.movementX
 
 /* touch */
 const touch = { move: null, look: null, joy: { x: 0, y: 0 }, held: {} };
+const autoLock = { fire: false, shield: false }, lockTap = { fire: 0, shield: 0 };
+function syncLock() { for (const k of ['fire', 'shield']) { const el = document.getElementById('t-' + k); if (el) el.classList.toggle('lock', autoLock[k]); } }
+function setLock(k, on, msg) { if (autoLock[k] === on) return; autoLock[k] = on; syncLock(); if (msg) say(msg, '', 0.9); }
 if (isTouch) {
   $('touch').classList.add('on');
   const joy = $('joy'), knob = $('knob');
@@ -464,7 +468,8 @@ if (isTouch) {
   joy.addEventListener('touchstart', e => { e.preventDefault(); touch.move = e.changedTouches[0].identifier; }, { passive: false });
   const tbind = (id, name, tap) => {
     const el = $(id);
-    el.addEventListener('touchstart', e => { e.preventDefault(); el.classList.add('down'); if (tap) press(tap); else touch.held[name] = true; }, { passive: false });
+    el.addEventListener('touchstart', e => { e.preventDefault(); el.classList.add('down'); if (tap) press(tap); else touch.held[name] = true;
+      if (name === 'fire' || name === 'shield') { const n = performance.now(); if (n - lockTap[name] < 320) { lockTap[name] = 0; if (name === 'shield') setLock('shield', !autoLock.shield, autoLock.shield ? 'KHÓA KHIÊN: TẮT' : 'KHÓA KHIÊN: BẬT'); else if (pl.char === 'heli' && pl.k < 0.5) setLock('fire', !autoLock.fire, autoLock.fire ? 'AUTO BẮN: TẮT' : 'AUTO BẮN: BẬT'); } else lockTap[name] = n; } }, { passive: false });
     const up = e => { e.preventDefault(); el.classList.remove('down'); touch.held[name] = false; };
     el.addEventListener('touchend', up, { passive: false }); el.addEventListener('touchcancel', up, { passive: false });
   };
@@ -500,8 +505,8 @@ function readInput(dt) {
   mx += touch.joy.x; my -= touch.joy.y;
   const l = Math.hypot(mx, my); if (l > 1) { mx /= l; my /= l; }
   IN.mx = mx; IN.my = my;
-  IN.fire = !!(keys.Mouse0 || keys.KeyJ || touch.held.fire);
-  IN.shield = !!(keys.ShiftLeft || keys.ShiftRight || keys.KeyK || keys.Mouse2 || touch.held.shield);
+  IN.fire = !!(keys.Mouse0 || keys.KeyJ || touch.held.fire || (autoLock.fire && pl.char === 'heli' && pl.k < 0.5));
+  IN.shield = !!(keys.ShiftLeft || keys.ShiftRight || keys.KeyK || keys.Mouse2 || touch.held.shield || autoLock.shield);
   IN.boost = !!(keys.Space || touch.held.space);
   IN.dyaw += ((keys.ArrowLeft ? 1 : 0) - (keys.ArrowRight ? 1 : 0)) * 2.2 * dt;
   IN.dpitch += ((keys.ArrowDown ? 1 : 0) - (keys.ArrowUp ? 1 : 0)) * 1.6 * dt;
@@ -562,7 +567,7 @@ const ARTY = [
   [V3(-1.45, 1.2, 0), V3(0.3, 0.8, 4.4)], [V3(1.45, 1.2, 0), V3(0.3, 0.8, 4.4)], [V3(-0.9, 1.0, 2.65), V3(0.5, 0.35, 0.15)], [V3(0.9, 1.0, 2.65), V3(0.5, 0.35, 0.15)],
   [V3(0, 0, 0), V3(2.1, 0.9, 2.4)], [V3(0, 1.75, 1.9), V3(1.9, 1.0, 1.3)], [V3(0, 1.8, -2.0), V3(1.9, 0.7, 1.1)],
 ];
-const barrier = { active: false, hp: 0, max: 350, t: 0, life: 4, pos: V3(), yaw: 0, grow: 0, push: 0 };
+const barrier = { active: false, hp: 0, max: 250, t: 0, life: 5, pos: V3(), yaw: 0, grow: 0, push: 0 };
 const barrierMesh = new THREE.Group(); barrierMesh.visible = false; scene.add(barrierMesh);
 const barrierMat = new THREE.MeshBasicMaterial({ color: 0x66e6ff, transparent: true, opacity: 0.35, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide });
 /* Shield look: curved energy-grid arc (transparent, no flat mirror slab). Hitbox is unchanged. */
@@ -798,6 +803,9 @@ function updatePlayer(dt) {
   const trans = pl.k !== 0 && pl.k !== 1;
   const robot = pl.k > 0.5, heliMode = pl.char === 'heli' && pl.k < 0.5;
   $('modev').textContent = trans ? 'BIẾN HÌNH…' : robot ? 'ROBOT' : heliMode ? 'TRỰC THĂNG' : 'XE TĂNG';
+  if (trans) { setLock('shield', false, autoLock.shield ? 'KHÓA KHIÊN: TẮT' : ''); setLock('fire', false, autoLock.fire ? 'AUTO BẮN: TẮT' : ''); }
+  if (autoLock.shield && (pl.shState === 'broken' || !pl.alive)) setLock('shield', false, 'KHIÊN VỠ');
+  if (autoLock.fire && (pl.ohT > 0 || !pl.alive || robot || pl.char !== 'heli')) setLock('fire', false, pl.ohT > 0 ? 'QUÁ NHIỆT: TẮT AUTO' : '');
   /* shield */
   const up = shieldUp() && !trans;
   if (pl.shState === 'broken') { pl.shTimer -= dt; if (pl.shTimer <= 0) { pl.shState = 'ready'; pl.sh = pl.shMax * 0.4; } }
@@ -808,17 +816,17 @@ function updatePlayer(dt) {
   let dx = sy * IN.my - cy * IN.mx, dz = cy * IN.my + sy * IN.mx; // forward=(sin,cos) right=(-cos,sin)
   const dl = Math.hypot(dx, dz); if (dl > 0.01) { dx /= dl; dz /= dl; }
   const has = dl > 0.01 && !frozen && !(pl.parT > 0) && !(pl.castT > 0);
-  let spd = (robot ? (pl.char === 'arty' ? 8 : pl.char === 'heli' ? 13 : 10) : heliMode ? 21 : (pl.char === 'arty' ? 10.5 : 17)) * (up ? 0.5 : 1) * (trans ? 0.4 : 1) * (pl.stun > 0 ? 0.5 : 1) * (pl.slowT > 0 ? 0.7 : 1);
+  let spd = (robot ? (pl.char === 'arty' ? 8 : pl.char === 'heli' ? 15.6 : 10) : heliMode ? 21 : (pl.char === 'arty' ? 10.5 : 17)) * (up && !heliMode ? 0.7 : 1) * (trans ? 0.4 : 1) * (pl.stun > 0 ? 0.5 : 1) * (pl.slowT > 0 ? 0.7 : 1);
   let tvx = 0, tvz = 0;
   if (!robot && !heliMode) {
     if (has) {
       const want = Math.atan2(dx, dz), diff = angDiff(pl.yaw, want);
-      const trn = pl.char === 'arty' ? 1.8 : 4.8; pl.yaw += clamp(diff, -trn * dt, trn * dt);
+      const trn = (pl.char === 'arty' ? 1.8 : 4.8) * (up ? 0.7 : 1); pl.yaw += clamp(diff, -trn * dt, trn * dt);
       const f = clamp(Math.cos(diff) * 0.85 + 0.15, 0.12, 1);
       tvx = Math.sin(pl.yaw) * spd * f; tvz = Math.cos(pl.yaw) * spd * f;
     }
   } else {
-    pl.yaw += angDiff(pl.yaw, pl.aimYaw) * damp(10, dt);
+    pl.yaw += angDiff(pl.yaw, pl.aimYaw) * damp((robot && pl.char === 'heli' ? 15 : 10) * (up && robot ? 0.7 : 1), dt);
     if (has) { const am = robot ? (pl.grounded ? 1 : 1.25) : 1; tvx = dx * spd * am; tvz = dz * spd * am; }
   }
   if (IN.pressed.space && !robot && !heliMode && !trans && pl.en >= 35 && pl.dashT <= 0 && pl.dashCd <= 0 && !frozen) {
@@ -839,7 +847,7 @@ function updatePlayer(dt) {
       }
     }
   } else pl.charging = false;
-  if (IN.pressed.space && robot && !trans && pl.char === 'arty' && pl.en >= 80 && !barrier.active && !frozen) {
+  if (IN.pressed.space && robot && !trans && pl.char === 'arty' && pl.en >= 95 && !barrier.active && !frozen) {
     pl.en = 0; pl.castT = 0.5; barrier.active = true; barrier.hp = barrier.max; barrier.t = 0; barrier.grow = 0; barrier.push = 0.35; barrier.yaw = pl.aimYaw;
     barrier.pos.set(pl.pos.x + Math.sin(pl.aimYaw) * 9, 0, pl.pos.z + Math.cos(pl.aimYaw) * 9); barrierMesh.visible = true; burst(V3(barrier.pos.x, 3, barrier.pos.z), 30, 14, 0x9aeaff, 0.6, 2); say('SHIELD', 'Núp sau Shield', 1);
   }
@@ -848,7 +856,7 @@ function updatePlayer(dt) {
     if (B !== B1 && B.alive && !B.rolling && !B.noPush) { const dx = B.pos.x - barrier.pos.x, dz = B.pos.z - barrier.pos.z, d = Math.hypot(dx, dz);
       if (d < 32 && d > 0.01) { B.pos.x += dx / d * 34 * dt; B.pos.z += dz / d * 34 * dt; const r = Math.hypot(B.pos.x, B.pos.z), lim = ARENA_R - 11; if (r > lim) { B.pos.x *= lim / r; B.pos.z *= lim / r; } } }
   }
-  if (IN.pressed.dodge && heliMode && !trans && pl.en >= 30 && pl.dashT <= 0 && pl.dashCd <= 0 && !frozen) {
+  if (IN.pressed.dodge && heliMode && !trans && !up && pl.en >= 30 && pl.dashT <= 0 && pl.dashCd <= 0 && !frozen) {
     pl.en -= 30; pl.dashT = 0.4; pl.burst = true; pl.dashCd = 0.5;
     for (const e of eproj) if (e.kind === 'missile' && e.pos.distanceTo(pCenter()) < 14) { e.lostT = 0.1; burst(e.pos, 8, 8, 0x9aeaff, 0.4, 0); }
     const vy = (IN.boost ? 1 : 0) - ((keys.KeyC || touch.held.down) ? 1 : 0);
@@ -862,7 +870,7 @@ function updatePlayer(dt) {
   pl.pos.x += pl.vel.x * dt; pl.pos.z += pl.vel.z * dt;
   /* vertical (robot boost) */
   pl.boosting = false;
-  if (robot && !trans && IN.boost && !frozen && pl.char === 'heli') {
+  if (robot && !trans && IN.boost && !up && !frozen && pl.char === 'heli') {
     if (pl.boostLock && pl.en > 14) pl.boostLock = false;
     if (!pl.boostLock && pl.en > 0) { pl.boosting = true; pl.vy = Math.min(pl.vy + 70 * dt, 13); pl.en -= 24 * dt; if (pl.en <= 0) { pl.en = 0; pl.boostLock = true; } }
   }
@@ -915,7 +923,7 @@ function updatePlayer(dt) {
   /* shield visual */
   shieldMesh.visible = up || pl.shFlash > 0;
   if (shieldMesh.visible) {
-    shieldMesh.position.copy(pCenter());
+    shieldMesh.position.copy(pCenter()); const as = pl.char === 'arty' ? pl.k : 0; shieldMesh.scale.setScalar(1 + 0.4 * as); shieldMesh.position.y += 0.9 * as;
     const low = pl.sh / pl.shMax;
     shieldMat.color.setHex(low < 0.3 ? 0xff7050 : 0x4fd8ff); shieldWire.color.setHex(low < 0.3 ? 0xffb090 : 0x9aeaff);
     shieldMat.opacity = 0.1 + pl.shFlash * 1.4; shieldMesh.rotation.y += dt * 0.6;
@@ -3598,6 +3606,7 @@ function updateTouchLabels() {
 }
 function showHud(on) { $('quitBtn').hidden = !on; for (const id of ['bossbar', 'player', 'mode']) $(id).hidden = !on; $('cross').style.display = on ? '' : 'none'; if (!on) { $('lock').style.display = $('lockl').style.display = 'none'; setWarn(''); } }
 function resetGame() {
+  autoLock.fire = autoLock.shield = false; syncLock();
   pl.char = G.char; applyChar();
   Object.assign(pl, { hp: pl.maxHp, sh: pl.shMax, shState: 'ready', shTimer: 0, shHit: 0, shFlash: 0, en: 100, k: 0, kTarget: 0, transCd: 0, fireCd: 0, dashT: 0, invuln: 0, meleeT: 0, meleeCd: 0, vy: 0, boosting: false, boostLock: false, alive: true, stun: 0, hstun: 0, yaw: 0, aimYaw: 0, mode: 'tank', rockets: 0, rocketT: 0, lean: 0, roll: 0, dashVy: 0, heat: 0, ohT: 0, slowT: 0, parT: 0, dashCd: 0, burst: false });
   pl.pos.set(B.start.x, 0, B.start.z); pl.vel.set(0, 0, 0); pl.root.visible = true; saberPivot.visible = false;
