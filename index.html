@@ -173,7 +173,7 @@ button.cta:disabled{opacity:.5;cursor:not-allowed}
 
 <div class="screen" id="menu">
   <div class="card">
-    <h1>Titan <em>Breaker</em> <small class="ver">v3.8</small></h1>
+    <h1>Titan <em>Breaker</em> <small class="ver">v3.9</small></h1>
     <div class="sub">Xe tăng biến hình đấu boss khổng lồ</div>
     <div id="mpBar" hidden><span id="mpBarT"></span><button id="mpLeave">Rời phòng</button></div>
     <div class="plab">Boss</div>
@@ -909,7 +909,7 @@ function updatePlayer(dt) {
     for (const key of B.keys) {
       const b = B.parts[key]; if ((!b.alive && key !== 'core' && !B.regen) || (pl.stabHit && pl.stabHit[key])) continue;
       const wp = bossPartPos(key), t = clamp(wp.clone().sub(a0).dot(ab) / ab.lengthSq(), 0, 1), cp = a0.clone().addScaledVector(ab, t);
-      if (wp.distanceTo(cp) < b.r + 1.8) { pl.stabHit[key] = 1; bossDamage(key, 156, wp.clone().lerp(cp, 0.5)); burst(wp, 36, 22, 0x9aeaff, 0.6, 2); shake(0.7); }
+      if (wp.distanceTo(cp) < b.r + 1.8) { pl.stabHit[key] = 1; G.mel = true; bossDamage(key, 156, wp.clone().lerp(cp, 0.5)); G.mel = false; burst(wp, 36, 22, 0x9aeaff, 0.6, 2); shake(0.7); }
     }
     rockSeg(a0, a1, 156, pl.stabHit || (pl.stabHit = {}));
     emit(a1.x, a1.y, a1.z, rnd(-2, 2), rnd(-2, 2), rnd(-2, 2), 0x9aeaff, 0.3, 0);
@@ -948,7 +948,7 @@ function doMelee() {
     const wp = bossPartPos(key), to = wp.clone().sub(c);
     const dist = to.length() - b.r;
     to.y = 0; to.normalize();
-    if (dist < SB().reach && to.dot(fwd) > 0.2) { bossDamage(key, SB().dmg, wp.clone().lerp(c, 0.3)); burst(wp, 30, 20, 0x9aeaff, 0.6, 2); shake(0.5); }
+    if (dist < SB().reach && to.dot(fwd) > 0.2) { G.mel = true; bossDamage(key, SB().dmg, wp.clone().lerp(c, 0.3)); G.mel = false; burst(wp, 30, 20, 0x9aeaff, 0.6, 2); shake(0.5); }
   }
   for (const k of rocks) if (k.alive && rockDist(k, c.x, c.z) < SB().reach && V3(k.x - c.x, 0, k.z - c.z).normalize().dot(fwd) > 0.2) { rockDamage(k, SB().dmg, true); burst(V3(k.x, 2, k.z), 14, 12, 0x9aeaff, 0.4, 2); shake(0.3); }
   for (const e of eproj.slice()) if (e.pos.distanceTo(c) < 11) missileOrBulletCut(e);
@@ -3313,10 +3313,10 @@ function updateJug(f, dt) {
     let want;
     if (f.guard) want = bearing; else { const a1 = bearing + Math.PI / 2, a2 = bearing - Math.PI / 2; want = Math.abs(angDiff(f.yaw, a1)) < Math.abs(angDiff(f.yaw, a2)) ? a1 : a2; }
     f.yaw += clamp(angDiff(f.yaw, want), -trn * dt, trn * dt);
-    const sp = 6.75 * SPD();
+    const sp = 6 * SPD();
     if (f.tr <= 0) {
-      if (f.guard && !jet.dead) { const ddx = (jet.pos.x + (pl.pos.x - jet.pos.x) * 0.25) - f.pos.x, ddz = (jet.pos.z + (pl.pos.z - jet.pos.z) * 0.25) - f.pos.z, dd = Math.hypot(ddx, ddz); if (dd > 2) { const st = Math.min(dd, 9 * dt); f.pos.x += ddx / dd * st; f.pos.z += ddz / dd * st; } }
-      else if (f.retreat) { f.pos.x -= dx / Math.max(d, 1) * 5.25 * dt; f.pos.z -= dz / Math.max(d, 1) * 5.25 * dt; }
+      if (f.guard && !jet.dead) { const ddx = (jet.pos.x + (pl.pos.x - jet.pos.x) * 0.25) - f.pos.x, ddz = (jet.pos.z + (pl.pos.z - jet.pos.z) * 0.25) - f.pos.z, dd = Math.hypot(ddx, ddz); if (dd > 2) { const st = Math.min(dd, 8 * dt); f.pos.x += ddx / dd * st; f.pos.z += ddz / dd * st; } }
+      else if (f.retreat) { f.pos.x -= dx / Math.max(d, 1) * 4.7 * dt; f.pos.z -= dz / Math.max(d, 1) * 4.7 * dt; }
       else { const k = clamp((d - 42) / 10, -1, 1); f.pos.x += dx / Math.max(d, 1) * k * sp * dt; f.pos.z += dz / Math.max(d, 1) * k * sp * dt; }
       b4Clamp(f.pos, 8); b4Avoid(f.pos, 5.6);
       // two side cannons, each only fires at its own side
@@ -3347,7 +3347,7 @@ function updateJug(f, dt) {
     if (f.tr <= 0) {
       if (f.atk) { if (f.atk.update(dt)) { f.atk = null; f.slamCd = 2.4 / SPD(); } }
       else {
-        if (d > 9) { const st = Math.min(d - 8, 7.5 * SPD() * dt); f.pos.x += dx / d * st; f.pos.z += dz / d * st; }
+        if (d > 9) { const st = Math.min(d - 8, 7 * SPD() * dt); f.pos.x += dx / d * st; f.pos.z += dz / d * st; }
         f.slamCd -= dt;
         if (d < 15 && f.slamCd <= 0) f.atk = jugSlam(f);
         if (d > 26) f.farT += dt; else f.farT = 0;
@@ -3376,11 +3376,11 @@ function jugSlam(f) {
     a.t += dt;
     if (a.t < 0.6) { a.sx = f.pos.x + Math.sin(f.yaw) * 7; a.sz = f.pos.z + Math.cos(f.yaw) * 7; }   // aim follows the player, then locks at 0.6s
     const sx = a.sx, sz = a.sz;
-    if (a.t < 1.0) { setWarn('Đập! Lùi ra xa hoặc lướt'); setRing(tl.a, sx, sz, 10, 11.4, 0.3 + 0.3 * Math.abs(Math.sin(a.t * 14))); setRing(tl.b, sx, sz, 0, 10, 0.12); return false; }
+    if (a.t < 1.0) { setWarn('Đập! Lùi ra xa hoặc lướt'); setRing(tl.a, sx, sz, 13, 14.5, 0.3 + 0.3 * Math.abs(Math.sin(a.t * 14))); setRing(tl.b, sx, sz, 0, 13, 0.12); return false; }
     if (!a.hit) {
       a.hit = true; setWarn(''); tl.a.visible = false; tl.b.visible = false;
-      flatRing(sx, sz, 4, 14, 0xffffff, 0.5, 2); burst(V3(sx, 1, sz), 40, 24, 0x9aa0b0, 0.7, 3); shake(1.0); S4('stomp'); rockSplash(V3(sx, 1, sz), 10, 400, false);
-      mpHit(() => { if (Math.hypot(pl.pos.x - sx, pl.pos.z - sz) < 11 && pl.pos.y < 8) { if (pl.invuln > 0 && pl.invuln <= 0.13) pl.invuln = 0; if (hurtPlayer(60, { shieldMul: 3.0 }) && !pl.lastBlocked) { pl.hstun = 1.5; pl.vel.x += (pl.pos.x - sx) * 1.2; pl.vel.z += (pl.pos.z - sz) * 1.2; say('BỊ CHOÁNG', 'Không thể hành động 1,5 giây', 1.4); } } });
+      flatRing(sx, sz, 5, 17, 0xffffff, 0.5, 2); burst(V3(sx, 1, sz), 50, 28, 0x9aa0b0, 0.7, 3.5); shake(1.0); S4('stomp'); rockSplash(V3(sx, 1, sz), 13, 400, false);
+      mpHit(() => { if (Math.hypot(pl.pos.x - sx, pl.pos.z - sz) < 14 && pl.pos.y < 8) { if (pl.invuln > 0 && pl.invuln <= 0.13) pl.invuln = 0; if (hurtPlayer(60, { shieldMul: 3.0 }) && !pl.lastBlocked) { pl.hstun = 1.5; pl.vel.x += (pl.pos.x - sx) * 1.2; pl.vel.z += (pl.pos.z - sz) * 1.2; say('BỊ CHOÁNG', 'Không thể hành động 1,5 giây', 1.4); } } });
     }
     return a.t > 2.0;
   };
@@ -3454,8 +3454,8 @@ bossDamage = function (key, dmg, pos) {
     if (key === 'jug') {
       const U = F4.jug;
       if (U.guard && U.mode === 'tank') { const dx = pos.x - U.pos.x, dz = pos.z - U.pos.z, d = Math.hypot(dx, dz) || 1; if ((dx / d) * Math.sin(U.yaw) + (dz / d) * Math.cos(U.yaw) > 0.3) { dmg *= 0.4; burst(pos, 6, 10, 0x9aeaff, 0.3, 0); } }
-      if (U.tr > 0 && U.mode === 'robot') dmg *= 1.3;
     }
+    if (key === 'jet' && F4.jet.mode === 'robot') dmg *= G.mel ? 1.5 : 1.25;
     if (key === 'jet' || key === 'jug') { const f = F4[key], dk = domeAt(f.pos, key === 'jet' && f.mode === 'fly' ? f.y : 1); if (dk) { domeAbsorb(dk, dmg, true); return; } }
   }
   return _bossDamage4.call(this, key, dmg, pos);
