@@ -175,7 +175,7 @@ button.cta:disabled{opacity:.5;cursor:not-allowed}
 
 <div class="screen" id="menu">
   <div class="card">
-    <h1>Titan <em>Breaker</em> <small class="ver">v4.3</small></h1>
+    <h1>Titan <em>Breaker</em> <small class="ver">v4.4</small></h1>
     <div class="sub">Robot biến hình đấu boss khổng lồ</div>
     <div id="mpBar" hidden><span id="mpBarT"></span><button id="mpLeave">Rời phòng</button></div>
     <div class="plab">Boss</div>
@@ -1221,7 +1221,7 @@ function atkBarrage() {
     if (a.t < a.tele) { emit(mp.x, mp.y, mp.z, rnd(-3, 3), rnd(-3, 3), rnd(-3, 3), 0xff8a30, 0.3, 0); setWarn(''); return false; }
     if (a.w < waves && a.t >= a.next) {
       a.w++; a.next += gap;
-      const base = leadAim(mp, sp, [0.6, 0.75, 0.9][G.diff]);
+      const base = leadAim(mp, sp, DIFFS[G.diff].lead);
       for (let i = 0; i < n; i++) {
         const off = (i - (n - 1) / 2) * (0.5 / n) * (a.w % 2 ? 1 : -1) * 1.1, c = Math.cos(off), s = Math.sin(off);
         const d = V3(base.x * c + base.z * s, base.y, -base.x * s + base.z * c).normalize();
@@ -1457,7 +1457,7 @@ function updateAA(dt) {
     const t = AA[key];
     if (!B.parts[key].alive) { t.pv.rotation.x = lerp(t.pv.rotation.x, 0.6, damp(3, dt)); continue; }
     if (!air) { t.charge = 0; t.burst = 0; t.pv.rotation.x = lerp(t.pv.rotation.x, -0.2, damp(4, dt)); t.g.rotation.y = lerp(t.g.rotation.y, 0, damp(4, dt)); continue; }
-    const mp = t.muz.getWorldPosition(V3()), d = leadAim(mp, 77.4 * SPD(), [0.6, 0.75, 0.9][G.diff]), L = 1;
+    const mp = t.muz.getWorldPosition(V3()), d = leadAim(mp, 77.4 * SPD(), DIFFS[G.diff].lead), L = 1;
     t.g.rotation.y = lerp(t.g.rotation.y, angDiff(B.yaw, Math.atan2(d.x, d.z)), damp(9, dt));
     t.pv.rotation.x = lerp(t.pv.rotation.x, -Math.asin(clamp(d.y / Math.max(L, 0.01), -1, 1)), damp(9, dt));
     if (t.cd > 0) { t.cd -= dt; continue; }
@@ -2592,7 +2592,7 @@ function mpGo(v) {
 }
 function mpDetach() { for (const f of MP.offs) { try { f(); } catch (_) { } } MP.offs.length = 0; }
 function mpAfterReset() {
-  for (const k in B.parts) { const p = B.parts[k]; if (p.max0 === undefined) p.max0 = p.max; p.max = Math.round(p.max0 * (MP.on ? 1.35 : 1)); p.hp = p.max; }
+  for (const k in B.parts) { const p = B.parts[k]; if (p.max0 === undefined) p.max0 = p.max; p.max = Math.round(p.max0 * DIFFS[G.diff].hp * (MP.on ? 1.35 : 1)); p.hp = p.max; }
   if (MP.on) pl.pos.x += MP.me === 'h' ? -8 : 8;
 }
 function mpEnded() {
@@ -3301,7 +3301,7 @@ function updateJet(f, dt) {
       f.bT -= dt;
       if (f.bT <= 0) {
         f.bT = 0.14; f.burst--;
-        const mp = V3(f.pos.x + Math.sin(f.yaw) * 1.5, 2.9, f.pos.z + Math.cos(f.yaw) * 1.5), dir = leadAim(mp, 95 * SPD(), [0.6, 0.75, 0.9][G.diff]);
+        const mp = V3(f.pos.x + Math.sin(f.yaw) * 1.5, 2.9, f.pos.z + Math.cos(f.yaw) * 1.5), dir = leadAim(mp, 95 * SPD(), DIFFS[G.diff].lead);
         dir.x += rnd(-0.03, 0.03); dir.y += rnd(-0.03, 0.03); dir.z += rnd(-0.03, 0.03);
         spawnBullet(mp, dir.normalize(), 95 * SPD(), 8); burst(mp, 3, 8, 0xffb0d8, 0.15, 0); S4('rgun');
       }
@@ -3313,7 +3313,7 @@ function updateJet(f, dt) {
 function shell4(f, s, th) {
   const ang = f.yaw + s * Math.PI / 2 + th, base = V3(Math.sin(ang), 0, Math.cos(ang));
   const mp = V3(f.pos.x + base.x * 4.6, f.mode === 'tank' ? 2.9 : 7.2, f.pos.z + base.z * 4.6);
-  const d = leadAim(mp, 74, [0.6, 0.75, 0.9][G.diff]);
+  const d = leadAim(mp, 74, DIFFS[G.diff].lead);
   const m = new THREE.Mesh(sh4Geo, sh4Mat); m.position.copy(mp); scene.add(m);
   shells4.push({ pos: mp.clone(), vel: d.multiplyScalar(74), t: 0, mesh: m });
   burst(mp, 14, 14, 0xffc070, 0.35, 0); shake(0.2); S4('howitzer');
@@ -3423,7 +3423,7 @@ function jugMG(f, st, wp, dt, ok) {
   st.g = (st.g || 0) - dt;
   if (st.g > 0) return;
   st.g = 0.12 / SPD(); st.n--;
-  const dir = leadAim(wp, 90 * SPD(), [0.6, 0.75, 0.9][G.diff]);
+  const dir = leadAim(wp, 90 * SPD(), DIFFS[G.diff].lead);
   dir.x += rnd(-0.05, 0.05); dir.y += rnd(-0.04, 0.04); dir.z += rnd(-0.05, 0.05);
   spawnBullet(wp, dir.normalize(), 90 * SPD(), 2.688, false, { scale: 0.2, hr: 1.0, sm: 0.8 }); S4('mg');
   if (st.n <= 0) st.cd = rnd(1.0, 1.6) / SPD();
@@ -3594,7 +3594,7 @@ function updateCamera(dt) {
 
 
 /* ---------- character + difficulty select ---------- */
-const DIFFS = [{ spd: 1, dmg: 1, ex: 0 }, { spd: 1.15, dmg: 1.1, ex: 0 }, { spd: 1.3, dmg: 1.2, ex: 1 }];
+const DIFFS = [{ spd: 0.8, dmg: 0.7, ex: 0, hp: 0.75, lead: 0.5 }, { spd: 1, dmg: 0.9, ex: 0, hp: 0.85, lead: 0.75 }, { spd: 1.2, dmg: 1.2, ex: 1, hp: 1, lead: 0.9 }];
 G.char = 'tank'; G.diff = 1; G.boss = 1;
 let unlocked2 = false;
 try { unlocked2 = localStorage.getItem('tb_u2') === '1'; } catch (_) { }
