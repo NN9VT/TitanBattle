@@ -175,7 +175,7 @@ button.cta:disabled{opacity:.5;cursor:not-allowed}
 
 <div class="screen" id="menu">
   <div class="card">
-    <h1>Titan <em>Breaker</em> <small class="ver">v4.7</small></h1>
+    <h1>Titan <em>Breaker</em> <small class="ver">v4.8</small></h1>
     <div class="sub">Robot biến hình đấu boss khổng lồ</div>
     <div id="mpBar" hidden><span id="mpBarT"></span><button id="mpLeave">Rời phòng</button></div>
     <div class="plab">Boss</div>
@@ -223,18 +223,14 @@ button.cta:disabled{opacity:.5;cursor:not-allowed}
     <h1 style="font-size:clamp(28px,calc(var(--vw,1vw)*6),48px)">Chơi <em>2 người</em></h1>
     <div class="sub" id="mpMsg">Cần 2 người để hạ boss</div>
     <div class="plab">Tạo phòng mới</div>
-    <details id="mpHostBox" style="margin:0 0 10px;color:var(--dim);font-size:13px"><summary style="cursor:pointer">Đăng nhập chủ phòng (chỉ chủ game mới tạo phòng)</summary>
+    <div id="mpHostBox" hidden style="margin:0 0 10px;color:var(--dim);font-size:13px"><div style="margin-bottom:6px">Đăng nhập chủ phòng</div>
       <input class="mpin" id="mpEmail" type="email" placeholder="Email" autocomplete="username" style="width:min(260px,80%);letter-spacing:0;text-transform:none;font-size:15px"><br>
       <input class="mpin" id="mpPass" type="password" placeholder="Mật khẩu" autocomplete="current-password" style="width:min(260px,80%);letter-spacing:0;text-transform:none;font-size:15px;margin-top:6px">
-    </details>
+    </div>
     <button class="cta" id="mpCreate">Tạo phòng</button>
     <div class="plab" style="margin-top:20px">Hoặc nhập mã phòng của bạn bạn</div>
     <input class="mpin" id="mpCode" maxlength="4" placeholder="MÃ" autocomplete="off" autocapitalize="characters"> <button class="cta" id="mpJoin" style="background:var(--cyan)">Vào phòng</button>
-    <details style="margin-top:20px;color:var(--dim);font-size:13px"><summary style="cursor:pointer">Cấu hình Firebase (đã có sẵn, chỉ đổi khi cần)</summary>
-      <p>Dán đoạn firebaseConfig vào đây rồi bấm Lưu. Để trống và bấm Lưu để dùng cấu hình mặc định.</p>
-      <textarea class="mpcfg" id="mpCfg" rows="6" placeholder='{ apiKey: "...", databaseURL: "https://...", ... }'></textarea>
-      <button class="cta" id="mpSaveCfg" style="margin-top:8px;padding:8px 18px;font-size:13px">Lưu</button>
-    </details>
+    
     <div style="margin-top:22px"><button class="cta" id="mpBack" style="background:#3a4658;color:#fff">Quay lại</button></div>
   </div>
 </div>
@@ -2487,8 +2483,7 @@ async function mpConnect() {
     if (!ok) throw new Error('Không tải được thư viện Firebase (kiểm tra mạng)');
   }
   let cfg = FB_DEFAULT;
-  try { const s = localStorage.getItem('tb_fbcfg'); if (s) cfg = new Function('return (' + s + ')')(); } catch (_) { }
-  if (!cfg || !cfg.databaseURL) throw new Error('Cấu hình Firebase thiếu databaseURL');
+    if (!cfg || !cfg.databaseURL) throw new Error('Cấu hình Firebase thiếu databaseURL');
   if (!firebase.apps.length) firebase.initializeApp(cfg);
   MP.db = firebase.database(); return MP.db;
 }
@@ -2499,7 +2494,7 @@ async function mpAuth(host) {
   if (host) {
     if (u && !u.isAnonymous) return;
     const em = ($('mpEmail').value || '').trim(), pw = $('mpPass').value;
-    if (!em || !pw) { $('mpHostBox').open = true; throw new Error('Nhập email và mật khẩu chủ phòng ở bên dưới rồi bấm Tạo phòng lại.'); }
+    if (!em || !pw) { $('mpHostBox').hidden = false; throw new Error('Đăng nhập chủ phòng: nhập email, mật khẩu rồi bấm Tạo phòng lại.'); }
     await au.signInWithEmailAndPassword(em, pw);
     try { localStorage.setItem('tb_hostmail', em); } catch (_) { } $('mpPass').value = '';
   } else if (!u) await au.signInAnonymously();
@@ -2823,11 +2818,6 @@ $('mpCreate').addEventListener('click', mpCreate);
 $('mpJoin').addEventListener('click', mpJoin);
 $('mpLeave').addEventListener('click', mpLeave);
 $('mpCode').addEventListener('input', e => { e.target.value = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, ''); });
-$('mpSaveCfg').addEventListener('click', () => {
-  const t = $('mpCfg').value.trim();
-  try { if (t) { const c = new Function('return (' + t.replace(/^\s*(const|let|var)\s+\w+\s*=\s*/, '').replace(/;\s*$/, '') + ')')(); if (!c.databaseURL) throw new Error('thiếu databaseURL'); localStorage.setItem('tb_fbcfg', JSON.stringify(c)); mpMsg('Đã lưu cấu hình Firebase'); } else { localStorage.removeItem('tb_fbcfg'); mpMsg('Dùng cấu hình mặc định'); } MP.db = null; }
-  catch (e) { mpMsg('Cấu hình lỗi: ' + e.message, true); }
-});
 for (const id of ['charPick', 'bossPick', 'diffPick']) $(id).addEventListener('click', () => setTimeout(() => { if (MP.room) { mpPushPicks(); mpUpdateUI(); } }, 0));
 
 try { const m = localStorage.getItem('tb_hostmail'); if (m) $('mpEmail').value = m; } catch (_) { }
