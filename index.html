@@ -175,7 +175,7 @@ button.cta:disabled{opacity:.5;cursor:not-allowed}
 
 <div class="screen" id="menu">
   <div class="card">
-    <h1>Titan <em>Breaker</em> <small class="ver">v4.8</small></h1>
+    <h1>Titan <em>Breaker</em> <small class="ver">v4.9</small></h1>
     <div class="sub">Robot biến hình đấu boss khổng lồ</div>
     <div id="mpBar" hidden><span id="mpBarT"></span><button id="mpLeave">Rời phòng</button></div>
     <div class="plab">Boss</div>
@@ -2502,6 +2502,7 @@ async function mpAuth(host) {
 function mpErr(e) {
   const m = (e && (e.code || e.message)) || String(e);
   if (/PERMISSION_DENIED/i.test(m)) return 'Firebase từ chối quyền. Chỉ chủ game mới tạo được phòng; nếu bạn là chủ, kiểm tra lại Rules đã Publish đúng chưa.';
+  if (/admin-restricted/i.test(m)) return 'Firebase đang chặn khách đăng nhập ẩn danh: bật Anonymous ở Authentication → Sign-in method, và bật "Enable create (sign-up)" ở Authentication → Settings → User actions.';
   if (/operation-not-allowed/i.test(m)) return 'Chưa bật đăng nhập trong Firebase → Authentication → Sign-in method (cần Email/Password và Anonymous).';
   if (/wrong-password|invalid-credential|user-not-found|invalid-login/i.test(m)) return 'Sai email hoặc mật khẩu chủ phòng.';
   if (/invalid-email/i.test(m)) return 'Email không hợp lệ.';
