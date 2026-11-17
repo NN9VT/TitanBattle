@@ -175,7 +175,7 @@ button.cta:disabled{opacity:.5;cursor:not-allowed}
 
 <div class="screen" id="menu">
   <div class="card">
-    <h1>Titan <em>Breaker</em> <small class="ver">v4.4</small></h1>
+    <h1>Titan <em>Breaker</em> <small class="ver">v4.7</small></h1>
     <div class="sub">Robot biến hình đấu boss khổng lồ</div>
     <div id="mpBar" hidden><span id="mpBarT"></span><button id="mpLeave">Rời phòng</button></div>
     <div class="plab">Boss</div>
@@ -223,6 +223,10 @@ button.cta:disabled{opacity:.5;cursor:not-allowed}
     <h1 style="font-size:clamp(28px,calc(var(--vw,1vw)*6),48px)">Chơi <em>2 người</em></h1>
     <div class="sub" id="mpMsg">Cần 2 người để hạ boss</div>
     <div class="plab">Tạo phòng mới</div>
+    <details id="mpHostBox" style="margin:0 0 10px;color:var(--dim);font-size:13px"><summary style="cursor:pointer">Đăng nhập chủ phòng (chỉ chủ game mới tạo phòng)</summary>
+      <input class="mpin" id="mpEmail" type="email" placeholder="Email" autocomplete="username" style="width:min(260px,80%);letter-spacing:0;text-transform:none;font-size:15px"><br>
+      <input class="mpin" id="mpPass" type="password" placeholder="Mật khẩu" autocomplete="current-password" style="width:min(260px,80%);letter-spacing:0;text-transform:none;font-size:15px;margin-top:6px">
+    </details>
     <button class="cta" id="mpCreate">Tạo phòng</button>
     <div class="plab" style="margin-top:20px">Hoặc nhập mã phòng của bạn bạn</div>
     <input class="mpin" id="mpCode" maxlength="4" placeholder="MÃ" autocomplete="off" autocapitalize="characters"> <button class="cta" id="mpJoin" style="background:var(--cyan)">Vào phòng</button>
@@ -1012,7 +1016,7 @@ const B1 = {
   start: { x: 0, z: -44, yaw: 0 }, phaseMsg: { 2: 'Guardian kích hoạt tên lửa và sập sàn', 3: 'Guardian nổi điên' }, ringHex: 0xff6a2a,
   root: new THREE.Group(), yaw: 0, phase: 1, alive: true, state: 'idle', timer: 3, atk: null, last: '', stagger: 0, dying: 0,
   parts: {
-    core: { name: 'LÕI', hp: 2200, max: 2200, r: 5.0, alive: true, flash: 0 },
+    core: { name: 'LÕI', hp: 2860, max: 2860, r: 5.0, alive: true, flash: 0 },
     gat: { name: 'TAY GATLING', hp: 900, max: 900, r: 6.2, alive: true, flash: 0 },
     art: { name: 'TAY PHÁO', hp: 900, max: 900, r: 6.2, alive: true, flash: 0 },
     head: { name: 'ĐẦU (LASER)', hp: 700, max: 700, r: 5.2, alive: true, flash: 0 },
@@ -1130,7 +1134,7 @@ function bossDamage(key, dmg, pos) {
 }
 function bossDie() {
   if (B.atk && B.atk.cancel) B.atk.cancel();
-  B.alive = false; B.dying = 5; B.atk = null; clearProjectiles(); hideTele(); if (B.onDie) B.onDie();
+  B.alive = false; B.dying = 5; if (B.atk && B.atk.cancel) { try { B.atk.cancel(); } catch (_) { } } B.atk = null; clearProjectiles(); hideTele(); cleanFx(); if (B.onDie) B.onDie();
   say(B.dieMsg || 'GUARDIAN SỤP ĐỔ', '', 3);
 }
 
@@ -1174,7 +1178,7 @@ function updateEproj(dt) {
     const hr = e.hr || (e.kind === 'missile' ? 2.3 : 2.1);
     if (e.pos.distanceTo(pc) < hr && pl.alive) {
       if (e.kind === 'missile') { if (hurtPlayer(e.dmg, { shieldMul: 1.3 })) { explode(e.pos, 1, 0xffa040); killE(e); } }
-      else if (hurtPlayer(e.dmg, e.sm ? { shieldMul: e.sm } : undefined)) { burst(e.pos, 10, 10, 0xff8030, 0.4, 2); killE(e); }
+      else if (hurtPlayer(e.dmg, e.sm ? { shieldMul: e.sm } : undefined)) { if (e.spike) pl.shHit = Math.max(pl.shHit, 3); burst(e.pos, 10, 10, 0xff8030, 0.4, 2); killE(e); }
       continue;
     }
     if (e.pos.y < 0.3 || e.pos.length() > ARENA_R * 2.3 || rockHit(e.pos, (e.dmg || 10) * 3, false)) { if (e.kind === 'missile') explode(e.pos, 0.8, 0xffa040); else burst(e.pos, 6, 7, 0xff8030, 0.3, 2); killE(e); }
@@ -1212,7 +1216,7 @@ function leadAim(mp, sp, frac) {
   return tg.sub(mp).normalize();
 }
 function atkBarrage() {
-  const waves = PH([3, 4, 5]) + XTRA(), n = PH([5, 7, 9]), gap = PH([0.55, 0.44, 0.36]) / SPD(), sp = PH([36, 42, 48]) * SPD();
+  const waves = PH([3, 4, 5]) + XTRA(), n = PH([7, 9, 11]), gap = PH([0.55, 0.44, 0.36]) / SPD(), sp = PH([44, 50, 56]) * SPD();
   const a = { type: 'bar', t: 0, w: 0, next: 1.0 / SPD(), tele: 1.0 / SPD() };
   a.update = dt => {
     if (!B.parts.gat.alive) return true;
@@ -1261,7 +1265,7 @@ function atkArtillery() {
         pil.position.set(s.x, 70, s.z); addFx(pil, 0.35, (m, f) => { m.material.opacity = 0.8 * (1 - f); m.scale.x = m.scale.z = 1 - f * 0.6; });
         flatRing(s.x, s.z, 1, s.R + 2, 0xffa040, 0.5, 1.5);
         const pc = pCenter();
-        mpHit(() => { if (Math.hypot(pc.x - s.x, pc.z - s.z) < s.R && pl.pos.y < 6) hurtPlayer(40, { shieldMul: 1.5, air: true }); });
+        mpHit(() => { if (Math.hypot(pc.x - s.x, pc.z - s.z) < s.R && pl.pos.y < 6) hurtPlayer(30, { shieldMul: 1.5, air: true }); });
       }
     }
     return a.spawned >= N && !alive;
@@ -1351,7 +1355,7 @@ function atkFlak() {
       if (b.t >= T) {
         b.done = true; scene.remove(b.mesh); b.mesh.material.dispose();
         const c = V3(b.x, b.y, b.z); explode(c, 2.4, 0xffa040); burst(c, 40, 22, 0xffffff, 0.5, 0);
-        mpHit(() => { if (pCenter().distanceTo(c) < b.R) hurtPlayer(26, { shieldMul: 1.3, air: true }); });
+        mpHit(() => { if (pCenter().distanceTo(c) < b.R) hurtPlayer(19.5, { shieldMul: 1.3, air: true }); });
       }
     }
     return a.spawned >= N && !alive;
@@ -1741,6 +1745,14 @@ function setFan(f, cx, cz, yaw, half, r, op) {
   f.m.geometry.attributes.position.needsUpdate = true; f.m.material.opacity = op; f.m.visible = true;
 }
 function freeFan(f) { if (f) { f.used = false; f.m.visible = false; } }
+function cleanFx() {
+  for (const f of fans) freeFan(f);
+  if (typeof laserBeam !== 'undefined' && laserBeam) laserBeam.visible = false;
+  if (typeof stompRing !== 'undefined' && stompRing) stompRing.visible = false;
+  if (typeof chargeLine !== 'undefined' && chargeLine) chargeLine.visible = false;
+  if (typeof spinRing !== 'undefined' && spinRing) spinRing.visible = false;
+  try { for (const t of tele4) if (t) { t.a.visible = false; t.b.visible = false; } } catch (_) { }
+}
 let chargeLine = null, spinRing = null;
 function getChargeLine() {
   if (!chargeLine) { chargeLine = new THREE.Mesh(new THREE.PlaneGeometry(1, 1).rotateX(-Math.PI / 2), new THREE.MeshBasicMaterial({ color: 0xff3a2a, transparent: true, opacity: 0.4, side: THREE.DoubleSide, depthWrite: false, blending: THREE.AdditiveBlending })); chargeLine.frustumCulled = false; scene.add(chargeLine); }
@@ -1882,7 +1894,7 @@ function atkCharge() {
 }
 function tipPos() { return (B2.parts.tail.alive ? B2m.tailTip : B2m.hitCore).getWorldPosition(V3()); }
 function atkVolley() {
-  const waves = PH([2, 3, 3]) + XTRA(), n = PH([7, 9, 11]), T = 0.6 / SPD(), gap = 0.42 / SPD(), a = { type: 'vol', t: 0, w: 0, next: T };
+  const waves = PH([2, 3, 3]) + XTRA(), n = PH([9, 11, 13]), T = 0.6 / SPD(), gap = 0.42 / SPD(), a = { type: 'vol', t: 0, w: 0, next: T };
   a.update = dt => {
     a.t += dt; b2Face(dt, 3.2);
     const mp = tipPos();
@@ -1890,7 +1902,7 @@ function atkVolley() {
     setWarn('');
     if (a.w < waves && a.t >= a.next) {
       a.w++; a.next += gap;
-      const tgt = pCenter().addScaledVector(pl.vel, 0.3), base = tgt.sub(mp).normalize();
+      const tgt = pCenter().addScaledVector(pl.vel, 0.25), base = tgt.sub(mp).normalize();
       for (let i = 0; i < n; i++) {
         const off = (i - (n - 1) / 2) * (1.15 / n), c = Math.cos(off), s = Math.sin(off);
         spawnBullet(mp, V3(base.x * c + base.z * s, base.y + rnd(-0.03, 0.03), -base.x * s + base.z * c).normalize(), 86 * SPD(), 12, true);
@@ -2445,13 +2457,13 @@ B3.reset = function () {
 };
 /* ===== Multiplayer (2 players) over Firebase Realtime Database ===== */
 const FB_DEFAULT = {
-  apiKey: "AIzaSyCtWpCTxQDX8QNUPXMv6Z2-0gjNwp0SCS8",
-  authDomain: "xamhuong-82e87.firebaseapp.com",
-  databaseURL: "https://xamhuong-82e87-default-rtdb.asia-southeast1.firebasedatabase.app",
-  projectId: "xamhuong-82e87",
-  storageBucket: "xamhuong-82e87.firebasestorage.app",
-  messagingSenderId: "862412056925",
-  appId: "1:862412056925:web:44a821b440e0b4f8ade0b4"
+  apiKey: "AIzaSyB8iTLfBiAo2M0s7Vg6ygVnIVhyG4ns_eI",
+  authDomain: "titanbrk.firebaseapp.com",
+  databaseURL: "https://titanbrk-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "titanbrk",
+  storageBucket: "titanbrk.firebasestorage.app",
+  messagingSenderId: "953531909917",
+  appId: "1:953531909917:web:3142b6d449f3abcc14c3f4"
 };
 const CHARS = ['tank', 'heli', 'arty'], CNAME = { tank: 'Xe tăng', heli: 'Trực thăng', arty: 'Pháo hạng nặng' };
 const MP = { room: false, on: false, host: false, me: 'h', other: 'g', code: '', db: null, lref: null, evRef: null, lobby: null, lastGo: 0, tgt: 'h', applying: false, swapped: false,
@@ -2465,13 +2477,13 @@ function mpMsg(t, bad) { const e = $('mpMsg'); e.textContent = t; e.style.color 
 function loadScript(u) { return new Promise((ok, no) => { const s = document.createElement('script'); s.src = u; s.onload = ok; s.onerror = () => no(new Error('load ' + u)); document.head.appendChild(s); }); }
 async function mpConnect() {
   if (MP.db) return MP.db;
-  if (!(window.firebase && firebase.database)) {
-    const V = '9.23.0', srcs = [
-      ['https://www.gstatic.com/firebasejs/' + V + '/firebase-app-compat.js', 'https://www.gstatic.com/firebasejs/' + V + '/firebase-database-compat.js'],
-      ['https://cdnjs.cloudflare.com/ajax/libs/firebase/' + V + '/firebase-app-compat.min.js', 'https://cdnjs.cloudflare.com/ajax/libs/firebase/' + V + '/firebase-database-compat.min.js'],
-      ['https://cdn.jsdelivr.net/npm/firebase@' + V + '/firebase-app-compat.js', 'https://cdn.jsdelivr.net/npm/firebase@' + V + '/firebase-database-compat.js']];
+  if (!(window.firebase && firebase.database && firebase.auth)) {
+    const V = '9.23.0', mk = b => ['app', 'database', 'auth'].map(n => b(n)), srcs = [
+      mk(n => 'https://www.gstatic.com/firebasejs/' + V + '/firebase-' + n + '-compat.js'),
+      mk(n => 'https://cdnjs.cloudflare.com/ajax/libs/firebase/' + V + '/firebase-' + n + '-compat.min.js'),
+      mk(n => 'https://cdn.jsdelivr.net/npm/firebase@' + V + '/firebase-' + n + '-compat.js')];
     let ok = false;
-    for (const [a, d] of srcs) { try { await loadScript(a); await loadScript(d); ok = true; break; } catch (_) { } }
+    for (const list of srcs) { try { for (const u of list) await loadScript(u); ok = true; break; } catch (_) { } }
     if (!ok) throw new Error('Không tải được thư viện Firebase (kiểm tra mạng)');
   }
   let cfg = FB_DEFAULT;
@@ -2480,9 +2492,25 @@ async function mpConnect() {
   if (!firebase.apps.length) firebase.initializeApp(cfg);
   MP.db = firebase.database(); return MP.db;
 }
+/* host = tài khoản email/mật khẩu (chủ game); khách = đăng nhập ẩn danh */
+async function mpAuth(host) {
+  const au = firebase.auth(); await new Promise(ok => { const off = au.onAuthStateChanged(() => { off(); ok(); }); });
+  const u = au.currentUser;
+  if (host) {
+    if (u && !u.isAnonymous) return;
+    const em = ($('mpEmail').value || '').trim(), pw = $('mpPass').value;
+    if (!em || !pw) { $('mpHostBox').open = true; throw new Error('Nhập email và mật khẩu chủ phòng ở bên dưới rồi bấm Tạo phòng lại.'); }
+    await au.signInWithEmailAndPassword(em, pw);
+    try { localStorage.setItem('tb_hostmail', em); } catch (_) { } $('mpPass').value = '';
+  } else if (!u) await au.signInAnonymously();
+}
 function mpErr(e) {
   const m = (e && (e.code || e.message)) || String(e);
-  if (/PERMISSION_DENIED/i.test(m)) return 'Firebase từ chối quyền ghi. Vào Realtime Database → Rules, dán: {"rules":{"rooms":{".read":true,".write":true}}} rồi Publish.';
+  if (/PERMISSION_DENIED/i.test(m)) return 'Firebase từ chối quyền. Chỉ chủ game mới tạo được phòng; nếu bạn là chủ, kiểm tra lại Rules đã Publish đúng chưa.';
+  if (/operation-not-allowed/i.test(m)) return 'Chưa bật đăng nhập trong Firebase → Authentication → Sign-in method (cần Email/Password và Anonymous).';
+  if (/wrong-password|invalid-credential|user-not-found|invalid-login/i.test(m)) return 'Sai email hoặc mật khẩu chủ phòng.';
+  if (/invalid-email/i.test(m)) return 'Email không hợp lệ.';
+  if (/too-many-requests/i.test(m)) return 'Thử đăng nhập quá nhiều lần, đợi một lúc rồi thử lại.';
   return m;
 }
 function genCode() { const a = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; let s = ''; for (let i = 0; i < 4; i++) s += a[Math.floor(Math.random() * a.length)]; return s; }
@@ -2491,7 +2519,7 @@ function genCode() { const a = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; let s = ''; f
 async function mpCreate() {
   if (MP.busy) return; MP.busy = true;
   try {
-    mpMsg('Đang kết nối…'); await mpConnect();
+    mpMsg('Đang kết nối…'); await mpConnect(); await mpAuth(true);
     for (let i = 0; i < 8; i++) {
       const code = genCode(), r = MP.db.ref('rooms/' + code + '/lobby'), v = (await r.once('value')).val();
       if (v && Date.now() - (v.ts || 0) < 3 * 3600e3) continue;
@@ -2506,7 +2534,7 @@ async function mpJoin() {
   if (MP.busy) return; const code = $('mpCode').value.trim().toUpperCase(); if (code.length !== 4) { mpMsg('Nhập mã phòng 4 ký tự', true); return; }
   MP.busy = true;
   try {
-    mpMsg('Đang kết nối…'); await mpConnect();
+    mpMsg('Đang kết nối…'); await mpConnect(); await mpAuth(false);
     const r = MP.db.ref('rooms/' + code + '/lobby'), v = (await r.once('value')).val();
     if (!v) { mpMsg('Không thấy phòng ' + code, true); return; }
     const tr = await r.child('j').transaction(c => c ? undefined : 1);
@@ -2801,6 +2829,8 @@ $('mpSaveCfg').addEventListener('click', () => {
   catch (e) { mpMsg('Cấu hình lỗi: ' + e.message, true); }
 });
 for (const id of ['charPick', 'bossPick', 'diffPick']) $(id).addEventListener('click', () => setTimeout(() => { if (MP.room) { mpPushPicks(); mpUpdateUI(); } }, 0));
+
+try { const m = localStorage.getItem('tb_hostmail'); if (m) $('mpEmail').value = m; } catch (_) { }
 /* ===== Audio: WebAudio synth (no files) ===== */
 const SND = { ctx: null, master: null, rev: null, nz: null, muted: false, vol: 0.6, active: 0, bed: null, started: false, nextVoice: 9, lastHit: 0, lastShot: 0, lastBoom: 0, drumT: 0,
   partA: {}, phase: 1, bossAlive: true, lastCd: 0, kT: undefined, dashing: false, bar: false, melee: false, curve: null };
@@ -3594,7 +3624,7 @@ function updateCamera(dt) {
 
 
 /* ---------- character + difficulty select ---------- */
-const DIFFS = [{ spd: 0.8, dmg: 0.7, ex: 0, hp: 0.75, lead: 0.5 }, { spd: 1, dmg: 0.9, ex: 0, hp: 0.85, lead: 0.75 }, { spd: 1.2, dmg: 1.2, ex: 1, hp: 1, lead: 0.9 }];
+const DIFFS = [{ spd: 0.8, dmg: 0.7, ex: 0, hp: 0.75, lead: 0.75 }, { spd: 1, dmg: 0.9, ex: 0, hp: 0.85, lead: 0.85 }, { spd: 1.2, dmg: 1.2, ex: 1, hp: 1, lead: 0.9 }];
 G.char = 'tank'; G.diff = 1; G.boss = 1;
 let unlocked2 = false;
 try { unlocked2 = localStorage.getItem('tb_u2') === '1'; } catch (_) { }
@@ -3681,6 +3711,8 @@ function resetGame() {
   pl.char = G.char; applyChar();
   Object.assign(pl, { hp: pl.maxHp, sh: pl.shMax, shState: 'ready', shTimer: 0, shHit: 0, shFlash: 0, en: 100, k: 0, kTarget: 0, transCd: 0, fireCd: 0, dashT: 0, invuln: 0, meleeT: 0, meleeCd: 0, vy: 0, boosting: false, boostLock: false, alive: true, stun: 0, hstun: 0, yaw: 0, aimYaw: 0, mode: 'tank', rockets: 0, rocketT: 0, lean: 0, roll: 0, dashVy: 0, heat: 0, ohT: 0, slowT: 0, parT: 0, dashCd: 0, burst: false });
   pl.pos.set(B.start.x, 0, B.start.z); pl.vel.set(0, 0, 0); pl.root.visible = true; saberPivot.visible = false;
+  for (const b of [B1, B2, B3, B4]) { if (b.atk && b.atk.cancel) { try { b.atk.cancel(); } catch (_) { } } b.atk = null; }
+  cleanFx(); setWarn('');
   B.reset(); mpAfterReset();
   clearProjectiles(); hideTele(); for (const s of shots.slice()) removeShot(s, shots);
   G.camYaw = B.start.yaw; G.target = B.keys.includes('core') ? 'core' : B.keys[B.keys.length - 1]; G.lockOn = true; G.jam = false; G.time = 0; G.intro = 3.6; G.hitT = 0;
