@@ -175,7 +175,7 @@ button.cta:disabled{opacity:.5;cursor:not-allowed}
 
 <div class="screen" id="menu">
   <div class="card">
-    <h1>Titan <em>Breaker</em> <small class="ver">v4.9</small></h1>
+    <h1>Titan <em>Breaker</em> <small class="ver">v5.0</small></h1>
     <div class="sub">Robot biến hình đấu boss khổng lồ</div>
     <div id="mpBar" hidden><span id="mpBarT"></span><button id="mpLeave">Rời phòng</button></div>
     <div class="plab">Boss</div>
@@ -215,7 +215,7 @@ button.cta:disabled{opacity:.5;cursor:not-allowed}
     <details style="margin:0 0 14px;color:var(--dim);font-size:13px"><summary style="cursor:pointer">Nhập mã mở khóa</summary>
       <div style="margin-top:8px"><input class="mpin" id="codeIn" style="width:200px;font-size:16px;letter-spacing:.1em;text-transform:none" placeholder="Mã" autocomplete="off" autocapitalize="off"> <button class="cta" id="codeBtn" style="padding:10px 18px;font-size:13px">Mở khóa</button> <span id="codeMsg"></span></div>
     </details>
-    <div class="stick"><button class="cta" id="startBtn">Xuất kích</button><button class="cta" id="mpBtn" style="margin-left:10px;background:var(--cyan)">Chơi 2 người</button></div>
+    <div class="stick"><button class="cta" id="startBtn">Xuất kích</button><button class="cta" id="mpBtn" style="margin-left:10px;background:var(--cyan)">Chơi 2 người</button><button class="cta" id="aiBtn" style="margin-left:10px;background:#3a4658;color:#fff">Đồng đội AI: TẮT</button></div>
   </div>
 </div>
 <div class="screen" id="mpScr" hidden>
@@ -775,7 +775,7 @@ function updateShots(dt) {
 /* ---------- damage to player ---------- */
 function shieldUp() { return IN.shield && pl.shState === 'ready' && pl.alive && pl.k % 1 === 0 && G.state === 'playing'; }
 function hurtPlayer(amount, o) {
-  o = o || {}; if (MP.swapped) return false; amount *= DIFFS[G.diff].dmg * (G.boss === 1 ? 0.9 : 1.1); if (pl.char === 'arty' && pl.k > 0.5) amount *= 0.75; pl.lastBlocked = false;
+  o = o || {}; if (MP.swapped) return MP.ai ? aiHurt(amount, o) : false; amount *= DIFFS[G.diff].dmg * (G.boss === 1 ? 0.9 : 1.1); if (pl.char === 'arty' && pl.k > 0.5) amount *= 0.75; pl.lastBlocked = false;
   if (!pl.alive || pl.invuln > 0 || G.state !== 'playing') return false;
   { const dk = domeAt(pl.pos, pl.pos.y); if (dk) { domeAbsorb(dk, amount, true); pl.lastBlocked = true; return true; } }
   if (!o.air && B.alive && barrierBlocksSeg(B.pos.x, B.pos.z, pl.pos.x, pl.pos.z)) {
@@ -1175,6 +1175,11 @@ function updateEproj(dt) {
     if (e.pos.distanceTo(pc) < hr && pl.alive) {
       if (e.kind === 'missile') { if (hurtPlayer(e.dmg, { shieldMul: 1.3 })) { explode(e.pos, 1, 0xffa040); killE(e); } }
       else if (hurtPlayer(e.dmg, e.sm ? { shieldMul: e.sm } : undefined)) { if (e.spike) pl.shHit = Math.max(pl.shHit, 3); burst(e.pos, 10, 10, 0xff8030, 0.4, 2); killE(e); }
+      continue;
+    }
+    if (MP.ai && gh.alive && e.pos.distanceTo(MP.ghostC) < hr) {
+      if (e.kind === 'missile') { if (aiHurt(e.dmg, { shieldMul: 1.3 })) { explode(e.pos, 1, 0xffa040); killE(e); } }
+      else if (aiHurt(e.dmg, e.sm ? { shieldMul: e.sm } : undefined)) { burst(e.pos, 10, 10, 0xff8030, 0.4, 2); killE(e); }
       continue;
     }
     if (e.pos.y < 0.3 || e.pos.length() > ARENA_R * 2.3 || rockHit(e.pos, (e.dmg || 10) * 3, false)) { if (e.kind === 'missile') explode(e.pos, 0.8, 0xffa040); else burst(e.pos, 6, 7, 0xff8030, 0.3, 2); killE(e); }
@@ -2620,6 +2625,7 @@ function mpAfterReset() {
   if (MP.on) pl.pos.x += MP.me === 'h' ? -8 : 8;
 }
 function mpEnded() {
+  if (MP.ai) { aiStop(); return; }
   $('againBtn').hidden = true; $('nextBtn').hidden = true; MP.on = false; mpDetach();
   try { MP.db.ref('rooms/' + MP.code + '/s/' + MP.me).remove(); } catch (_) { }
 }
@@ -2630,7 +2636,7 @@ function mpPartnerLeft(roomGone) {
 }
 
 /* ---- messaging ---- */
-function mpSend(o) { if (!MP.on || !MP.evRef) return; o.f = MP.me; MP.evRef.push(o).catch(() => { }); }
+function mpSend(o) { if (!MP.on || MP.ai || !MP.evRef) return; o.f = MP.me; MP.evRef.push(o).catch(() => { }); }
 function mpOnEvent(e) {
   if (!e || e.f === MP.me || !MP.on) return;
   if (e.t === 'd') { const h = G.hitT; MP.applying = true; try { _bossDamage(e.k, e.d, V3(e.x, e.y, e.z)); } finally { MP.applying = false; } G.hitT = h; }
@@ -2668,6 +2674,7 @@ function mpOnState(s) {
   gh.fireN = s.f;
 }
 function mpSendState() {
+  if (MP.ai) return;
   const fc = pl.fireCd; if (fc > MP.lastFireCd + 0.005) MP.fireN++; MP.lastFireCd = fc;
   const st = { x: r2(pl.pos.x), y: r2(pl.pos.y), z: r2(pl.pos.z), yw: r2(pl.yaw), ay: r2(pl.aimYaw), ap: r2(pl.aimPitch), k: r2(pl.k), c: CHARS.indexOf(pl.char),
     h: Math.round(pl.hp / pl.maxHp * 100), a: pl.alive ? 1 : 0, f: MP.fireN, s: shieldUp() ? 1 : 0, m: (pl.stab || pl.meleeT > 0) ? 1 : 0,
@@ -2675,6 +2682,7 @@ function mpSendState() {
   MP.db.ref('rooms/' + MP.code + '/s/' + MP.me).set(st).catch(() => { });
 }
 function mpSendSnap() {
+  if (MP.ai) return;
   const p = {}; for (const k in B.parts) { const q = B.parts[k]; p[k] = [Math.round(q.hp), q.alive ? 1 : 0]; }
   const snap = { x: r1(B.pos.x), z: r1(B.pos.z), yw: r2(B.yaw), ph: B.phase, al: B.alive ? 1 : 0, p }; if (B.snapOut) Object.assign(snap, B.snapOut());
   MP.db.ref('rooms/' + MP.code + '/bs').set(snap).catch(() => { });
@@ -2792,7 +2800,7 @@ function mpUpdateGhost(dt) {
 function mpHud(dt) {
   MP.hudT -= dt; if (MP.hudT > 0) return; MP.hudT = 0.15;
   const nm = CNAME[gh.ch] || '';
-  $('mateN').textContent = 'ĐỒNG ĐỘI · ' + nm;
+  $('mateN').textContent = MP.ai ? 'AI · ' + AIM[AI.mode] : 'ĐỒNG ĐỘI · ' + nm;
   let v = gh.left ? 'ĐÃ THOÁT' : gh.alive ? gh.hp + '%' : 'GỤC';
   if (!pl.alive && gh.alive) v = 'Bạn đã gục, chờ hồi sinh'; else if (MP.revT > 0) v = 'HỒI SINH ' + MP.revT.toFixed(1) + '/3s'; else if (!gh.alive && !gh.left && MP.revUsed[MP.other] >= 1) v = 'GỤC (đã dùng hồi sinh)';
   $('mateV').textContent = v; $('mateHp').firstElementChild.style.transform = 'scaleX(' + clamp((gh.alive && !gh.left ? gh.hp : 0) / 100, 0, 1) + ')';
@@ -2800,9 +2808,12 @@ function mpHud(dt) {
 function mpOnDeath() { MP.deadAt = G.time; mpSendState(); say('BẠN ĐÃ GỤC', 'Đồng đội có thể hồi sinh bạn (đứng gần 3 giây)', 3); }
 function mpTick(dt) {
   mpUpdateGhost(dt);
-  MP.sendT -= dt; if (MP.sendT <= 0) { MP.sendT = 0.07; mpSendState(); }
-  if (MP.host) { MP.bsT -= dt; if (MP.bsT <= 0) { MP.bsT = 0.2; mpSendSnap(); } }
-  if (!gh.left && G.intro <= 0 && performance.now() - gh.last > 12000) mpPartnerLeft();
+  if (MP.ai) { gh.last = performance.now(); aiTick(dt); }
+  else {
+    MP.sendT -= dt; if (MP.sendT <= 0) { MP.sendT = 0.07; mpSendState(); }
+    if (MP.host) { MP.bsT -= dt; if (MP.bsT <= 0) { MP.bsT = 0.2; mpSendSnap(); } }
+    if (!gh.left && G.intro <= 0 && performance.now() - gh.last > 12000) mpPartnerLeft();
+  }
   if (pl.alive && !gh.alive && !gh.left && MP.revUsed[MP.other] < 1 && G.state === 'playing') {
     if (Math.hypot(pl.pos.x - gh.pos.x, pl.pos.z - gh.pos.z) < 10) {
       MP.revT += dt;
@@ -3016,9 +3027,9 @@ for (const ev of ['pointerdown', 'keydown', 'touchstart']) window.addEventListen
 document.addEventListener('click', e => { if (e.target.closest && e.target.closest('button') && e.target.id !== 'sndBtn') sfx('click'); });
 /* ===== Team commands (2 players) ===== */
 const COM = {
-  all: { t: 'ALL-OUT ATTACK', col: '#ff9a3d', n: '1' }, ret: { t: 'RETREAT', col: '#6db8ff', n: '2' }, ast: { t: 'ASSAULT', col: '#ff5a4a', n: '3' },
-  foc: { t: 'TẬP TRUNG', col: '#ffd23d', n: '4' }, cau: { t: 'CẨN THẬN!', col: '#ff4a3d', n: '5' } };
-const COM_ORDER = ['all', 'ret', 'ast', 'foc', 'cau'];
+  all: { t: 'ALL-OUT ATTACK', col: '#ff9a3d', n: '1' }, ret: { t: 'RETREAT', col: '#6db8ff', n: '2' }, ast: { t: 'XUNG PHONG', col: '#ff5a4a', n: '3' },
+  foc: { t: 'TẬP TRUNG', col: '#ffd23d', n: '4' }, cau: { t: 'CẨN THẬN!', col: '#ff4a3d', n: '5' }, fol: { t: 'THEO TÔI', col: '#6dff9a', n: '6' } };
+const COM_ORDER = ['all', 'ret', 'ast', 'foc', 'cau', 'fol'];
 const comS = { msgT: 0, pingT: 0, pingKey: null, cd: 0, open: false };
 const comProj = V3();
 function comPickPart() {
@@ -3036,7 +3047,7 @@ function comShow(c, k, mine) {
 }
 function comSend(c) {
   if (!MP.on || G.state !== 'playing' || comS.cd > 0) return; comS.cd = 1.2;
-  const k = c === 'foc' ? comPickPart() : undefined; const o = { t: 'c', c }; if (k) o.k = k; mpSend(o); comShow(c, k, true); comOpen(false);
+  const k = c === 'foc' ? comPickPart() : undefined; const o = { t: 'c', c }; if (k) o.k = k; mpSend(o); comShow(c, k, true); comOpen(false); if (MP.ai) aiCommand(c, k);
 }
 function comRecv(e) { if (MP.on && G.state === 'playing') comShow(e.c, e.k, false); }
 function comOpen(on) { comS.open = on && MP.on && G.state === 'playing'; $('comWheel').hidden = !comS.open; }
@@ -3574,6 +3585,141 @@ function updateBoss4(dt) {
   b4Show(); b4Pose(dt);
 }
 B4.update = updateBoss4;
+/* ===== AI teammate (single player) — reuses the 2-player partner machinery, driven locally ===== */
+MP.ai = false;
+const AI = { want: false, mode: 'atk', ch: 'heli', hp: 1, max: 1, sh: 1, shMax: 1, shState: 'ready', shT: 0, shHit: 0, shOn: false, inv: 0, dead: false, fireT: 1, heat: 0, ohT: 0, shotN: 0,
+  focus: null, key: 'core', keyT: 0, dir: 1, dirT: 2, formCd: 0, transT: 0, revT: 0, meleeT: 0, mFlash: 0, evade: 0, evDir: 1, evCd: 0, starting: false };
+const AIM = { atk: 'TẤN CÔNG', fol: 'THEO TÔI', def: 'PHÒNG THỦ', chg: 'XUNG PHONG', foc: 'TẬP TRUNG', cau: 'CẨN THẬN' };
+const AI_STAT = { tank: [220, 120, 17, 42], heli: [180, 100, 21, 48], arty: [260, 150, 10.5, 62] }; /* maxHp, shield, speed, range */
+const AI_DMG = 0.75;
+try { AI.want = localStorage.getItem('tb_ai') === '1'; } catch (_) { }
+
+function aiBtnSync() { const b = $('aiBtn'); b.textContent = 'Đồng đội AI: ' + (AI.want ? 'BẬT' : 'TẮT'); b.setAttribute('aria-pressed', AI.want ? 'true' : 'false'); b.style.background = AI.want ? 'var(--green,#6dff9a)' : '#3a4658'; b.style.color = AI.want ? '#06210f' : '#fff'; }
+$('aiBtn').addEventListener('click', () => { AI.want = !AI.want; try { localStorage.setItem('tb_ai', AI.want ? '1' : '0'); } catch (_) { } aiBtnSync(); });
+aiBtnSync();
+{ const _u = mpUpdateUI; mpUpdateUI = function () { _u(); $('aiBtn').hidden = MP.room; }; }
+
+const _startGameRaw = startGame;
+startGame = function () { if (!MP.on && !MP.room && AI.want) return aiGo(); return _startGameRaw.apply(this, arguments); };
+const _resetGameRaw = resetGame;
+resetGame = function () { if (MP.ai && !AI.starting) aiStop(); return _resetGameRaw.apply(this, arguments); };
+
+function aiGo() {
+  const o = CHARS.filter(c => c !== G.char); AI.ch = o[(Math.random() * o.length) | 0]; const st = AI_STAT[AI.ch];
+  AI.starting = true; MP.on = true; MP.ai = true; MP.host = true; MP.me = 'h'; MP.other = 'g'; MP.tgt = 'h'; MP.evRef = null; MP.swapped = false; MP.applying = false;
+  MP.revUsed = { h: 0, g: 0 }; MP.revT = 0; MP.deadAt = 0; MP.fireN = 0; MP.ringT = 0;
+  Object.assign(AI, { mode: 'atk', max: st[0], hp: st[0], shMax: st[1], sh: st[1], shState: 'ready', shT: 0, shHit: 0, shOn: false, inv: 0, dead: false, fireT: 1.2, heat: 0, ohT: 0, shotN: 0,
+    focus: null, key: 'core', keyT: 0, dir: Math.random() < 0.5 ? 1 : -1, dirT: 2, formCd: 0, transT: 0, revT: 0, meleeT: 0, mFlash: 0, evade: 0, evDir: 1, evCd: 0 });
+  Object.assign(gh, { ch: AI.ch, alive: true, left: false, hp: 100, k: 0, tk: 0, sh: 0, bar: 0, m: 0, fireN: 0, first: false, last: performance.now() });
+  try { _startGameRaw(); } finally { AI.starting = false; }
+  gh.pos.set(B.start.x + 8, 0, B.start.z); gh.tp.copy(gh.pos); gh.yaw = gh.ty = 0; gh.vel.set(0, 0, 0); gh.ay = 0; gh.ap = 0;
+  $('mate').hidden = false;
+}
+function aiStop() {
+  MP.on = false; MP.ai = false; MP.swapped = false; gh.alive = false; ghostG.visible = false; ghostShield.visible = false; ghostBar.visible = false; $('mate').hidden = true;
+  try { comOpen(false); } catch (_) { }
+}
+
+/* commands from the wheel */
+function aiCommand(c, k) {
+  const m = { all: 'atk', ret: 'def', ast: 'chg', foc: 'foc', cau: 'cau', fol: 'fol' }[c]; if (!m) return;
+  AI.mode = m; AI.focus = (m === 'foc' && k) ? k : null; AI.keyT = 0;
+}
+
+/* damage taken by the AI (called from hurtPlayer while the partner is the swapped target) */
+function aiHurt(amount, o) {
+  pl.lastBlocked = true; o = o || {};
+  if (!gh.alive || G.state !== 'playing') return false;
+  if (AI.inv > 0 && !o.noInv) return false;
+  amount *= DIFFS[G.diff].dmg * (G.boss === 1 ? 0.9 : 1.1); if (AI.ch === 'arty' && gh.tk > 0.5) amount *= 0.75;
+  if (!o.pierce && AI.shOn) {
+    AI.sh -= amount * (o.shieldMul || 1); AI.shHit = 2; burst(MP.ghostC, 6, 8, 0x7af0ff, 0.3, 0);
+    if (AI.sh <= 0) { AI.sh = 0; AI.shState = 'broken'; AI.shT = 6; AI.shOn = false; burst(MP.ghostC, 30, 14, 0x9aeaff, 0.7, 3); }
+    return true;
+  }
+  AI.hp -= amount; AI.inv = 0.12; gh.hp = Math.max(0, Math.round(AI.hp / AI.max * 100)); burst(MP.ghostC, 6, 8, 0xff8030, 0.3, 0);
+  if (AI.hp <= 0) { AI.hp = 0; AI.dead = true; gh.alive = false; gh.hp = 0; AI.shOn = false; gh.sh = 0; gh.m = 0; explode(MP.ghostC, 1.6, 0xffb050); say('ĐỒNG ĐỘI AI ĐÃ GỤC', 'Đến gần 3 giây để hồi sinh', 2.4); }
+  return true;
+}
+
+function aiPickKey() {
+  const f = AI.focus; if (f && B.parts[f] && (f === 'core' || B.parts[f].alive)) return f;
+  const ks = B.keys.filter(k => B.parts[k] && B.parts[k].alive && !(k === 'core' && B.noCore)); if (!ks.length) return null;
+  const minor = ks.filter(k => k !== 'core'), pool = minor.length && Math.random() < 0.65 ? minor : ks; return pool[(Math.random() * pool.length) | 0];
+}
+function aiHit(dmg, mel) {
+  const k = AI.key, pt = k && B.parts[k]; if (!pt || !B.alive || (k !== 'core' && !pt.alive)) return;
+  const was = MP.applying, h = G.hitT; MP.applying = true; if (mel) G.mel = true;
+  try { bossDamage(k, dmg, B.pp[k].clone()); } finally { MP.applying = was; G.mel = false; G.hitT = h; }
+}
+function aiThreat() { return MP.tgt === 'g' && (!!B.atk || (G.boss === 4 && (F4.jet.tgt === 'g' || F4.jug.tgt === 'g'))); }
+
+function aiTick(dt) {
+  if (G.state !== 'playing') return;
+  if (AI.inv > 0) AI.inv -= dt;
+  if (gh.alive && AI.dead) { AI.dead = false; AI.hp = AI.max * 0.5; gh.hp = 50; AI.inv = 2.5; AI.sh = AI.shMax; AI.shState = 'ready'; AI.shT = 0; }
+  if (!gh.alive) { gh.sh = 0; gh.m = 0; return; }
+  if (G.intro > 0 || !B.alive) { gh.sh = 0; return; }
+  AI.formCd -= dt; AI.transT -= dt; AI.keyT -= dt; AI.dirT -= dt; AI.evCd -= dt; AI.mFlash -= dt; AI.shHit -= dt;
+  const st = AI_STAT[AI.ch], heli = AI.ch === 'heli', robot = gh.tk > 0.5, trans = AI.transT > 0;
+  if (AI.keyT <= 0 || !AI.key || (AI.key !== 'core' && !(B.parts[AI.key] && B.parts[AI.key].alive))) { AI.key = aiPickKey(); AI.keyT = 3.5; }
+  if (!AI.key) return;
+  const tp = B.pp[AI.key], dx = tp.x - gh.pos.x, dz = tp.z - gh.pos.z, dist = Math.max(0.1, Math.hypot(dx, dz));
+  /* shield */
+  const threat = aiThreat();
+  if (AI.shState === 'broken') { AI.shT -= dt; if (AI.shT <= 0) { AI.shState = 'ready'; AI.sh = AI.shMax * 0.4; } }
+  else if (!AI.shOn && AI.shHit <= 0) AI.sh = Math.min(AI.shMax, AI.sh + 16 * dt);
+  const wantSh = AI.mode === 'cau' || (threat && (AI.mode === 'def' || AI.hp < AI.max * 0.4));
+  AI.shOn = wantSh && AI.shState === 'ready' && AI.sh > 0 && !trans; if (AI.shOn) AI.sh = Math.max(0, AI.sh - 6 * dt); gh.sh = AI.shOn ? 1 : 0;
+  /* evade: when the boss locks onto us, sprint sideways */
+  if (threat && AI.evCd <= 0) { AI.evade = 1.3; AI.evDir = Math.random() < 0.5 ? 1 : -1; AI.evCd = G.boss === 4 ? 2.6 : 3.2; }
+  AI.evade = Math.max(0, AI.evade - dt);
+  /* form */
+  const wantRobot = AI.mode === 'chg' ? dist < 30 : dist < 13;
+  if (wantRobot !== robot && AI.formCd <= 0 && !(heli && !robot && false)) { gh.tk = wantRobot ? 1 : 0; AI.formCd = 4; AI.transT = heli ? 0.6 : 1.1; burst(MP.ghostC, 14, 9, 0x9aeaff, 0.4, 0); }
+  const rb = gh.tk > 0.5;
+  /* movement target */
+  let tx, tz;
+  const aw = Math.atan2(gh.pos.x - tp.x, gh.pos.z - tp.z);
+  if (AI.dirT <= 0) { AI.dir = Math.random() < 0.5 ? 1 : -1; AI.dirT = 2 + Math.random() * 3; }
+  if (AI.mode === 'fol') {
+    const sy = Math.sin(pl.yaw), cy = Math.cos(pl.yaw); tx = pl.pos.x + cy * 12 - sy * 4; tz = pl.pos.z - sy * 12 - cy * 4;
+  } else {
+    let R = st[3] * (AI.mode === 'def' || AI.mode === 'cau' ? 1.45 : 1);
+    if (AI.mode === 'chg') R = rb ? 6.5 : 14;
+    const a = aw + AI.dir * 0.5; tx = tp.x + Math.sin(a) * R; tz = tp.z + Math.cos(a) * R;
+  }
+  if (AI.evade > 0) { const pa = Math.atan2(dx, dz) + AI.evDir * Math.PI / 2; tx = gh.pos.x + Math.sin(pa) * 30; tz = gh.pos.z + Math.cos(pa) * 30; }
+  if (!pl.alive && !gh.left) { tx = pl.pos.x; tz = pl.pos.z; }
+  if (Math.hypot(pl.pos.x - tx, pl.pos.z - tz) < 9 && pl.alive) { const ax = tx - pl.pos.x, az = tz - pl.pos.z, al = Math.max(0.1, Math.hypot(ax, az)); tx = pl.pos.x + ax / al * 11; tz = pl.pos.z + az / al * 11; }
+  const lim = ARENA_R - 8, tr = Math.hypot(tx, tz); if (tr > lim) { tx *= lim / tr; tz *= lim / tr; }
+  const mx = tx - gh.tp.x, mz = tz - gh.tp.z, ml = Math.hypot(mx, mz);
+  let spd = (rb ? (AI.ch === 'arty' ? 8 : heli ? 15.6 : 10) : st[2]) * 0.85 * (AI.shOn ? 0.5 : 1) * (trans ? 0.4 : 1) * (AI.evade > 0 ? 1.25 : 1);
+  if (ml > 0.5) { const s = Math.min(ml, spd * dt) / ml; gh.tp.x += mx * s; gh.tp.z += mz * s; }
+  const wy = heli && !rb ? clamp(tp.y, 6, 16) : 0; gh.tp.y += clamp(wy - gh.tp.y, -14 * dt, 14 * dt);
+  gh.ty = Math.atan2(dx, dz); gh.ay = gh.ty; gh.ap = Math.atan2(tp.y - (gh.pos.y + 2), dist);
+  /* revive the player */
+  if (!pl.alive && MP.revUsed.h < 1) {
+    if (Math.hypot(pl.pos.x - gh.pos.x, pl.pos.z - gh.pos.z) < 8) { AI.revT += dt; if (AI.revT >= 3) { AI.revT = 0; mpOnEvent({ t: 'rv', to: 'h', f: 'g' }); } } else AI.revT = 0;
+    return;
+  } AI.revT = 0;
+  /* attack */
+  AI.fireT -= dt; gh.m = AI.mFlash > 0 ? 1 : 0;
+  if (!AI.shOn && !trans && dist < 130) {
+    const slow = AI.mode === 'def' ? 1.6 : 1;
+    if (AI.ohT > 0) { AI.ohT -= dt; if (AI.ohT <= 0) AI.heat = 0.3; }
+    else if (heli && !rb && AI.heat > 0) AI.heat = Math.max(0, AI.heat - 0.12 * dt);
+    if (AI.fireT <= 0 && AI.ohT <= 0) {
+      const reach = AI.ch === 'tank' ? 7.5 : heli ? 11 : 0;
+      if (rb && reach && dist < reach + 4 + (tp.y > 0 ? 0 : 0) && AI.mode !== 'def') {
+        const d = AI.ch === 'tank' ? 75 : 60; AI.fireT = (AI.ch === 'tank' ? 0.95 : 0.76) * slow; AI.mFlash = 0.35; aiHit(d * AI_DMG, true); burst(tp, 16, 14, 0x9aeaff, 0.5, 2);
+      } else if (rb) { AI.fireT = (AI.ch === 'arty' ? 1.4 : 0.55) * slow; aiHit((AI.ch === 'arty' ? 48 : 30) * AI_DMG); mpTracer(); }
+      else if (heli) { AI.fireT = 0.08 * slow; aiHit(2.8 * AI_DMG); if (AI.shotN++ % 3 === 0) mpTracer(); AI.heat += 0.035; if (AI.heat >= 1) { AI.heat = 1; AI.ohT = 2; } }
+      else if (AI.ch === 'tank') { AI.fireT = 1.0 * slow; aiHit(33 * AI_DMG); mpTracer(); }
+      else { AI.fireT = 4.3 * slow; aiHit(100 * AI_DMG); mpTracer(); }
+    }
+  }
+}
 /* ===== camera, HUD, game flow ===== */
 const camPosS = V3(0, 8, -60), camLookS = V3(0, 10, 0), _d = V3();
 let bannerT = 0;
@@ -3742,8 +3888,8 @@ $('resumeBtn').addEventListener('click', () => setPaused(false));
 let quitPaused = false;
 function quitAsk() {
   if (G.state !== 'playing' && G.state !== 'paused') return;
-  quitPaused = false; if (G.state === 'playing' && !MP.on) { setPaused(true); quitPaused = true; }
-  $('quitSub').textContent = MP.on ? 'Ván online sẽ đóng cho cả hai người và quay về màn hình chính' : 'Ván hiện tại sẽ kết thúc và quay về màn hình chính';
+  quitPaused = false; if (G.state === 'playing' && !(MP.on && !MP.ai)) { setPaused(true); quitPaused = true; }
+  $('quitSub').textContent = (MP.on && !MP.ai) ? 'Ván online sẽ đóng cho cả hai người và quay về màn hình chính' : 'Ván hiện tại sẽ kết thúc và quay về màn hình chính';
   $('quitDlg').hidden = false;
 }
 function quitToMenu(remote) {
@@ -3764,13 +3910,13 @@ $('codeBtn').addEventListener('click', () => {
   if (v === 'titanmatrix') { unlocked2 = unlocked3 = unlocked4 = true; try { localStorage.setItem('tb_u2', '1'); localStorage.setItem('tb_u3', '1'); localStorage.setItem('tb_u4', '1'); } catch (_) { } syncPick(); $('codeMsg').textContent = 'Đã mở khóa Boss 2, 3 và 4'; $('codeMsg').style.color = '#6dff9a'; }
   else { $('codeMsg').textContent = 'Mã không đúng'; $('codeMsg').style.color = '#ff6a5d'; }
 });
-document.addEventListener('visibilitychange', () => { if (document.hidden && !MP.on) setPaused(true); });
+document.addEventListener('visibilitychange', () => { if (document.hidden && !(MP.on && !MP.ai)) setPaused(true); });
 
 let last = performance.now();
 function loop(now) {
   requestAnimationFrame(loop);
   const dt = Math.min(0.05, (now - last) / 1000); last = now;
-  if (IN.pressed.pause && !MP.on) { if (G.state === 'playing') setPaused(true); else if (G.state === 'paused') setPaused(false); }
+  if (IN.pressed.pause && !(MP.on && !MP.ai)) { if (G.state === 'playing') setPaused(true); else if (G.state === 'paused') setPaused(false); }
   const run = G.state === 'playing' || G.state === 'ending';
   if (run) {
     G.time += dt; if (G.intro > 0) G.intro -= dt;
