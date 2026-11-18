@@ -176,7 +176,7 @@ button.cta:disabled{opacity:.5;cursor:not-allowed}
 
 <div class="screen" id="menu">
   <div class="card">
-    <h1>Titan <em>Breaker</em> <small class="ver">v5.5</small></h1>
+    <h1>Titan <em>Breaker</em> <small class="ver">v5.7</small></h1>
     <div class="sub">Robot biến hình đấu boss khổng lồ</div>
     <div id="mpBar" hidden><span id="mpBarT"></span><button id="mpLeave">Rời phòng</button></div>
     <div class="plab">Boss</div>
@@ -192,6 +192,9 @@ button.cta:disabled{opacity:.5;cursor:not-allowed}
       <button class="opt" data-c="heli" aria-pressed="false"><b>Trực thăng</b><span>Bay lơ lửng, súng máy + rocket, mỏng giáp</span></button>
       <button class="opt" data-c="arty" aria-pressed="false"><b>Pháo hạng nặng</b><span>Xe 6 bánh, pháo 2 nòng, đạn chậm nổ lớn, rất trâu</span></button>
     </div>
+    <div class="plab">Skin</div>
+    <div class="pick" id="skinPick"></div>
+    <div id="skinHint" style="font-size:12px;color:var(--dim);margin:-6px 0 10px;min-height:14px"></div>
     <div class="plab">Độ khó của boss</div>
     <div class="pick small" id="diffPick">
       <button class="opt" data-d="0" aria-pressed="false">Dễ</button>
@@ -712,16 +715,16 @@ const _v = V3(), _w = V3();
 const arAlt = { n: 0 };
 function fireArty() {
   pl.root.updateMatrixWorld(true);
-  const robot = pl.k > 0.5, ms = robot ? [(arAlt.n ^= 1) ? muzzle : muzzleB] : [muzzle, muzzleB];
+  const robot = pl.k > 0.5, sv = artySilver(), ms = robot ? [sv ? muzzle : (arAlt.n ^= 1) ? muzzle : muzzleB] : sv ? [muzzle] : [muzzle, muzzleB];
   for (const mz of ms) {
     const mp = mz.getWorldPosition(V3()), d = aimPoint.clone().sub(mp).normalize(), sp = 0.012;
     d.x += rnd(-sp, sp); d.y += rnd(-sp, sp); d.z += rnd(-sp, sp); d.normalize();
     const m = new THREE.Mesh(shellGeo, ART.shell); m.scale.set(robot ? 1.6 : 2.2, robot ? 1.6 : 2.2, robot ? 2.2 : 3.0); m.position.copy(mp); m.lookAt(mp.clone().add(d)); scene.add(m);
-    const dmg = robot ? 30 : 46;
-    shots.push({ mesh: m, pos: mp.clone(), vel: d.multiplyScalar(robot ? 85 : 62), dmg, life: 3.2, r: robot ? 1.2 : 1.6, splash: robot ? 6 : 9, sdmg: dmg * 0.6, ab: true });
+    const dmg = (robot ? 30 : 46) * (sv && !robot ? 1.7 : 1);
+    shots.push({ mesh: m, pos: mp.clone(), vel: d.multiplyScalar((robot ? 85 : 62) * (sv ? 1.3 : 1)), dmg, life: 3.2, r: robot ? 1.2 : 1.6, splash: robot ? 6 : 9, sdmg: dmg * 0.6, ab: true });
     burst(mp, robot ? 8 : 14, 12, 0xffc070, 0.3, 0);
   }
-  pl.fireCd = robot ? 1.4 : 4.3; shake(robot ? 0.12 : 0.3);
+  pl.fireCd = robot ? 1.4 : 4.3; pl.shotT = 0.3; shake(robot ? 0.12 : 0.3);
 }
 function artySplash(s, direct) {
   const p = s.pos; explode(p, s.splash * 0.14, 0xffa040); burst(p, 26, 16, 0xffd070, 0.5, 3); flatRing(p.x, p.z, 1, s.splash, 0xffa040, 0.4, 1); shake(0.35); rockSplash(p, s.splash, s.sdmg, true);
@@ -739,7 +742,7 @@ function fireShot() {
   shots.push({ mesh: m, pos: mp.clone(), vel: d.multiplyScalar(robot ? 170 : hg ? 190 : 125), dmg: robot ? 30 : hg ? 2.8 : 33, life: 1.6, r: hg ? 1.3 : 0.7, coreMul: hg ? 0.85 : 1 });
   burst(mp, hg ? 2 : 5, 8, robot ? 0x7af0ff : 0xffd070, 0.18, 0);
   if (hg) { pl.heat += 0.01; if (pl.heat >= 1) { pl.heat = 1; pl.ohT = 3; } }
-  pl.fireCd = robot ? 0.55 : hg ? 0.08 : 1.0; shake(hg ? 0.02 : 0.05);
+  pl.fireCd = robot ? 0.55 : hg ? 0.08 : 1.0; pl.shotT = 0.3; shake(hg ? 0.02 : 0.05);
 }
 function removeShot(s, arr) { scene.remove(s.mesh); arr.splice(arr.indexOf(s), 1); }
 function trackSpeeds(dt) {
@@ -824,7 +827,8 @@ function updatePlayer(dt) {
   if (!pl.alive) return;
   pl.hstun = Math.max(0, (pl.hstun || 0) - dt);
   const frozen = G.intro > 0 || pl.hstun > 0;
-  pl.invuln = Math.max(0, pl.invuln - dt); pl.slowT = Math.max(0, (pl.slowT || 0) - dt); pl.parT = Math.max(0, (pl.parT || 0) - dt); pl.dashCd = Math.max(0, (pl.dashCd || 0) - dt); pl.fireCd -= dt; pl.castT = Math.max(0, (pl.castT || 0) - dt); if (pl.ohT > 0) { pl.ohT -= dt; pl.heat = Math.max(0, pl.ohT / 3); } else if (pl.heat > 0 && !IN.fire) pl.heat = Math.max(0, pl.heat - 0.3 * dt); pl.meleeCd -= dt; pl.transCd -= dt; pl.stun = Math.max(0, pl.stun - dt);
+  pl.invuln = Math.max(0, pl.invuln - dt); pl.slowT = Math.max(0, (pl.slowT || 0) - dt); pl.parT = Math.max(0, (pl.parT || 0) - dt); pl.dashCd = Math.max(0, (pl.dashCd || 0) - dt); pl.fireCd -= dt; pl.shotT = Math.max(0, (pl.shotT || 0) - dt); pl.castT = Math.max(0, (pl.castT || 0) - dt); if (pl.ohT > 0) { pl.ohT -= dt; pl.heat = Math.max(0, pl.ohT / 3); } else if (pl.heat > 0 && !IN.fire) pl.heat = Math.max(0, pl.heat - 0.3 * dt); pl.meleeCd -= dt; pl.transCd -= dt; pl.stun = Math.max(0, pl.stun - dt);
+  const fireBusy = !!IN.fire || pl.shotT > 0; /* firing and sword/stab/punch are mutually exclusive */
   /* transform */
   if (IN.pressed.transform && pl.transCd <= 0 && pl.k === pl.kTarget && !frozen) {
     pl.kTarget = pl.kTarget ? 0 : 1; pl.transCd = pl.char === 'heli' ? 1.1 : 2.2; burst(pCenter(), 24, 10, 0x9aeaff, 0.5, 0); flatRing(pl.pos.x, pl.pos.z, 1, 7, 0x9aeaff, 0.5, 0.8);
@@ -866,7 +870,7 @@ function updatePlayer(dt) {
     burst(pCenter(), 20, 12, 0x7af0ff, 0.4, 0); shake(0.2);
   }
   if (pl.char === 'tank' && robot && !trans) {
-    if (!pl.charging && IN.pressed.space && pl.en >= 70 && pl.dashT <= 0 && pl.dashCd <= 0 && !frozen) { if (up) { pl.shCut = true; setLock('shield', false, autoLock.shield ? 'KHÓA KHIÊN: TẮT' : ''); } pl.charging = true; pl.chargeT = 0; burst(pCenter(), 16, 10, 0x9aeaff, 0.4, 0); }
+    if (!pl.charging && IN.pressed.space && !fireBusy && pl.en >= 70 && pl.dashT <= 0 && pl.dashCd <= 0 && !frozen) { if (up) { pl.shCut = true; setLock('shield', false, autoLock.shield ? 'KHÓA KHIÊN: TẮT' : ''); } pl.charging = true; pl.chargeT = 0; burst(pCenter(), 16, 10, 0x9aeaff, 0.4, 0); }
     if (pl.charging) {
       pl.chargeT += dt;
       if (frozen || pl.parT > 0) pl.charging = false;
@@ -924,7 +928,7 @@ function updatePlayer(dt) {
   { const bx = pl.pos.x - B.pos.x, bz = pl.pos.z - B.pos.z, br = Math.hypot(bx, bz), lim = B.colR + 2.4; if (B.alive && br < lim && pl.pos.y < B.colH) { const k = lim / Math.max(br, 0.01); pl.pos.x = B.pos.x + bx * k; pl.pos.z = B.pos.z + bz * k; } }
   collideRocks(pl.pos);
   /* weapons */
-  if (IN.fire && !up && !trans && !pl.pOn && pl.fireCd <= 0 && !(pl.ohT > 0) && !frozen && G.state === 'playing') fireShot();
+  if (IN.fire && !up && !trans && !pl.pOn && !(pl.meleeT > 0 || pl.charging || (pl.stab && pl.dashT > 0)) && !(swordMode() && robot) && pl.fireCd <= 0 && !(pl.ohT > 0) && !frozen && G.state === 'playing') fireShot();
   if (IN.pressed.melee && heliMode && pl.en >= 50 && pl.rockets <= 0 && !up && !frozen) { pl.en -= 50; pl.rockets = 6; pl.rocketT = 0; }
   if (pl.rockets > 0) { pl.rocketT -= dt; if (pl.rocketT <= 0) { fireRocket(pl.rockets % 2 ? 1 : -1); pl.rockets--; pl.rocketT = 0.07; } }
   /* arty punch: hold to charge, release to send the wave */
@@ -932,14 +936,14 @@ function updatePlayer(dt) {
   if (pl.pOn && (pl.char !== 'arty' || !robot || trans || frozen || !pl.alive)) { pl.pOn = false; punchRing.visible = false; }
   if (pl.char === 'arty' && robot && !trans && !frozen && pl.alive && G.state === 'playing') {
     const held = !!(keys.KeyF || touch.held.m);
-    if (!pl.pOn && IN.pressed.melee && pl.pCd <= 0) { pl.pOn = true; pl.pCh = 0; if (up) { pl.shCut = true; setLock('shield', false, autoLock.shield ? 'KHÓA KHIÊN: TẮT' : ''); } }
+    if (!pl.pOn && IN.pressed.melee && !fireBusy && pl.pCd <= 0) { pl.pOn = true; pl.pCh = 0; if (up) { pl.shCut = true; setLock('shield', false, autoLock.shield ? 'KHÓA KHIÊN: TẮT' : ''); } }
     if (pl.pOn) {
       if (held) { pl.pCh = Math.min(2, pl.pCh + dt); setRing(punchRing, pl.pos.x, pl.pos.z, punchR(pl.pCh) - 0.5, punchR(pl.pCh), 0.14 + 0.1 * pl.pCh / 2); emit(pl.pos.x + rnd(-2.5, 2.5), 1 + rnd(0, 4), pl.pos.z + rnd(-2.5, 2.5), rnd(-3, 3), rnd(2, 6), rnd(-3, 3), 0xff9a3c, 0.4, 0); }
       else { punchRelease(); pl.pOn = false; pl.pCd = 4; punchRing.visible = false; }
     }
   }
   { const mb = document.getElementById('t-melee'); if (mb && pl.char === 'arty') { mb.classList.toggle('chg', !!pl.pOn); mb.classList.toggle('cd', pl.pCd > 0 && !pl.pOn); mb.style.setProperty('--c', (pl.pOn ? pl.pCh / 2 : 0).toFixed(2)); } }
-  if (IN.pressed.melee && robot && !trans && pl.char !== 'arty' && pl.meleeCd <= 0 && !up && !frozen) { const md = pl.char === 'heli' ? 0.32 : 0.4; pl.meleeT = md; pl.meleeDur = md; pl.meleeCd = SB().cd * md / (pl.char === 'heli' ? 0.32 : 0.4); pl.meleeHit = false; }
+  if (IN.pressed.melee && robot && !trans && pl.char !== 'arty' && !swordMode() && !fireBusy && pl.meleeCd <= 0 && !up && !frozen) { const md = pl.char === 'heli' ? 0.32 : 0.4; pl.meleeT = md; pl.meleeDur = md; pl.meleeCd = SB().cd * md / (pl.char === 'heli' ? 0.32 : 0.4); pl.meleeHit = false; }
   if (pl.meleeT > 0) {
     pl.meleeT -= dt; const f = 1 - pl.meleeT / (pl.meleeDur || 0.4);
     saberPivot.visible = pl.meleeT > 0; saberPivot.rotation.y = lerp(1.1, -1.1, f); saberPivot.rotation.x = -0.15;
@@ -2723,13 +2727,14 @@ function mpFixTgt() {
   if (MP.tgt === MP.me && !meUp && oUp) MP.tgt = MP.other; else if (MP.tgt !== MP.me && !oUp && meUp) MP.tgt = MP.me;
 }
 function mpChoose() {
+  if (MP.ai && gh.alive && pl.alive && stealthTry()) return MP.other;
   const meUp = pl.alive, oUp = gh.alive && !gh.left;
   if (meUp && !oUp) return MP.me; if (!meUp && oUp) return MP.other;
   const bp = B.pos || { x: 0, z: 0 }, dm = Math.hypot(pl.pos.x - bp.x, pl.pos.z - bp.z), dO = Math.hypot(gh.pos.x - bp.x, gh.pos.z - bp.z), nearMe = dm <= dO;
   return Math.random() < 0.6 ? (nearMe ? MP.me : MP.other) : (nearMe ? MP.other : MP.me);
 }
 function mpPick(n) {
-  if (!MP.on) { if (n === 1) startAttack(pickAttack()); else if (n === 2) startAttack2(pick2()); else startAttack3(pick3()); return; }
+  if (!MP.on) { if (stealthTry()) { const bb = n === 1 ? B1 : n === 2 ? B2 : B3; bb.timer = 1.4; return; } if (n === 1) startAttack(pickAttack()); else if (n === 2) startAttack2(pick2()); else startAttack3(pick3()); return; }
   if (!MP.host) return;
   mpSwapOut(); MP.tgt = mpChoose(); if (mpTgtRemote()) mpSwapIn();
   const t = n === 1 ? pickAttack() : n === 2 ? pick2() : pick3();
@@ -3320,7 +3325,7 @@ function updateJet(f, dt) {
       f.timer -= dt;
       if (f.timer <= 0 && b4Host()) {
         const t = jetDecide(f);
-        if (t) { if (MP.on) mpSend({ t: 'a', o: 'jet', y: t, g: f.tgt }); startJetAtk(f, t); } else f.timer = 0.4;
+        if (t) { const st = stealthTry(); if (st && !(MP.ai && gh.alive)) f.timer = 1.4; else { if (st) f.tgt = MP.other; if (MP.on) mpSend({ t: 'a', o: 'jet', y: t, g: f.tgt }); startJetAtk(f, t); } } else f.timer = 0.4;
       }
     }
   } else {
@@ -3402,7 +3407,8 @@ function jugToTank(f) {
 function updateJug(f, dt) {
   const P = B4.parts.jug, jet = F4.jet;
   if (f.lastHp === undefined) f.lastHp = P.hp; if (P.hp < f.lastHp - 0.01) f.hitT = 4; f.lastHp = P.hp; f.hitT -= dt;
-  const far = f.hitT > 0, RC = far ? 400 : 120, RM = far ? 400 : 75;
+  f.stlT = (f.stlT || 0) - dt; if (f.stlT <= 0) { f.stlT = 3; if (!MP.on) stealthTry(); }
+  const far = f.hitT > 0, blind = STL.t > 0 && !MP.on, RC = blind ? 0 : far ? 400 : 120, RM = blind ? 0 : far ? 400 : 75;
   f.tgtT -= dt;
   if (f.tgtT <= 0) { f.tgtT = rnd(6, 9); if (MP.on && MP.host) { f.tgt = mpChoose(); mpSend({ t: 'a', o: 'jug', y: 'tg', g: f.tgt }); } }
   f.guard = !jet.dead && B4.parts.jet.hp < B4.parts.jet.max * 0.25;
@@ -3812,6 +3818,187 @@ function aiBarrier(tp) {
   AI.en -= 95; barrier.active = true; barrier.hp = barrier.max; barrier.t = 0; barrier.grow = 0; barrier.push = 0.35; barrier.yaw = yaw;
   barrier.pos.set(gh.pos.x + Math.sin(yaw) * 9, 0, gh.pos.z + Math.cos(yaw) * 9); barrierMesh.visible = true; burst(V3(barrier.pos.x, 3, barrier.pos.z), 30, 14, 0x9aeaff, 0.6, 2);
 }
+/* ===== Skins: tank camo x4, yellow heli (thrown sword), silver arty (long barrel); stealth vs bosses ===== */
+const SKINS = {
+  tank: [
+    { id: 'camo1', n: 'Camo 1', s: 'Thép đêm · tàng hình', need: 'Hạ Boss 1 bằng Xe tăng (Thường trở lên)' },
+    { id: 'camo2', n: 'Camo 2', s: 'Sa mạc · tàng hình', need: 'Hạ Boss 2 bằng Xe tăng (Thường trở lên)' },
+    { id: 'camo3', n: 'Camo 3', s: 'Tro núi lửa · tàng hình', need: 'Hạ Boss 3 bằng Xe tăng (Thường trở lên)' },
+    { id: 'camo4', n: 'Camo 4', s: 'Tuyết · tàng hình', need: 'Hạ Boss 4 bằng Xe tăng (Thường trở lên)' }],
+  heli: [{ id: 'heliY', n: 'Vàng', s: 'Máu −20% · robot không bắn, Kiếm phóng', need: 'Hạ Boss 3 (Thường trở lên)' }],
+  arty: [{ id: 'artyS', n: 'Bạc', s: '1 nòng dài · đạn +30% · khiên −40%', need: 'Hạ Boss 4 (Thường trở lên)' }],
+};
+let SK_UNL = {}, SK_SEL = { tank: '', heli: '', arty: '' };
+try { SK_UNL = JSON.parse(localStorage.getItem('tb_sk') || '{}') || {}; Object.assign(SK_SEL, JSON.parse(localStorage.getItem('tb_sksel') || '{}')); } catch (_) { }
+function skinSave() { try { localStorage.setItem('tb_sk', JSON.stringify(SK_UNL)); localStorage.setItem('tb_sksel', JSON.stringify(SK_SEL)); } catch (_) { } }
+function skinUnlockAll() { for (const c in SKINS) for (const s of SKINS[c]) SK_UNL[s.id] = 1; skinSave(); skinUI(); }
+if (location.hash === '#skins') for (const c in SKINS) for (const s of SKINS[c]) SK_UNL[s.id] = 1;
+function curSkin() { const s = SK_SEL[pl.char] || ''; return (s && SK_UNL[s] && !(MP.on && !MP.ai)) ? s : ''; }
+const swordMode = () => curSkin() === 'heliY' && pl.char === 'heli';
+const artySilver = () => curSkin() === 'artyS' && pl.char === 'arty';
+function skinWin(win) {
+  if (!win || G.diff < 1) return; const got = [];
+  const add = id => { if (!SK_UNL[id]) { SK_UNL[id] = 1; got.push(id); } };
+  if (pl.char === 'tank') add('camo' + G.boss);
+  if (G.boss === 3) add('heliY'); if (G.boss === 4) add('artyS');
+  if (!got.length) return; skinSave(); skinUI();
+  const nm = id => { for (const c in SKINS) for (const s of SKINS[c]) if (s.id === id) return (c === 'tank' ? 'Xe tăng ' : c === 'heli' ? 'Trực thăng ' : 'Pháo ') + s.n + (s.s ? ' (' + s.s.split(' · ')[0] + ')' : ''); return id; };
+  $('stats').textContent += '  ·  MỞ KHÓA SKIN: ' + got.map(nm).join(', ');
+}
+
+/* ---- menu ---- */
+function skinUI() {
+  const c = G.char, list = SKINS[c], el = $('skinPick'); el.innerHTML = '';
+  const mk = (id, n, s, locked, need) => {
+    const b = document.createElement('button'); b.className = 'opt'; b.dataset.k = id;
+    b.setAttribute('aria-pressed', (SK_SEL[c] || '') === id && !locked ? 'true' : 'false'); if (locked) b.style.opacity = 0.55;
+    b.innerHTML = '<b>' + (locked ? '🔒 ' : '') + n + '</b><span>' + s + '</span>'; b.dataset.need = locked ? need : ''; el.appendChild(b);
+  };
+  mk('', 'Gốc', 'Mặc định', false, '');
+  for (const s of list) mk(s.id, s.n, s.s, !SK_UNL[s.id], s.need);
+  $('skinHint').textContent = '';
+}
+$('skinPick').addEventListener('click', e => {
+  const b = e.target.closest('.opt'); if (!b) return;
+  if (b.dataset.need) { $('skinHint').textContent = 'Mở khóa: ' + b.dataset.need; return; }
+  SK_SEL[G.char] = b.dataset.k; skinSave(); skinUI();
+});
+{ const _s = syncPick; syncPick = function () { _s(); skinUI(); }; }
+
+/* ---- camo textures ---- */
+function rng(seed) { let a = seed >>> 0; return () => { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+const CAMO = [
+  { bg: [40, 44, 58], c: [[26, 30, 42], [58, 66, 86], [30, 52, 70], [70, 160, 190]] },
+  { bg: [176, 146, 92], c: [[120, 96, 52], [92, 84, 44], [210, 184, 130], [70, 56, 34]] },
+  { bg: [52, 40, 38], c: [[26, 20, 20], [86, 34, 28], [70, 58, 54], [190, 70, 30]] },
+  { bg: [226, 230, 238], c: [[176, 186, 202], [240, 242, 248], [128, 144, 168], [98, 112, 138]] },
+];
+const camoCache = {};
+function camoMat(n, v) {
+  const key = n + '_' + v; if (camoCache[key]) return camoCache[key];
+  const P = CAMO[n - 1], S = 128, cv = document.createElement('canvas'); cv.width = cv.height = S; const g = cv.getContext('2d'), R = rng(n * 977 + v * 131);
+  const rgb = a => 'rgb(' + a.join(',') + ')'; g.fillStyle = rgb(P.bg); g.fillRect(0, 0, S, S);
+  for (const col of P.c) {
+    g.fillStyle = rgb(col);
+    for (let i = 0; i < 7; i++) {
+      const cx = R() * S, cy = R() * S, rx = 14 + R() * 26, ry = 8 + R() * 16, N = 12;
+      for (const ox of [-S, 0, S]) for (const oy of [-S, 0, S]) { g.beginPath(); for (let k = 0; k < N; k++) { const a = k / N * 6.283, r = 0.65 + R() * 0.5; g.lineTo(cx + ox + Math.cos(a) * rx * r, cy + oy + Math.sin(a) * ry * r); } g.closePath(); g.fill(); }
+    }
+  }
+  const t = new THREE.CanvasTexture(cv); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(1.5, 1.5);
+  const m = new THREE.MeshStandardMaterial({ map: t, roughness: 0.62, metalness: 0.2 }); if (v) m.color.setScalar(0.72); return camoCache[key] = m;
+}
+const GOLD = new THREE.MeshStandardMaterial({ color: 0xf6c428, roughness: 0.35, metalness: 0.5 }), GOLD2 = new THREE.MeshStandardMaterial({ color: 0xc99a18, roughness: 0.4, metalness: 0.5 });
+const SIL1 = new THREE.MeshStandardMaterial({ color: 0xc4cad6, roughness: 0.3, metalness: 0.75 }), SIL2 = new THREE.MeshStandardMaterial({ color: 0x8e96a8, roughness: 0.35, metalness: 0.7 }), SILD = new THREE.MeshStandardMaterial({ color: 0x4a5062, roughness: 0.5, metalness: 0.6 });
+
+/* ---- models ---- */
+parts.forEach(p => { p.rpT = p.rp.clone(); p.rsT = p.rs.clone(); });
+const HELI_Y = [ /* vehicle form: tp, ts (slimmer fuselage, long thin boom) */
+  [V3(-0.9, 0.3, 0.1), V3(0.1, 0.1, 3.8)], [V3(0.9, 0.3, 0.1), V3(0.1, 0.1, 3.8)], [V3(0, 1.85, 0), V3(1.4, 1.3, 4.2)], [V3(0, 1.85, 2.15), V3(0.8, 0.4, 0.15)],
+  [V3(-0.8, 1.0, 0.2), V3(0.07, 1.3, 0.07)], [V3(0.8, 1.0, 0.2), V3(0.07, 1.3, 0.07)], [V3(-1.05, 1.75, -0.1), V3(0.9, 0.2, 1.1)], [V3(1.05, 1.75, -0.1), V3(0.9, 0.2, 1.1)],
+  [V3(0, 0, 0), V3(1.1, 0.7, 1.8)], [V3(0, 2.15, -3.5), V3(0.28, 0.34, 4.6)], [V3(0, 2.85, -5.6), V3(0.1, 1.3, 0.9)],
+];
+const HELI_YR = [ /* robot form: rp, rs (slim, tall) */
+  [V3(-0.7, 1.25, 0), V3(0.6, 2.5, 0.8)], [V3(0.7, 1.25, 0), V3(0.6, 2.5, 0.8)], [V3(0, 3.1, 0), V3(1.4, 1.5, 0.9)], [V3(0, 2.55, 0.48), V3(0.8, 0.4, 0.12)],
+  [V3(-1.25, 3.35, 0), V3(0.45, 2.0, 0.6)], [V3(1.25, 3.35, 0), V3(0.45, 2.0, 0.6)], [V3(-0.4, 2.8, -0.5), V3(0.3, 0.4, 0.12)], [V3(0.4, 2.8, -0.5), V3(0.3, 0.4, 0.12)],
+  [V3(0, 0.25, 0), V3(2.3, 0.5, 1.0)], [V3(0, 2.9, 0), HID.clone()], [V3(0, 2.9, 0), HID.clone()],
+];
+const heliDeco = new THREE.Group(); pl.root.add(heliDeco); heliDeco.visible = false;
+for (const s of [-1, 1]) { const w = bx(GOLD2, heliDeco); w.scale.set(0.08, 2.9, 0.55); w.position.set(s * 0.95, 4.35, -0.75); w.rotation.z = -s * 0.38; const w2 = bx(M.dark, heliDeco); w2.scale.set(0.1, 2.2, 0.3); w2.position.set(s * 1.05, 4.2, -0.78); w2.rotation.z = -s * 0.38; }
+const crest = bx(GOLD, heliDeco); crest.scale.set(0.12, 0.9, 0.5); crest.position.set(0, 5.75, 0.1);
+const rings = []; for (let i = 0; i < 3; i++) { const r = bx(SILD, gunPivot); r.visible = false; rings.push(r); }
+const sbChildren = bigShield.children.map(c => c.material);
+const headBody = head.children[0], heliBlades = [rotor.children[1], rotor.children[2]];
+
+function skinApply() {
+  const sk = curSkin(), c = pl.char, H = c === 'heli', A = c === 'arty';
+  /* restore defaults first */
+  parts.forEach(p => { p.rp.copy(p.rpT); p.rs.copy(p.rsT); });
+  headBody.material = M.white; headBody.scale.set(0.95, 0.9, 0.95); heliDeco.visible = false; for (const r of rings) r.visible = false;
+  bigShield.children.forEach((m, i) => { m.material = sbChildren[i]; });
+  heliBlades[0].scale.set(8, 0.06, 0.45); heliBlades[1].scale.set(0.45, 0.06, 8);
+  if (sk.startsWith('camo') && c === 'tank') {
+    const n = +sk.slice(4), A1 = camoMat(n, 0), B1m = camoMat(n, 1);
+    parts.forEach(p => { p.mesh.material = p.m0 === M.white ? A1 : (p.m0 === M.blue ? B1m : p.m0 === M.red ? B1m : p.m0); });
+    headBody.material = A1;
+  } else if (sk === 'heliY' && H) {
+    parts.forEach((p, i) => {
+      if (HELI_Y[i]) { p.tp.copy(HELI_Y[i][0]); p.ts.copy(HELI_Y[i][1]); p.rp.copy(HELI_YR[i][0]); p.rs.copy(HELI_YR[i][1]); }
+      p.mesh.material = p.m0 === M.white ? GOLD : p.m0 === M.blue ? GOLD2 : p.m0 === M.red ? (i === 10 ? GOLD2 : M.dark) : p.m0;
+    });
+    headBody.material = GOLD; headBody.scale.set(0.8, 0.85, 0.8); heliBlades[0].scale.set(10.5, 0.04, 0.3); heliBlades[1].scale.set(0.3, 0.04, 10.5);
+    pl.maxHp = Math.round(pl.maxHp * 0.8);
+  } else if (sk === 'artyS' && A) {
+    parts.forEach((p, i) => { p.mesh.material = (i === 4 || i === 5) ? SILD : p.m0 === M.white ? SIL1 : p.m0 === M.blue ? SIL2 : p.m0 === M.red ? SILD : p.m0; });
+    headBody.material = SIL1; bigShield.children.forEach((m, i) => { m.material = i === 0 ? SIL1 : i === 1 ? SILD : i === 2 ? SIL2 : SILD; });
+    pl.shMax = Math.round(pl.shMax * 0.6);
+  }
+  swReset();
+}
+{ const _a = applyChar; applyChar = function () { _a.apply(this, arguments); skinApply(); }; }
+
+/* per-frame: fade (stealth), silver barrel, deco */
+const STL = { t: 0, cd: 0, a: 1 };
+function stealthTry() {
+  const sk = curSkin(); if (!sk.startsWith('camo') || !pl.alive || G.state !== 'playing' || G.intro > 0 || STL.cd > 0 || STL.t > 0) return false;
+  const p = (+sk.slice(4) === G.boss) ? 0.15 : 0.10; if (Math.random() >= p) return false;
+  STL.t = 1.6; STL.cd = 5; say('TÀNG HÌNH', 'Boss mất dấu bạn', 1.2, true); return true;
+}
+function skinFrame(dt) {
+  const sk = curSkin();
+  if (sk.startsWith('camo')) {
+    STL.a = lerp(STL.a, STL.t > 0 ? 0.35 : 1, damp(10, dt)); const n = +sk.slice(4);
+    for (const v of [0, 1]) { const m = camoMat(n, v), tr = STL.a < 0.98; m.opacity = STL.a; if (m.transparent !== tr) { m.transparent = tr; m.needsUpdate = true; } } if (STL.t > 0) emit(pl.pos.x + rnd(-1.5, 1.5), pl.pos.y + rnd(0.5, 3), pl.pos.z + rnd(-1.5, 1.5), 0, 1, 0, CAMO[n - 1].c[3] ? (n === 4 ? 0xaec4e6 : 0x9aeaff) : 0x9aeaff, 0.3, 0);
+  } else STL.a = 1;
+  heliDeco.visible = sk === 'heliY' && pl.k > 0.5; heliDeco.scale.setScalar(Math.max(0.001, pl.k));
+  if (artySilver()) {
+    const k = ease(pl.k), len = lerp(8.8, 6.8, k), bt = 0.42;
+    barrelB.visible = tipB.visible = false; barrel.scale.set(bt, bt, len); barrel.position.set(0, 0, len / 2); muzzle.position.set(0, 0, len + 0.3); tip.position.set(0, 0, len); tip.scale.set(0.5, 0.5, 0.3);
+    rings.forEach((r, i) => { r.visible = true; r.scale.set(0.62, 0.62, 0.3); r.position.set(0, 0, len * (0.3 + i * 0.25)); });
+  }
+}
+{ const _p = poseModel; poseModel = function (dt) { _p(dt); skinFrame(dt); }; }
+
+/* ---- thrown sword (yellow heli robot) ---- */
+const SW = { st: 'idle', t: 0, pos: V3(), dir: V3(0, 0, 1), cd: 0, hit: {}, spin: 0 };
+const swG = new THREE.Group(); swG.visible = false; scene.add(swG);
+{ const b1 = bx(M.glow, swG); b1.scale.set(0.55, 0.2, 11); const b2 = bx(M.glow, swG); b2.scale.set(11, 0.2, 0.55); const c = bx(GOLD, swG); c.scale.set(1.3, 0.6, 1.3); }
+const SW_DMG = 90, SW_R = 5.5;
+function swReset() { SW.st = 'idle'; SW.cd = 0; SW.hit = {}; swG.visible = false; }
+function swHits() {
+  for (const key of B.keys) {
+    const b = B.parts[key]; if ((!b.alive && key !== 'core' && !B.regen) || SW.hit[key]) continue;
+    const wp = bossPartPos(key); if (wp.distanceTo(SW.pos) < b.r + SW_R) { SW.hit[key] = 1; G.mel = true; bossDamage(key, SW_DMG, wp.clone().lerp(SW.pos, 0.5)); G.mel = false; burst(wp, 30, 20, 0xffe27a, 0.6, 2); shake(0.45); }
+  }
+  for (let i = 0; i < rocks.length; i++) { const k = rocks[i]; if (k.alive && !SW.hit['r' + i] && SW.pos.y < 12 && rockDist(k, SW.pos.x, SW.pos.z) < SW_R) { SW.hit['r' + i] = 1; rockDamage(k, SW_DMG, true); burst(V3(k.x, 2, k.z), 14, 12, 0xffe27a, 0.4, 2); } }
+  for (const e of eproj.slice()) if (e.pos.distanceTo(SW.pos) < 7) missileOrBulletCut(e);
+}
+function swordTick(dt) {
+  if (!swordMode() || !pl.alive || pl.k < 0.5 || G.state !== 'playing') { if (SW.st !== 'idle') { swReset(); SW.cd = 1; } return; }
+  const robot = pl.k > 0.98, frozen = G.intro > 0 || pl.hstun > 0 || pl.parT > 0; SW.cd = Math.max(0, SW.cd - dt);
+  if (SW.st === 'idle') {
+    if ((IN.pressed.melee || IN.fire) && robot && SW.cd <= 0 && !frozen && !shieldUp()) { SW.st = 'wind'; SW.t = 0.45; pl.meleeCd = 0.45; burst(pCenter(), 12, 10, 0xffe27a, 0.4, 0); }
+    return;
+  }
+  const c = pCenter(); SW.spin += dt * 34; swG.rotation.y = SW.spin;
+  if (SW.st === 'wind') {
+    SW.t -= dt; swG.visible = true; swG.scale.setScalar(0.5); swG.position.copy(c).addScaledVector(V3(Math.sin(pl.yaw), 0, Math.cos(pl.yaw)), 3).setY(c.y + 1.2); SW.pos.copy(swG.position);
+    if (SW.t <= 0) { SW.dir.copy(aimPoint).sub(swG.position); if (SW.dir.lengthSq() < 1) SW.dir.set(Math.sin(pl.yaw), 0, Math.cos(pl.yaw)); SW.dir.normalize(); SW.st = 'out'; SW.t = 0.8; SW.hit = {}; swG.scale.setScalar(1); shake(0.2); sfx('boom', 0.6); }
+    return;
+  }
+  if (SW.st === 'out') {
+    SW.t -= dt; SW.pos.addScaledVector(SW.dir, 46 * dt); SW.pos.y = Math.max(1, SW.pos.y);
+    if (Math.hypot(SW.pos.x, SW.pos.z) > ARENA_R * 1.05) { SW.pos.x *= ARENA_R * 1.05 / Math.hypot(SW.pos.x, SW.pos.z); SW.pos.z *= ARENA_R * 1.05 / Math.hypot(SW.pos.x, SW.pos.z); }
+    swHits(); if (SW.t <= 0) { SW.st = 'hover'; SW.t = 0.25; }
+  } else if (SW.st === 'hover') { SW.t -= dt; if (SW.t <= 0) { SW.st = 'back'; SW.t = 3; SW.hit = {}; SW.sp = 30; } }
+  else if (SW.st === 'back') {
+    SW.t -= dt; SW.sp = Math.min(62, SW.sp + 70 * dt); const to = c.clone().sub(SW.pos), d = to.length();
+    if (d < 3 || SW.t <= 0) { SW.st = 'idle'; SW.cd = 0.5; swG.visible = false; burst(c, 10, 8, 0xffe27a, 0.3, 0); return; }
+    SW.pos.addScaledVector(to.multiplyScalar(1 / d), SW.sp * dt); swHits();
+  }
+  swG.position.copy(SW.pos); emit(SW.pos.x, SW.pos.y, SW.pos.z, rnd(-2, 2), rnd(-2, 2), rnd(-2, 2), 0xffe27a, 0.3, 0);
+}
+{ const _u = updatePlayer; updatePlayer = function (dt) { STL.t = Math.max(0, STL.t - dt); STL.cd = Math.max(0, STL.cd - dt); _u.apply(this, arguments); swordTick(dt); }; }
 /* ===== camera, HUD, game flow ===== */
 const camPosS = V3(0, 8, -60), camLookS = V3(0, 10, 0), _d = V3();
 let bannerT = 0;
@@ -3967,6 +4154,7 @@ function endGame(win) {
   $('endt').textContent = win ? 'Chiến thắng' : 'Thất bại';
   $('stats').textContent = win ? 'Thời gian ' + m + ':' + s + '  ·  Giáp còn ' + Math.ceil(pl.hp) + '/' + pl.maxHp
     : 'Kẻ địch còn ' + Math.ceil(B.parts.core.hp / B.parts.core.max * 100) + (G.boss === 4 ? '% máu' : '% lõi') + '  ·  Cầm cự ' + m + ':' + s;
+  try { skinWin(win); } catch (_) { }
   $('end').hidden = false; if (MP.on) mpEnded();
 }
 function setPaused(on) {
@@ -4000,7 +4188,7 @@ $('quitYes').addEventListener('click', () => quitToMenu(false));
 $('quitNo').addEventListener('click', () => { $('quitDlg').hidden = true; if (quitPaused) { quitPaused = false; setPaused(false); } });
 $('codeBtn').addEventListener('click', () => {
   const v = $('codeIn').value.trim().toLowerCase();
-  if (v === 'titanmatrix') { unlocked2 = unlocked3 = unlocked4 = true; try { localStorage.setItem('tb_u2', '1'); localStorage.setItem('tb_u3', '1'); localStorage.setItem('tb_u4', '1'); } catch (_) { } syncPick(); $('codeMsg').textContent = 'Đã mở khóa Boss 2, 3 và 4'; $('codeMsg').style.color = '#6dff9a'; }
+  if (v === 'titanmatrix') { unlocked2 = unlocked3 = unlocked4 = true; try { localStorage.setItem('tb_u2', '1'); localStorage.setItem('tb_u3', '1'); localStorage.setItem('tb_u4', '1'); } catch (_) { } try { skinUnlockAll(); } catch (_) { } syncPick(); $('codeMsg').textContent = 'Đã mở khóa Boss 2, 3, 4 và mọi skin'; $('codeMsg').style.color = '#6dff9a'; }
   else { $('codeMsg').textContent = 'Mã không đúng'; $('codeMsg').style.color = '#ff6a5d'; }
 });
 document.addEventListener('visibilitychange', () => { if (document.hidden && !(MP.on && !MP.ai)) setPaused(true); });
