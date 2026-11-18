@@ -45,6 +45,7 @@ html,body{height:100%;margin:0;background:var(--bg);color:var(--fg);font-family:
 #lockl{font-size:11px;letter-spacing:.14em;color:var(--cyan);display:none;left:0;top:0;white-space:nowrap}
 #banner{left:0;right:0;top:26%;text-align:center;opacity:0;transition:opacity .3s}
 #banner.on{opacity:1}
+#banner.sm{top:21%}#banner.sm b{font-size:clamp(12px,calc(var(--vw,1vw)*2.2),18px);letter-spacing:.1em;text-shadow:0 0 12px rgba(255,120,40,.6)}#banner.sm span{font-size:clamp(10px,calc(var(--vw,1vw)*1.6),13px)}
 #banner b{display:block;font-size:clamp(22px,calc(var(--vw,1vw)*5),44px);letter-spacing:.18em;text-transform:uppercase;text-shadow:0 0 24px rgba(255,120,40,.8)}
 #banner span{font-size:clamp(12px,calc(var(--vw,1vw)*2),16px);color:var(--dim);letter-spacing:.12em}
 #flash{inset:0;background:radial-gradient(ellipse at center,transparent 40%,rgba(255,40,30,.65));opacity:0;transition:opacity .25s}
@@ -175,7 +176,7 @@ button.cta:disabled{opacity:.5;cursor:not-allowed}
 
 <div class="screen" id="menu">
   <div class="card">
-    <h1>Titan <em>Breaker</em> <small class="ver">v5.0</small></h1>
+    <h1>Titan <em>Breaker</em> <small class="ver">v5.3</small></h1>
     <div class="sub">Robot biến hình đấu boss khổng lồ</div>
     <div id="mpBar" hidden><span id="mpBarT"></span><button id="mpLeave">Rời phòng</button></div>
     <div class="plab">Boss</div>
@@ -215,7 +216,7 @@ button.cta:disabled{opacity:.5;cursor:not-allowed}
     <details style="margin:0 0 14px;color:var(--dim);font-size:13px"><summary style="cursor:pointer">Nhập mã mở khóa</summary>
       <div style="margin-top:8px"><input class="mpin" id="codeIn" style="width:200px;font-size:16px;letter-spacing:.1em;text-transform:none" placeholder="Mã" autocomplete="off" autocapitalize="off"> <button class="cta" id="codeBtn" style="padding:10px 18px;font-size:13px">Mở khóa</button> <span id="codeMsg"></span></div>
     </details>
-    <div class="stick"><button class="cta" id="startBtn">Xuất kích</button><button class="cta" id="mpBtn" style="margin-left:10px;background:var(--cyan)">Chơi 2 người</button><button class="cta" id="aiBtn" style="margin-left:10px;background:#3a4658;color:#fff">Đồng đội AI: TẮT</button></div>
+    <div class="stick"><button class="cta" id="startBtn">Xuất kích</button><button class="cta" id="mpBtn" style="margin-left:10px;background:var(--cyan)">Chơi 2 người</button><button class="cta" id="aiBtn" style="margin-left:10px;background:#3a4658;color:#fff;font-size:10px;padding:8px 18px">Đồng đội AI: TẮT</button></div>
   </div>
 </div>
 <div class="screen" id="mpScr" hidden>
@@ -470,7 +471,7 @@ window.addEventListener('mousemove', e => { if (locked) { IN.dyaw -= e.movementX
 const touch = { move: null, look: null, joy: { x: 0, y: 0 }, held: {} };
 const autoLock = { fire: false, shield: false }, lockTap = { fire: 0, shield: 0 };
 function syncLock() { for (const k of ['fire', 'shield']) { const el = document.getElementById('t-' + k); if (el) el.classList.toggle('lock', autoLock[k]); } }
-function setLock(k, on, msg) { if (autoLock[k] === on) return; autoLock[k] = on; syncLock(); if (msg) say(msg, '', 0.9); }
+function setLock(k, on, msg) { if (autoLock[k] === on) return; autoLock[k] = on; syncLock(); if (msg) say(msg, '', 0.9, true); }
 if (isTouch) {
   $('touch').classList.add('on');
   const joy = $('joy'), knob = $('knob');
@@ -773,6 +774,13 @@ function updateShots(dt) {
 }
 
 /* ---------- damage to player ---------- */
+function shieldLook(low) { /* stage 4 has a bright floor: use normal blending + deeper colours so the shield stays visible */
+  const b = BRIGHT, bl = b ? THREE.NormalBlending : THREE.AdditiveBlending;
+  if (shieldMat.blending !== bl) { shieldMat.blending = bl; shieldWire.blending = bl; shieldMat.needsUpdate = true; shieldWire.needsUpdate = true; }
+  shieldMat.color.setHex(b ? (low < 0.3 ? 0xd8452b : 0x1593cc) : (low < 0.3 ? 0xff7050 : 0x4fd8ff));
+  shieldWire.color.setHex(b ? (low < 0.3 ? 0xb83a22 : 0x0e6b9c) : (low < 0.3 ? 0xffb090 : 0x9aeaff));
+  shieldWire.opacity = b ? 0.65 : 0.3; return b ? 0.2 : 0.1;
+}
 function shieldUp() { return IN.shield && pl.shState === 'ready' && pl.alive && pl.k % 1 === 0 && G.state === 'playing'; }
 function hurtPlayer(amount, o) {
   o = o || {}; if (MP.swapped) return MP.ai ? aiHurt(amount, o) : false; amount *= DIFFS[G.diff].dmg * (G.boss === 1 ? 0.9 : 1.1); if (pl.char === 'arty' && pl.k > 0.5) amount *= 0.75; pl.lastBlocked = false;
@@ -789,7 +797,7 @@ function hurtPlayer(amount, o) {
     if (pl.sh <= 0) {
       pl.sh = 0; pl.shState = 'broken'; pl.shTimer = 6; pl.stun = 0.9;
       burst(pCenter(), 40, 16, 0x9aeaff, 0.8, 4); flatRing(pl.pos.x, pl.pos.z, 1, 9, 0x9aeaff, 0.5, 1);
-      shake(0.8); say('KHIÊN VỠ', 'Chờ khiên hồi phục', 1.6);
+      shake(0.8); say('KHIÊN VỠ', 'Chờ khiên hồi phục', 1.6, true);
     }
     return true;
   }
@@ -820,7 +828,7 @@ function updatePlayer(dt) {
   /* transform */
   if (IN.pressed.transform && pl.transCd <= 0 && pl.k === pl.kTarget && !frozen) {
     pl.kTarget = pl.kTarget ? 0 : 1; pl.transCd = pl.char === 'heli' ? 1.1 : 2.2; burst(pCenter(), 24, 10, 0x9aeaff, 0.5, 0); flatRing(pl.pos.x, pl.pos.z, 1, 7, 0x9aeaff, 0.5, 0.8);
-    say(pl.kTarget ? 'DẠNG ROBOT' : 'DẠNG XE TĂNG', '', 1.2);
+    say(pl.kTarget ? 'DẠNG ROBOT' : 'DẠNG XE TĂNG', '', 1.2, true);
   }
   { const tr = dt / (pl.char === 'heli' ? 0.55 : 1.1); pl.k += clamp(pl.kTarget - pl.k, -tr, tr); }
   const trans = pl.k !== 0 && pl.k !== 1;
@@ -872,7 +880,7 @@ function updatePlayer(dt) {
   } else pl.charging = false;
   if (IN.pressed.space && robot && !trans && pl.char === 'arty' && pl.en >= 95 && !barrier.active && !frozen) {
     pl.en = 0; pl.castT = 0.5; barrier.active = true; barrier.hp = barrier.max; barrier.t = 0; barrier.grow = 0; barrier.push = 0.35; barrier.yaw = pl.aimYaw;
-    barrier.pos.set(pl.pos.x + Math.sin(pl.aimYaw) * 9, 0, pl.pos.z + Math.cos(pl.aimYaw) * 9); barrierMesh.visible = true; burst(V3(barrier.pos.x, 3, barrier.pos.z), 30, 14, 0x9aeaff, 0.6, 2); say('SHIELD', 'Núp sau Shield', 1);
+    barrier.pos.set(pl.pos.x + Math.sin(pl.aimYaw) * 9, 0, pl.pos.z + Math.cos(pl.aimYaw) * 9); barrierMesh.visible = true; burst(V3(barrier.pos.x, 3, barrier.pos.z), 30, 14, 0x9aeaff, 0.6, 2); say('SHIELD', 'Núp sau Shield', 1, true);
   }
   if (barrier.push > 0) {
     barrier.push -= dt;
@@ -960,8 +968,7 @@ function updatePlayer(dt) {
   if (shieldMesh.visible) {
     shieldMesh.position.copy(pCenter()); const as = pl.char === 'arty' ? pl.k : 0; shieldMesh.scale.setScalar(1 + 0.4 * as); shieldMesh.position.y += 0.9 * as;
     const low = pl.sh / pl.shMax;
-    shieldMat.color.setHex(low < 0.3 ? 0xff7050 : 0x4fd8ff); shieldWire.color.setHex(low < 0.3 ? 0xffb090 : 0x9aeaff);
-    shieldMat.opacity = 0.1 + pl.shFlash * 1.4; shieldMesh.rotation.y += dt * 0.6;
+    shieldMat.opacity = shieldLook(low) + pl.shFlash * 1.4; shieldMesh.rotation.y += dt * 0.6;
   }
   pl.root.visible = !(pl.invuln > 0 && pl.dashT <= 0 && Math.floor(G.time * 30) % 2 === 0 && pl.hp < pl.maxHp && false);
   poseModel(dt);
@@ -1123,7 +1130,7 @@ function bossDamage(key, dmg, pos) {
       explode(B.pp[key], minor ? 2 : 3, 0xffa040); shake(minor ? 0.6 : 1.1);
       B.mats[key].color.setHex(0x14161b); B.mats[key].emissive.setRGB(0, 0, 0);
       if (B.onDestroy) B.onDestroy(key);
-      say('ĐÃ PHÁ ' + pt.name, minor ? '' : (B.destroyMsg && B.destroyMsg[key]) || 'Lõi lộ ra, sát thương lên lõi tăng', 2.2);
+      if (B.alive) say('ĐÃ PHÁ ' + pt.name, minor ? '' : (B.destroyMsg && B.destroyMsg[key]) || 'Lõi lộ ra, sát thương lên lõi tăng', 2.2);
       if (G.target === key && !B.regen) G.target = 'core';
     }
   }
@@ -1131,18 +1138,19 @@ function bossDamage(key, dmg, pos) {
 function bossDie() {
   if (B.atk && B.atk.cancel) B.atk.cancel();
   B.alive = false; B.dying = 5; if (B.atk && B.atk.cancel) { try { B.atk.cancel(); } catch (_) { } } B.atk = null; clearProjectiles(); hideTele(); cleanFx(); if (B.onDie) B.onDie();
-  say(B.dieMsg || 'GUARDIAN SỤP ĐỔ', '', 3);
+  say(B.dieMsg || 'GUARDIAN ĐÃ SỤP ĐỔ', '', 3);
 }
 
 /* ===== enemy projectiles ===== */
 const bulletGeo = new THREE.SphereGeometry(0.85, 10, 8), bulletMat = new THREE.MeshBasicMaterial({ color: 0xff7a30 });
+const longGeo = new THREE.BoxGeometry(0.5, 0.5, 3.6), longMat = new THREE.MeshBasicMaterial({ color: 0xb04dff });
 const missGeo = new THREE.CylinderGeometry(0.02, 0.55, 2.6, 8).rotateX(Math.PI / 2), missMat = new THREE.MeshStandardMaterial({ color: 0xcfd6e0, emissive: 0xff5a20, emissiveIntensity: 0.6 });
 const spikeMat = new THREE.MeshStandardMaterial({ color: 0xc9b896, emissive: 0x7dff3a, emissiveIntensity: 0.5 });
 function spawnBullet(p, d, sp, dmg, spike, opt) {
-  const m = new THREE.Mesh(spike ? missGeo : bulletGeo, spike ? spikeMat : bulletMat); m.position.copy(p); scene.add(m);
+  const lg = !!(opt && opt.long), m = new THREE.Mesh(lg ? longGeo : spike ? missGeo : bulletGeo, lg ? longMat : spike ? spikeMat : bulletMat); m.position.copy(p); scene.add(m); if (lg) m.lookAt(p.clone().add(d));
   if (spike) m.scale.set(1.2, 1.2, 1.2);
   if (opt && opt.scale) m.scale.setScalar(opt.scale);
-  eproj.push({ kind: 'bullet', spike: !!spike, mesh: m, pos: p.clone(), vel: d.clone().multiplyScalar(sp), dmg, life: 5, hr: opt && opt.hr, sm: opt && opt.sm });
+  eproj.push({ kind: 'bullet', spike: !!spike, long: lg, mesh: m, pos: p.clone(), vel: d.clone().multiplyScalar(sp), dmg, life: 5, hr: opt && opt.hr, sm: opt && opt.sm });
 }
 function spawnMissile(p, hv, sp, turn, life, dmg) {
   const m = new THREE.Mesh(missGeo, missMat); m.position.copy(p); scene.add(m);
@@ -1169,7 +1177,7 @@ function updateEproj(dt) {
       emit(e.pos.x, e.pos.y, e.pos.z, rnd(-1, 1), rnd(-1, 1), rnd(-1, 1), 0xff8a40, 0.45, 0);
     }
     e.pos.addScaledVector(e.vel, dt); e.mesh.position.copy(e.pos);
-    if (e.kind === 'missile' || e.spike) e.mesh.lookAt(e.pos.clone().add(e.vel)); if (e.kind !== 'missile') emit(e.pos.x, e.pos.y, e.pos.z, 0, 0, 0, 0xff6a20, 0.25, 0);
+    if (e.kind === 'missile' || e.spike || e.long) e.mesh.lookAt(e.pos.clone().add(e.vel)); if (e.kind !== 'missile') emit(e.pos.x, e.pos.y, e.pos.z, 0, 0, 0, e.long ? 0xb870ff : 0xff6a20, 0.25, 0);
     if (typeof barrierHit === 'function' && barrierHit(e)) continue;
     const hr = e.hr || (e.kind === 'missile' ? 2.3 : 2.1);
     if (e.pos.distanceTo(pc) < hr && pl.alive) {
@@ -1265,8 +1273,7 @@ function atkArtillery() {
         const pil = new THREE.Mesh(new THREE.CylinderGeometry(s.R * 0.5, s.R * 0.5, 140, 16, 1, true), new THREE.MeshBasicMaterial({ color: 0xffb060, transparent: true, opacity: 0.8, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide }));
         pil.position.set(s.x, 70, s.z); addFx(pil, 0.35, (m, f) => { m.material.opacity = 0.8 * (1 - f); m.scale.x = m.scale.z = 1 - f * 0.6; });
         flatRing(s.x, s.z, 1, s.R + 2, 0xffa040, 0.5, 1.5);
-        const pc = pCenter();
-        mpHit(() => { if (Math.hypot(pc.x - s.x, pc.z - s.z) < s.R && pl.pos.y < 6) hurtPlayer(30, { shieldMul: 1.5, air: true }); });
+        mpHit(() => { const pc = pCenter(); if (Math.hypot(pc.x - s.x, pc.z - s.z) < s.R && pl.pos.y < 6) hurtPlayer(30, { shieldMul: 1.5, air: true }); });
       }
     }
     return a.spawned >= N && !alive;
@@ -1308,8 +1315,7 @@ function atkLaser() {
     a.tick -= dt;
     if (a.tick <= 0) {
       a.tick = 0.1;
-      const rx = pl.pos.x - B.pos.x, rz = pl.pos.z - B.pos.z, along = rx * sx + rz * sz, perp = Math.abs(rx * sz - rz * sx), pc = pCenter();
-      mpHit(() => { if (along > 6 && along < ARENA_R + 6 && perp < 3.4 && Math.abs(pc.y - a.py) < 5) hurtPlayer(16, { pierce: true, noInv: true }); });
+      mpHit(() => { const rx = pl.pos.x - B.pos.x, rz = pl.pos.z - B.pos.z, along = rx * sx + rz * sz, perp = Math.abs(rx * sz - rz * sx), pc = pCenter(); if (along > 6 && along < ARENA_R + 6 && perp < 3.4 && Math.abs(pc.y - a.py) < 5) hurtPlayer(16, { pierce: true, noInv: true }); });
     }
     if (f >= 1) { clean(); return true; }
     return false;
@@ -1381,8 +1387,7 @@ function atkStomp() {
     if (!a.R) { a.R = BOSS_COL_R; shake(1.0); burst(V3(0, 0.5, 0), 40, 20, 0xb0a090, 0.8, 4); }
     B.root.position.y = 0; a.R += a.spd * dt;
     setRing(stompRing, 0, 0, Math.max(0, a.R - 1.8), a.R + 1.0, 0.85);
-    const d = Math.hypot(pl.pos.x, pl.pos.z);
-    mpHit(() => { if (!a.hit && Math.abs(d - a.R) < 2.2 && pl.pos.y < 2.5) { if (hurtPlayer(32, { shieldMul: 1.4 }) || pl.invuln > 0) a.hit = true; } });
+    mpHit(() => { const d = Math.hypot(pl.pos.x, pl.pos.z), hk = AI.pass ? 'hitG' : 'hit'; if (!a[hk] && Math.abs(d - a.R) < 2.2 && pl.pos.y < 2.5) { if (hurtPlayer(32, { shieldMul: 1.4 }) || curInv() > 0) a[hk] = true; } });
     if (a.R > ARENA_R + 8) { stompRing.visible = false; return true; }
     return false;
   };
@@ -1625,7 +1630,7 @@ B1.reset = function () {
 B1.intro = 'Phá tay và đầu để lộ lõi';
 /* ===== Boss 2: Dread-Scorp (model) ===== */
 const B2 = {
-  title: 'Dread-Scorp', intro: 'Nhanh, đầy gai, cận chiến rất đau. Bắn vào mặt hoặc đuôi', pos: V3(0, 0, 40), colR: 10, colH: 14,
+  dieMsg: 'DREAD-SCORP ĐÃ SỤP ĐỔ', title: 'Dread-Scorp', intro: 'Nhanh, đầy gai, cận chiến rất đau. Bắn vào mặt hoặc đuôi', pos: V3(0, 0, 40), colR: 10, colH: 14,
   keys: ['core', 'clawL', 'clawR', 'tail'], minor: [], start: { x: 0, z: -85, yaw: 0 },
   phaseMsg: { 2: 'Dread-Scorp cuộn thành quả cầu gai', 3: 'Giáp gai vỡ, bọ cạp nổi điên' }, ringHex: 0x7dff3a,
   root: new THREE.Group(), yaw: Math.PI, phase: 1, alive: true, state: 'idle', timer: 2, atk: null, last: '', stagger: 0, dying: 0, vuln: 1, rolling: false, walk: 0,
@@ -1784,8 +1789,7 @@ function atkJab() {
       if (b2Dist() > B2.colR + 3) { B2.pos.x += Math.sin(B2.yaw) * 44 * dt; B2.pos.z += Math.cos(B2.yaw) * 44 * dt; }
       if (!a.hit && a.t >= 0.05) {
         a.hit = true; freeFan(a.fan); shake(0.45);
-        const dx = pl.pos.x - B2.pos.x, dz = pl.pos.z - B2.pos.z;
-        mpHit(() => { if (Math.hypot(dx, dz) < 25 && Math.abs(angDiff(B2.yaw, Math.atan2(dx, dz))) < 0.55 && pl.pos.y < 15) { if (hurtVenom(20, { shieldMul: 1.3 }, 2.0, 0.15)) b2Knock(14); } });
+        mpHit(() => { const dx = pl.pos.x - B2.pos.x, dz = pl.pos.z - B2.pos.z; if (Math.hypot(dx, dz) < 25 && Math.abs(angDiff(B2.yaw, Math.atan2(dx, dz))) < 0.55 && pl.pos.y < 15) { if (hurtVenom(20, { shieldMul: 1.3 }, 2.0, 0.15)) b2Knock(14); } });
       }
       if (a.t >= 0.15) { a.phase = 2; a.t = 0; c.target = -c.s * 0.18; }
     } else return a.t >= 0.18;
@@ -1810,8 +1814,7 @@ function atkSwipe() {
       if (!a.hit && a.t >= 0.09) {
         a.hit = true; freeFan(a.fan); shake(0.7);
         const hp = B2m.claws.clawL.hit.getWorldPosition(V3()); burst(hp, 16, 14, 0xcdbb9b, 0.5, 4);
-        const dx = pl.pos.x - B2.pos.x, dz = pl.pos.z - B2.pos.z;
-        mpHit(() => { if (Math.hypot(dx, dz) < 27 && Math.abs(angDiff(B2.yaw, Math.atan2(dx, dz))) < 0.95 && pl.pos.y < 15) { if (hurtVenom(34, { shieldMul: 1.5 }, 2.0, 0.25)) b2Knock(26); } });
+        mpHit(() => { const dx = pl.pos.x - B2.pos.x, dz = pl.pos.z - B2.pos.z; if (Math.hypot(dx, dz) < 27 && Math.abs(angDiff(B2.yaw, Math.atan2(dx, dz))) < 0.95 && pl.pos.y < 15) { if (hurtVenom(34, { shieldMul: 1.5 }, 2.0, 0.25)) b2Knock(26); } });
       }
       if (a.t >= 0.18) { a.phase = 2; a.t = 0; c.target = -c.s * 0.18; }
     } else if (a.t >= 0.35) { a.i++; if (a.i >= n) { return true; } a.phase = 0; a.t = 0; a.fan = getFan(); }
@@ -1885,7 +1888,7 @@ function atkCharge() {
       const sp = 108.8 * SPD(); B2.pos.x += Math.sin(a.yaw) * sp * dt; B2.pos.z += Math.cos(a.yaw) * sp * dt; a.trav += sp * dt; B2.walk += dt * 22;
       crushRocks(B2.pos.x, B2.pos.z, 9); shake(0.3);
       emit(B2.pos.x + rnd(-6, 6), 1, B2.pos.z + rnd(-6, 6), rnd(-3, 3), rnd(2, 6), rnd(-3, 3), 0xb0a090, 0.7, 2);
-      mpHit(() => { if (!a.hit && b2Dist() < 10 && pl.pos.y < 10) { a.hit = true; if (hurtVenom(36, { shieldMul: 1.4 }, 2.0, 0.45)) b2Knock(30); } });
+      mpHit(() => { const hk = AI.pass ? 'hitG' : 'hit'; if (!a[hk] && b2Dist() < 10 && pl.pos.y < 10) { a[hk] = true; if (hurtVenom(36, { shieldMul: 1.4 }, 2.0, 0.45)) b2Knock(30); } });
       if (Math.hypot(B2.pos.x, B2.pos.z) > ARENA_R - 11 || a.t > 1.5) { b2Clamp(); a.phase = 2; a.t = 0; B2.vuln = 2.0; shake(0.9); burst(B2.pos.clone().setY(4), 24, 16, 0xcdbb9b, 0.6, 3); say('KIỆT SỨC', 'Bắn mạnh vào lúc này', 1.2); }
     } else { if (a.t >= 2.6) { B2.vuln = 1; return true; } emit(B2.pos.x + rnd(-4, 4), 11, B2.pos.z + rnd(-4, 4), 0, 3, 0, 0x888888, 0.8, -1); }
     return false;
@@ -1936,18 +1939,18 @@ function atkRoll() {
       B2m.model.scale.setScalar(Math.max(0.05, 1 - f * 0.95));
       if (f > 0.5 && !B2.rolling) { B2.rolling = true; B2m.model.visible = false; B2m.ball.visible = true; burst(B2.pos.clone().setY(7), 30, 14, 0xcdbb9b, 0.5, 2); }
       B2m.ball.scale.setScalar(clamp((f - 0.4) * 2, 0.05, 1));
-      if (a.t >= T) { a.phase = 1; a.t = 0; a.yaw = Math.atan2(pl.pos.x - B2.pos.x, pl.pos.z - B2.pos.z); a.speed = 0; a.trav = 0; a.hit = false; setWarn(''); }
+      if (a.t >= T) { a.phase = 1; a.t = 0; a.yaw = Math.atan2(pl.pos.x - B2.pos.x, pl.pos.z - B2.pos.z); a.speed = 0; a.trav = 0; a.hit = a.hitG = false; setWarn(''); }
     } else if (a.phase === 1) {
       B2.yaw = a.yaw; a.speed = lerp(a.speed, 118.3 * SPD(), damp(3, dt));
       B2.pos.x += Math.sin(a.yaw) * a.speed * dt; B2.pos.z += Math.cos(a.yaw) * a.speed * dt; a.trav += a.speed * dt;
       B2m.ball.rotation.x += a.speed * dt / 6.4; crushRocks(B2.pos.x, B2.pos.z, 8); shake(0.25);
       emit(B2.pos.x + rnd(-5, 5), 0.6, B2.pos.z + rnd(-5, 5), rnd(-3, 3), rnd(1, 5), rnd(-3, 3), 0xb0a090, 0.6, 2);
-      mpHit(() => { if (!a.hit && b2Dist() < 9.5 && pl.pos.y < 10) { a.hit = true; if (hurtVenom(28, { shieldMul: 1.3 }, 2.0, 0.4)) b2Knock(28); } });
+      mpHit(() => { const hk = AI.pass ? 'hitG' : 'hit'; if (!a[hk] && b2Dist() < 9.5 && pl.pos.y < 10) { a[hk] = true; if (hurtVenom(28, { shieldMul: 1.3 }, 2.0, 0.4)) b2Knock(28); } });
       if (a.trav > 80 || Math.hypot(B2.pos.x, B2.pos.z) > ARENA_R * 0.6) { b2Clamp(); a.pass++; a.phase = a.pass >= passes ? 3 : 2; a.t = 0; }
     } else if (a.phase === 2) {
       a.speed *= Math.exp(-4 * dt); B2.pos.x += Math.sin(a.yaw) * a.speed * dt; B2.pos.z += Math.cos(a.yaw) * a.speed * dt; b2Clamp();
       B2m.ball.rotation.x += a.speed * dt / 6.4;
-      if (a.t >= 0.35) { a.phase = 1; a.t = 0; a.yaw = Math.atan2(pl.pos.x - B2.pos.x, pl.pos.z - B2.pos.z); a.speed = 0; a.trav = 0; a.hit = false; }
+      if (a.t >= 0.35) { a.phase = 1; a.t = 0; a.yaw = Math.atan2(pl.pos.x - B2.pos.x, pl.pos.z - B2.pos.z); a.speed = 0; a.trav = 0; a.hit = a.hitG = false; }
     } else {
       const f = Math.min(1, a.t / 0.3); B2.rolling = false; B2m.ball.visible = false; B2m.model.visible = true; B2m.model.scale.setScalar(0.6 + 0.4 * f);
       if (a.t >= 0.3) { B2.vuln = 2.0; a.phase = 4; a.t = 0; say('KIỆT SỨC', 'Bắn mạnh vào lúc này', 2.6); }
@@ -2081,7 +2084,7 @@ B2.reset = function () {
 };
 /* ===== Boss 3: Incendium (rồng cơ khí bay) — model + AI ===== */
 const B3 = {
-  title: 'Incendium', intro: 'Rồng cơ khí bay lượn. Phá cánh để hạ nó xuống đất', pos: V3(0, 0, 45), alt: 32, colR: 9, colH: 0, dieMsg: 'RỒNG CƠ SỤP ĐỔ',
+  title: 'Incendium', intro: 'Rồng cơ khí bay lượn. Phá cánh để hạ nó xuống đất', pos: V3(0, 0, 45), alt: 32, colR: 9, colH: 0, dieMsg: 'INCENDIUM ĐÃ SỤP ĐỔ',
   keys: ['core', 'wingL', 'wingR', 'head', 'tail'], minor: [], start: { x: 0, z: -95, yaw: 0 },
   phaseMsg: { 2: 'Incendium gầm lên, lửa rực hơn', 3: 'Giáp vỡ, rồng cơ nổi điên' }, ringHex: 0xff8a2a,
   destroyMsg: { wingL: 'Rồng rơi xuống! Đánh mạnh lúc này', wingR: 'Rồng rơi xuống! Đánh mạnh lúc này', head: 'Hết phun lửa', tail: 'Mất đuôi' },
@@ -2190,8 +2193,7 @@ function atkFire() {
       const mp = mouthPos(); for (let i = 0; i < 4; i++) emit(mp.x, mp.y, mp.z, sx * 30 + rnd(-4, 4), rnd(-14, -6), sz * 30 + rnd(-4, 4), 0xffb040, 0.4, 0);
       shake(0.12); crushRocks(B3.pos.x + sx * 40, B3.pos.z + sz * 40, 6);
       a.tick -= dt;
-      const rx = pl.pos.x - B3.pos.x, rz = pl.pos.z - B3.pos.z, along = rx * sx + rz * sz, perp = Math.abs(rx * sz - rz * sx);
-      mpHit(() => { if (a.tick <= 0 && along > 8 && along < 78 && perp < 5.5 && pl.pos.y < 45) { a.tick = 0.2; hurtPlayer(11, { shieldMul: 1.2 }); } });
+      mpHit(() => { const rx = pl.pos.x - B3.pos.x, rz = pl.pos.z - B3.pos.z, along = rx * sx + rz * sz, perp = Math.abs(rx * sz - rz * sx), ok = AI.pass ? G.time >= (a.tgAt || 0) : a.tick <= 0; if (ok && along > 8 && along < 78 && perp < 5.5 && pl.pos.y < 45) { if (AI.pass) a.tgAt = G.time + 0.2; else a.tick = 0.2; hurtPlayer(11, { shieldMul: 1.2 }); } });
       if (a.t >= dur) { line.visible = false; a.phase = 2; a.t = 0; }
     } else return a.t >= 0.5;
     return false;
@@ -2244,7 +2246,7 @@ function atkDive() {
       const sp = 209 * SPD(); B3.pos.x += Math.sin(a.yaw) * sp * dt; B3.pos.z += Math.cos(a.yaw) * sp * dt; a.trav += sp * dt;
       b3Alt(7, dt, 7); B3.pitch = lerp(B3.pitch, 0.35, damp(8, dt)); crushRocks(B3.pos.x, B3.pos.z, 14); shake(0.3);
       emit(B3.pos.x + rnd(-6, 6), 1, B3.pos.z + rnd(-6, 6), rnd(-3, 3), rnd(2, 6), rnd(-3, 3), 0xb0a090, 0.7, 2);
-      mpHit(() => { if (!a.hit && b3Dist() < 15 && Math.abs(pl.pos.y + 1.5 - B3.alt) < 16) { a.hit = true; if (hurtPlayer(34, { shieldMul: 1.5 })) b3Knock(30); } });
+      mpHit(() => { const hk = AI.pass ? 'hitG' : 'hit'; if (!a[hk] && b3Dist() < 15 && Math.abs(pl.pos.y + 1.5 - B3.alt) < 16) { a[hk] = true; if (hurtPlayer(34, { shieldMul: 1.5 })) b3Knock(30); } });
       if (Math.hypot(B3.pos.x, B3.pos.z) > ARENA_R - 11 || a.t > 1.6) { b3Clamp(); a.phase = 2; a.t = 0; B3.vuln = 1.8; shake(0.9); say('THỞ DỐC', 'Bắn mạnh vào lúc này', 1.2); }
     } else {
       B3.pitch = lerp(B3.pitch, 0, damp(4, dt)); b3Alt(7, dt, 4);
@@ -2283,7 +2285,7 @@ function updatePools(dt) {
     p.t += dt; p.tick -= dt;
     const f = p.t / p.life; setRing(p.tele.a, p.x, p.z, p.R - 0.6, p.R, 0.5 * (1 - f * 0.5)); setRing(p.tele.b, p.x, p.z, 0, p.R, 0.12 + 0.12 * Math.abs(Math.sin(p.t * 6)));
     if (Math.random() < dt * 30) emit(p.x + rnd(-p.R, p.R) * 0.8, 0.5, p.z + rnd(-p.R, p.R) * 0.8, 0, rnd(3, 7), 0, 0xff6a20, 0.5, -1);
-    mpHit(() => { if (p.tick <= 0 && Math.hypot(pl.pos.x - p.x, pl.pos.z - p.z) < p.R && pl.pos.y < 8) { p.tick = 0.5; hurtPlayer(6); } });
+    mpHit(() => { const ok = AI.pass ? G.time >= (p.tgAt || 0) : p.tick <= 0; if (ok && Math.hypot(pl.pos.x - p.x, pl.pos.z - p.z) < p.R && pl.pos.y < 8) { if (AI.pass) p.tgAt = G.time + 0.5; else p.tick = 0.5; hurtPlayer(6); } });
     if (p.t >= p.life) { freeTele(p.tele); B3.pools.splice(B3.pools.indexOf(p), 1); }
   }
 }
@@ -2328,8 +2330,7 @@ function atkBite() {
       if (b3Dist() > 14) { B3.pos.x += Math.sin(B3.yaw) * 60 * dt; B3.pos.z += Math.cos(B3.yaw) * 60 * dt; }
       if (!a.hit) {
         a.hit = true; shake(0.6); burst(mouthPos(), 14, 14, 0xffd060, 0.4, 3);
-        const dx = pl.pos.x - B3.pos.x, dz = pl.pos.z - B3.pos.z;
-        mpHit(() => { if (Math.hypot(dx, dz) < 30 && Math.abs(angDiff(B3.yaw, Math.atan2(dx, dz))) < 0.5 && pl.pos.y < 16) { if (hurtPlayer(36, { shieldMul: 1.5 })) b3Knock(24); } });
+        mpHit(() => { const dx = pl.pos.x - B3.pos.x, dz = pl.pos.z - B3.pos.z; if (Math.hypot(dx, dz) < 30 && Math.abs(angDiff(B3.yaw, Math.atan2(dx, dz))) < 0.5 && pl.pos.y < 16) { if (hurtPlayer(36, { shieldMul: 1.5 })) b3Knock(24); } });
       }
       if (a.t >= 0.2) { a.phase = 2; a.t = 0; }
     } else { B3m.head.rotation.x = lerp(B3m.head.rotation.x, 0, damp(6, dt)); return a.t >= 0.35; }
@@ -2707,7 +2708,15 @@ function mpOnSnap() {
 const _sv = { pos: null, vel: null };
 function mpSwapIn() { if (MP.swapped) return; _sv.pos = pl.pos; _sv.vel = pl.vel; pl.pos = gh.pos; pl.vel = gh.vel; MP.swapped = true; }
 function mpSwapOut() { if (!MP.swapped) return; pl.pos = _sv.pos; pl.vel = _sv.vel; MP.swapped = false; }
-function mpHit(fn) { const was = MP.swapped; if (was) mpSwapOut(); try { fn(); } finally { if (was) mpSwapIn(); } }
+function mpHit(fn) {
+  const was = MP.swapped; if (was) mpSwapOut(); try { fn(); } finally { if (was) mpSwapIn(); }
+  if (MP.ai && gh.alive && G.state === 'playing') { /* second pass: same hit test against the AI teammate */
+    const sw = MP.swapped; if (!sw) mpSwapIn(); AI.pass = true;
+    const vx = gh.vel.x, vz = gh.vel.z;
+    try { fn(); } finally { AI.pass = false; if (!sw) mpSwapOut(); }
+    AI.kx += gh.vel.x - vx; AI.kz += gh.vel.z - vz; gh.vel.x = vx; gh.vel.z = vz;
+  }
+}
 function mpTgtRemote() { return MP.on && MP.tgt !== MP.me; }
 function mpFixTgt() {
   const meUp = pl.alive, oUp = gh.alive && !gh.left;
@@ -2794,7 +2803,11 @@ function mpUpdateGhost(dt) {
     ghostShield.visible = !!gh.sh; ghostShield.position.set(gh.pos.x, gh.pos.y + 2.4, gh.pos.z);
   } else ghostShield.visible = false;
   if (gh.bar) { ghostBar.visible = true; ghostBar.position.set(gh.bar[0], 0, gh.bar[1]); ghostBar.rotation.y = gh.bar[2]; } else ghostBar.visible = false;
-  if (!gh.alive && !gh.left) { MP.ringT -= dt; if (MP.ringT <= 0) { MP.ringT = 0.7; flatRing(gh.pos.x, gh.pos.z, 1, 9, 0x6dff9a, 0.7, 1); } }
+  if (show && gh.sh && !shieldMesh.visible) shieldLook(1);
+  { /* revive rings: at a fallen teammate, and at your own spot while you wait to be revived (deeper green on the bright stage 4 floor) */
+    const hex = BRIGHT ? 0x0fa84a : 0x6dff9a, down = !gh.alive && !gh.left && MP.revUsed[MP.other] < 1, meDown = !pl.alive && gh.alive && !gh.left && MP.revUsed[MP.me] < 1;
+    if (down || meDown) { MP.ringT -= dt; if (MP.ringT <= 0) { MP.ringT = 0.6; const p = down ? gh.pos : pl.pos; flatRing(p.x, p.z, 1, 10, hex, 0.85, 2.6, 1); flatRing(p.x, p.z, 1, 6, hex, 0.85, 1.6, 1); } }
+  }
   for (let i = mpTr.length - 1; i >= 0; i--) { const t = mpTr[i]; t.life -= dt; t.m.position.addScaledVector(t.v, dt); if (t.life <= 0) { scene.remove(t.m); mpTr.splice(i, 1); } }
 }
 function mpHud(dt) {
@@ -2802,10 +2815,10 @@ function mpHud(dt) {
   const nm = CNAME[gh.ch] || '';
   $('mateN').textContent = MP.ai ? 'AI · ' + AIM[AI.mode] : 'ĐỒNG ĐỘI · ' + nm;
   let v = gh.left ? 'ĐÃ THOÁT' : gh.alive ? gh.hp + '%' : 'GỤC';
-  if (!pl.alive && gh.alive) v = 'Bạn đã gục, chờ hồi sinh'; else if (MP.revT > 0) v = 'HỒI SINH ' + MP.revT.toFixed(1) + '/3s'; else if (!gh.alive && !gh.left && MP.revUsed[MP.other] >= 1) v = 'GỤC (đã dùng hồi sinh)';
+  if (!pl.alive && gh.alive) v = MP.revUsed[MP.me] < 1 ? 'Bạn đã gục, chờ hồi sinh' : 'Bạn đã gục'; else if (MP.revT > 0) v = 'HỒI SINH ' + MP.revT.toFixed(1) + '/3s'; else if (!gh.alive && !gh.left && MP.revUsed[MP.other] >= 1) v = 'GỤC (đã dùng hồi sinh)';
   $('mateV').textContent = v; $('mateHp').firstElementChild.style.transform = 'scaleX(' + clamp((gh.alive && !gh.left ? gh.hp : 0) / 100, 0, 1) + ')';
 }
-function mpOnDeath() { MP.deadAt = G.time; mpSendState(); say('BẠN ĐÃ GỤC', 'Đồng đội có thể hồi sinh bạn (đứng gần 3 giây)', 3); }
+function mpOnDeath() { MP.deadAt = G.time; mpSendState(); say('BẠN ĐÃ GỤC', MP.revUsed[MP.me] < 1 && gh.alive && !gh.left ? 'Đồng đội có thể hồi sinh bạn (đứng gần 3 giây)' : '', 3); }
 function mpTick(dt) {
   mpUpdateGhost(dt);
   if (MP.ai) { gh.last = performance.now(); aiTick(dt); }
@@ -3083,7 +3096,7 @@ function comTick(dt) {
 })();
 /* ===== Boss 4: Jet + Juggernaut (two person-sized robots, no sub-parts) ===== */
 const B4 = {
-  title: 'Valkyrie & Juggernaut', intro: 'Hai robot phối hợp. Hạ cả hai để thắng', pos: V3(0, 0, 50), colR: 0, colH: 0, dieMsg: 'CẢ HAI ĐÃ GỤC',
+  title: 'Valkyrie & Juggernaut', intro: 'Hai robot phối hợp. Hạ cả hai để thắng', pos: V3(0, 0, 50), colR: 0, colH: 0, dieMsg: 'KẺ ĐỊCH ĐÃ BỊ TIÊU DIỆT',
   keys: ['jet', 'jug'], minor: ['jet', 'jug'], start: { x: 0, z: -120, yaw: 0 }, noCore: true, noPush: true,
   phaseMsg: { 2: 'Hai robot phối hợp chặt hơn', 3: 'Chúng liều mạng' }, ringHex: 0xffffff,
   destroyMsg: { jet: 'Valkyrie rơi xuống', jug: 'Juggernaut gục' },
@@ -3335,7 +3348,7 @@ function updateJet(f, dt) {
         f.bT = 0.14; f.burst--;
         const mp = V3(f.pos.x + Math.sin(f.yaw) * 1.5, 2.9, f.pos.z + Math.cos(f.yaw) * 1.5), dir = leadAim(mp, 95 * SPD(), DIFFS[G.diff].lead);
         dir.x += rnd(-0.03, 0.03); dir.y += rnd(-0.03, 0.03); dir.z += rnd(-0.03, 0.03);
-        spawnBullet(mp, dir.normalize(), 95 * SPD(), 8); burst(mp, 3, 8, 0xffb0d8, 0.15, 0); S4('rgun');
+        spawnBullet(mp, dir.normalize(), 95 * SPD(), 8, false, { long: true }); burst(mp, 3, 8, 0xc080ff, 0.15, 0); S4('rgun');
       }
     }
   }
@@ -3470,7 +3483,7 @@ function jugSlam(f) {
     if (!a.hit) {
       a.hit = true; setWarn(''); tl.a.visible = false; tl.b.visible = false;
       flatRing(sx, sz, 5, 17, 0xffffff, 0.5, 2); burst(V3(sx, 1, sz), 50, 28, 0x9aa0b0, 0.7, 3.5); shake(1.0); S4('stomp'); rockSplash(V3(sx, 1, sz), 13, 400, false);
-      mpHit(() => { if (Math.hypot(pl.pos.x - sx, pl.pos.z - sz) < 14 && pl.pos.y < 8) { if (pl.invuln > 0 && pl.invuln <= 0.13) pl.invuln = 0; if (hurtPlayer(60, { shieldMul: 3.0 }) && !pl.lastBlocked) { pl.hstun = 1.5; pl.vel.x += (pl.pos.x - sx) * 1.2; pl.vel.z += (pl.pos.z - sz) * 1.2; say('BỊ CHOÁNG', 'Không thể hành động 1,5 giây', 1.4); } } });
+      mpHit(() => { if (Math.hypot(pl.pos.x - sx, pl.pos.z - sz) < 14 && pl.pos.y < 8) { clearInv(); if (hurtPlayer(60, { shieldMul: 3.0 }) && !pl.lastBlocked) { pl.hstun = 1.5; pl.vel.x += (pl.pos.x - sx) * 1.2; pl.vel.z += (pl.pos.z - sz) * 1.2; say('BỊ CHOÁNG', 'Không thể hành động 1,5 giây', 1.4); } } });
     }
     return a.t > 2.0;
   };
@@ -3588,7 +3601,7 @@ B4.update = updateBoss4;
 /* ===== AI teammate (single player) — reuses the 2-player partner machinery, driven locally ===== */
 MP.ai = false;
 const AI = { want: false, mode: 'atk', ch: 'heli', hp: 1, max: 1, sh: 1, shMax: 1, shState: 'ready', shT: 0, shHit: 0, shOn: false, inv: 0, dead: false, fireT: 1, heat: 0, ohT: 0, shotN: 0,
-  focus: null, key: 'core', keyT: 0, dir: 1, dirT: 2, formCd: 0, transT: 0, revT: 0, meleeT: 0, mFlash: 0, evade: 0, evDir: 1, evCd: 0, starting: false };
+  focus: null, key: 'core', keyT: 0, dir: 1, dirT: 2, formCd: 0, transT: 0, revT: 0, meleeT: 0, mFlash: 0, evade: 0, evDir: 1, evCd: 0, starting: false, pass: false, kx: 0, kz: 0 };
 const AIM = { atk: 'TẤN CÔNG', fol: 'THEO TÔI', def: 'PHÒNG THỦ', chg: 'XUNG PHONG', foc: 'TẬP TRUNG', cau: 'CẨN THẬN' };
 const AI_STAT = { tank: [220, 120, 17, 42], heli: [180, 100, 21, 48], arty: [260, 150, 10.5, 62] }; /* maxHp, shield, speed, range */
 const AI_DMG = 0.75;
@@ -3638,7 +3651,7 @@ function aiHurt(amount, o) {
     return true;
   }
   AI.hp -= amount; AI.inv = 0.12; gh.hp = Math.max(0, Math.round(AI.hp / AI.max * 100)); burst(MP.ghostC, 6, 8, 0xff8030, 0.3, 0);
-  if (AI.hp <= 0) { AI.hp = 0; AI.dead = true; gh.alive = false; gh.hp = 0; AI.shOn = false; gh.sh = 0; gh.m = 0; explode(MP.ghostC, 1.6, 0xffb050); say('ĐỒNG ĐỘI AI ĐÃ GỤC', 'Đến gần 3 giây để hồi sinh', 2.4); }
+  if (AI.hp <= 0) { AI.hp = 0; AI.dead = true; gh.alive = false; gh.hp = 0; AI.shOn = false; gh.sh = 0; gh.m = 0; explode(MP.ghostC, 1.6, 0xffb050); say('ĐỒNG ĐỘI AI ĐÃ GỤC', MP.revUsed.g < 1 ? 'Đến gần 3 giây để hồi sinh' : '', 2.4); }
   return true;
 }
 
@@ -3660,6 +3673,7 @@ function aiTick(dt) {
   if (gh.alive && AI.dead) { AI.dead = false; AI.hp = AI.max * 0.5; gh.hp = 50; AI.inv = 2.5; AI.sh = AI.shMax; AI.shState = 'ready'; AI.shT = 0; }
   if (!gh.alive) { gh.sh = 0; gh.m = 0; return; }
   if (G.intro > 0 || !B.alive) { gh.sh = 0; return; }
+  if (AI.kx || AI.kz) { gh.tp.x += AI.kx * dt; gh.tp.z += AI.kz * dt; const dk = Math.exp(-3 * dt); AI.kx *= dk; AI.kz *= dk; if (Math.abs(AI.kx) + Math.abs(AI.kz) < 0.3) AI.kx = AI.kz = 0; }
   AI.formCd -= dt; AI.transT -= dt; AI.keyT -= dt; AI.dirT -= dt; AI.evCd -= dt; AI.mFlash -= dt; AI.shHit -= dt;
   const st = AI_STAT[AI.ch], heli = AI.ch === 'heli', robot = gh.tk > 0.5, trans = AI.transT > 0;
   if (AI.keyT <= 0 || !AI.key || (AI.key !== 'core' && !(B.parts[AI.key] && B.parts[AI.key].alive))) { AI.key = aiPickKey(); AI.keyT = 3.5; }
@@ -3720,10 +3734,15 @@ function aiTick(dt) {
     }
   }
 }
+
+/* helpers used by boss hit tests (they run once for the player and once for the AI) */
+function curInv() { return AI.pass ? AI.inv : pl.invuln; }
+function clearInv() { if (AI.pass) { if (AI.inv > 0 && AI.inv <= 0.13) AI.inv = 0; } else if (pl.invuln > 0 && pl.invuln <= 0.13) pl.invuln = 0; }
 /* ===== camera, HUD, game flow ===== */
 const camPosS = V3(0, 8, -60), camLookS = V3(0, 10, 0), _d = V3();
 let bannerT = 0;
-function say(t, s, dur) { $('bt').textContent = t; $('bs').textContent = s || ''; $('banner').classList.add('on'); bannerT = dur || 2; }
+function say(t, s, dur, small) { $('bt').textContent = t; $('bs').textContent = s || ''; const bn = $('banner'); bn.classList.add('on'); bn.classList.toggle('sm', !!small); bannerT = dur || 2; }
+function clearMsgs() { const bn = $('banner'); bn.classList.remove('on', 'sm'); bannerT = 0; setWarn(''); try { const c = $('cmsg'); c.classList.remove('on'); c.hidden = true; comS.msgT = 0; comS.pingT = 0; $('cping').style.display = $('cpingl').style.display = 'none'; comOpen(false); } catch (_) { } }
 function aliveTargets() { return B.keys.filter(k => (k === 'core' || B.parts[k].alive || B.regen) && !(B.noLock && B.noLock(k))); }
 function cycleTarget(dir) { if (G.jam) return; const l = aliveTargets(); if (!l.length) return; let i = l.indexOf(G.target); if (i < 0) i = 0; G.target = l[(i + dir + l.length) % l.length]; G.lockOn = true; }
 
@@ -3882,7 +3901,7 @@ function setPaused(on) {
 }
 $('startBtn').addEventListener('click', () => { if (MP.room) mpStartClick(); else startGame(); });
 $('againBtn').addEventListener('click', startGame);
-$('homeBtn').addEventListener('click', () => { setBoss(G.boss); resetGame(); G.state = 'menu'; $('end').hidden = true; $('menu').hidden = false; showHud(false); if (MP.room) mpBackToLobby(); });
+$('homeBtn').addEventListener('click', () => { clearMsgs(); setBoss(G.boss); resetGame(); G.state = 'menu'; $('end').hidden = true; $('menu').hidden = false; showHud(false); if (MP.room) mpBackToLobby(); });
 $('nextBtn').addEventListener('click', () => { G.boss = Math.min(4, G.boss + 1); syncPick(); startGame(); });
 $('resumeBtn').addEventListener('click', () => setPaused(false));
 let quitPaused = false;
@@ -3897,7 +3916,7 @@ function quitToMenu(remote) {
   const mp = MP.on; if (mp && !remote) { try { mpSend({ t: 'q' }); } catch (_) { } }
   try { document.exitPointerLock(); } catch (_) { } try { if (typeof bedStop === 'function') bedStop(); } catch (_) { }
   $('pause').hidden = true; $('end').hidden = true; $('menu').hidden = false; showHud(false); setWarn('');
-  setBoss(G.boss); resetGame(); G.state = 'menu';
+  setBoss(G.boss); resetGame(); G.state = 'menu'; clearMsgs();
   if (MP.room) { if (mp && !remote) setTimeout(() => { if (MP.room) mpLeave(); }, 500); else mpLeave(); }
   if (remote) say('ĐỒNG ĐỘI ĐÃ THOÁT VÁN', 'Ván online đã đóng', 3);
 }
