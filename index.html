@@ -176,7 +176,7 @@ button.cta:disabled{opacity:.5;cursor:not-allowed}
 
 <div class="screen" id="menu">
   <div class="card">
-    <h1>Titan <em>Breaker</em> <small class="ver">v5.4</small></h1>
+    <h1>Titan <em>Breaker</em> <small class="ver">v5.5</small></h1>
     <div class="sub">Robot biến hình đấu boss khổng lồ</div>
     <div id="mpBar" hidden><span id="mpBarT"></span><button id="mpLeave">Rời phòng</button></div>
     <div class="plab">Boss</div>
@@ -3040,9 +3040,9 @@ for (const ev of ['pointerdown', 'keydown', 'touchstart']) window.addEventListen
 document.addEventListener('click', e => { if (e.target.closest && e.target.closest('button') && e.target.id !== 'sndBtn') sfx('click'); });
 /* ===== Team commands (2 players) ===== */
 const COM = {
-  all: { t: 'ALL-OUT ATTACK', col: '#ff9a3d', n: '1' }, ret: { t: 'RETREAT', col: '#6db8ff', n: '2' }, ast: { t: 'XUNG PHONG', col: '#ff5a4a', n: '3' },
-  foc: { t: 'TẬP TRUNG', col: '#ffd23d', n: '4' }, cau: { t: 'CẨN THẬN!', col: '#ff4a3d', n: '5' }, fol: { t: 'THEO TÔI', col: '#6dff9a', n: '6' } };
-const COM_ORDER = ['all', 'ret', 'ast', 'foc', 'cau', 'fol'];
+  all: { t: 'ALL-OUT ATTACK', col: '#ff9a3d', n: '1' }, ret: { t: 'RETREAT', col: '#6db8ff', n: '6' }, ast: { t: 'XUNG PHONG', col: '#ff5a4a', n: '3' },
+  foc: { t: 'TẬP TRUNG', col: '#ffd23d', n: '4' }, cau: { t: 'CẨN THẬN!', col: '#ff4a3d', n: '5' }, fol: { t: 'THEO TÔI', col: '#6dff9a', n: '2' } };
+const COM_ORDER = ['all', 'fol', 'ast', 'foc', 'cau', 'ret'];
 const comS = { msgT: 0, pingT: 0, pingKey: null, cd: 0, open: false };
 const comProj = V3();
 function comPickPart() {
@@ -3601,7 +3601,7 @@ B4.update = updateBoss4;
 /* ===== AI teammate (single player) — reuses the 2-player partner machinery, driven locally ===== */
 MP.ai = false;
 const AI = { want: false, mode: 'atk', ch: 'heli', hp: 1, max: 1, sh: 1, shMax: 1, shState: 'ready', shT: 0, shHit: 0, shOn: false, inv: 0, dead: false, fireT: 1, heat: 0, ohT: 0, shotN: 0,
-  focus: null, key: 'core', keyT: 0, dir: 1, dirT: 2, formCd: 0, transT: 0, revT: 0, meleeT: 0, mFlash: 0, evade: 0, evDir: 1, evCd: 0, starting: false, pass: false, kx: 0, kz: 0,
+  focus: null, key: 'core', keyT: 0, dir: 1, dirT: 2, formCd: 0, transT: 0, revT: 0, meleeT: 0, mFlash: 0, evade: 0, evDir: 1, evCd: 0, starting: false, pass: false, kx: 0, kz: 0, holdRobot: 0, cauWant: 0,
   en: 100, dashT: 0, dashCd: 0, dspd: 0, dvx: 0, dvz: 0, react: 0, thr: false, liftT: 0, rk: 0, rkT: 0, sS: 'idle', sT: 0, sHit: false, stab: false, pOn: false, pCh: 0, pT: 0, pCd: 0, pRingT: 0 };
 const AIM = { atk: 'TẤN CÔNG', fol: 'THEO TÔI', def: 'PHÒNG THỦ', chg: 'XUNG PHONG', foc: 'TẬP TRUNG', cau: 'CẨN THẬN' };
 const AI_STAT = { tank: [220, 120, 17, 42], heli: [180, 100, 21, 48], arty: [260, 150, 10.5, 62] }; /* maxHp, shield, speed, range */
@@ -3624,7 +3624,7 @@ function aiGo() {
   MP.revUsed = { h: 0, g: 0 }; MP.revT = 0; MP.deadAt = 0; MP.fireN = 0; MP.ringT = 0;
   Object.assign(AI, { mode: 'atk', max: st[0], hp: st[0], shMax: st[1], sh: st[1], shState: 'ready', shT: 0, shHit: 0, shOn: false, inv: 0, dead: false, fireT: 1.2, heat: 0, ohT: 0, shotN: 0,
     focus: null, key: 'core', keyT: 0, dir: Math.random() < 0.5 ? 1 : -1, dirT: 2, formCd: 0, transT: 0, revT: 0, meleeT: 0, mFlash: 0, evade: 0, evDir: 1, evCd: 0,
-    en: 100, dashT: 0, dashCd: 0, dspd: 0, react: 0, thr: false, liftT: 0, rk: 0, rkT: 0, sS: 'idle', sT: 0, sHit: false, stab: false, pOn: false, pCh: 0, pT: 0, pCd: 3, pRingT: 0 });
+    en: 100, holdRobot: 0, cauWant: 0, dashT: 0, dashCd: 0, dspd: 0, react: 0, thr: false, liftT: 0, rk: 0, rkT: 0, sS: 'idle', sT: 0, sHit: false, stab: false, pOn: false, pCh: 0, pT: 0, pCd: 3, pRingT: 0 });
   Object.assign(gh, { ch: AI.ch, alive: true, left: false, hp: 100, k: 0, tk: 0, sh: 0, bar: 0, m: 0, fireN: 0, first: false, last: performance.now() });
   try { _startGameRaw(); } finally { AI.starting = false; }
   gh.pos.set(B.start.x + 8, 0, B.start.z); gh.tp.copy(gh.pos); gh.yaw = gh.ty = 0; gh.vel.set(0, 0, 0); gh.ay = 0; gh.ap = 0;
@@ -3638,7 +3638,7 @@ function aiStop() {
 /* commands from the wheel */
 function aiCommand(c, k) {
   const m = { all: 'atk', ret: 'def', ast: 'chg', foc: 'foc', cau: 'cau', fol: 'fol' }[c]; if (!m) return;
-  AI.mode = m; AI.focus = (m === 'foc' && k) ? k : null; AI.keyT = 0;
+  AI.mode = m; AI.focus = (m === 'foc' && k) ? k : null; AI.keyT = 0; AI.cauWant = (m === 'cau' && AI.ch === 'arty') ? 40 : 0;
 }
 
 /* damage taken by the AI (called from hurtPlayer while the partner is the swapped target) */
@@ -3676,7 +3676,7 @@ function aiTick(dt) {
   if (!gh.alive) { gh.sh = 0; gh.m = 0; return; }
   if (G.intro > 0 || !B.alive) { gh.sh = 0; return; }
   if (AI.kx || AI.kz) { gh.tp.x += AI.kx * dt; gh.tp.z += AI.kz * dt; const dk = Math.exp(-3 * dt); AI.kx *= dk; AI.kz *= dk; if (Math.abs(AI.kx) + Math.abs(AI.kz) < 0.3) AI.kx = AI.kz = 0; }
-  AI.formCd -= dt; AI.transT -= dt; AI.keyT -= dt; AI.dirT -= dt; AI.evCd -= dt; AI.mFlash -= dt; AI.shHit -= dt; AI.dashCd -= dt; AI.pCd -= dt; AI.rkT -= dt; AI.liftT -= dt;
+  AI.formCd -= dt; AI.transT -= dt; AI.keyT -= dt; AI.dirT -= dt; AI.evCd -= dt; AI.mFlash -= dt; AI.shHit -= dt; AI.dashCd -= dt; AI.holdRobot -= dt; AI.pCd -= dt; AI.rkT -= dt; AI.liftT -= dt;
   if (AI.dashT <= 0 && !AI.stab) AI.en = Math.min(100, AI.en + (gh.tk > 0.5 ? 20 : AI.ch === 'heli' ? 22 : AI.ch === 'arty' ? 12 : 15) * dt);
   const st = AI_STAT[AI.ch], heli = AI.ch === 'heli', robot = gh.tk > 0.5, trans = AI.transT > 0;
   if (AI.keyT <= 0 || !AI.key || (AI.key !== 'core' && !(B.parts[AI.key] && B.parts[AI.key].alive))) { AI.key = aiPickKey(); AI.keyT = 3.5; }
@@ -3693,8 +3693,8 @@ function aiTick(dt) {
   if (threat && AI.react <= 0 && AI.evCd <= 0) aiDodge(dx, dz, heli, robot);
   AI.evade = Math.max(0, AI.evade - dt);
   /* form */
-  const wantRobot = AI.mode === 'chg' ? dist < 30 : dist < 13;
-  if (wantRobot !== robot && AI.formCd <= 0 && !(heli && !robot && false)) { gh.tk = wantRobot ? 1 : 0; AI.formCd = 4; AI.transT = heli ? 0.6 : 1.1; burst(MP.ghostC, 14, 9, 0x9aeaff, 0.4, 0); }
+  const wantRobot = AI.holdRobot > 0 || (AI.mode === 'chg' ? dist < (heli ? 18 : 30) : dist < 13);
+  if (wantRobot !== robot && (AI.formCd <= 0 || AI.holdRobot > 0)) { gh.tk = wantRobot ? 1 : 0; AI.formCd = 4; AI.transT = heli ? 0.6 : 1.1; burst(MP.ghostC, 14, 9, 0x9aeaff, 0.4, 0); }
   const rb = gh.tk > 0.5;
   /* movement target */
   let tx, tz;
@@ -3715,7 +3715,7 @@ function aiTick(dt) {
   let spd = (rb ? (AI.ch === 'arty' ? 8 : heli ? 15.6 : 10) : st[2]) * 0.85 * (AI.shOn ? 0.5 : 1) * (trans ? 0.4 : 1) * (AI.evade > 0 ? 1.25 : 1);
   if (AI.dashT > 0) { AI.dashT -= dt; gh.tp.x += AI.dvx * AI.dspd * dt; gh.tp.z += AI.dvz * AI.dspd * dt; const rr = Math.hypot(gh.tp.x, gh.tp.z); if (rr > lim) { gh.tp.x *= lim / rr; gh.tp.z *= lim / rr; } }
   else if (!(AI.sS === 'ch' || AI.pOn) && ml > 0.5) { const s = Math.min(ml, spd * dt) / ml; gh.tp.x += mx * s; gh.tp.z += mz * s; }
-  let wy = heli && !rb ? clamp(tp.y, 6, 16) : 0; if (AI.liftT > 0 && heli && !rb) wy = Math.max(wy, 22); gh.tp.y += clamp(wy - gh.tp.y, -14 * dt, 14 * dt);
+  let wy = heli && !rb ? clamp(tp.y, 6, 16) : 0; if (AI.liftT > 0 && heli) { wy = Math.max(wy, rb ? 16 : 22); if (rb) { AI.en = Math.max(0, AI.en - 24 * dt); if (AI.en <= 0) AI.liftT = 0; } } gh.tp.y += clamp(wy - gh.tp.y, -14 * dt, 14 * dt);
   gh.ty = Math.atan2(dx, dz); gh.ay = gh.ty; gh.ap = Math.atan2(tp.y - (gh.pos.y + 2), dist);
   /* revive the player */
   if (!pl.alive && MP.revUsed.h < 1) {
@@ -3755,6 +3755,7 @@ function aiDodge(dx, dz, heli, rb) {
   }
   if (sp) { AI.en -= cost; AI.dashT = t; AI.dspd = sp; AI.dvx = Math.sin(pa); AI.dvz = Math.cos(pa); AI.dashCd = heli ? 0.5 : 0.4; burst(MP.ghostC, 20, 12, 0x7af0ff, 0.4, 0); }
   if (heli && !rb && Math.random() < 0.7) AI.liftT = 1.6;
+  else if (heli && rb && AI.en >= 20 && Math.random() < 0.7) AI.liftT = 1.2;
 }
 function aiPunch() {
   const f = AI.pCh / 2, R = 10 + 10 * f, dmg = (50 + 50 * f) * AI_DMG, C = gh.pos; let slow = false;
@@ -3785,6 +3786,14 @@ function aiSkills(dt, dist, rb, heli, tp) {
     if (AI.dashT <= 0) AI.stab = false;
     else if (!AI.sHit) { const pt = B.parts[AI.key]; if (pt && gh.pos.distanceTo(tp) < pt.r + 7.5 + 1.8) { AI.sHit = true; aiHit(156 * AI_DMG, true); burst(tp, 36, 22, 0x9aeaff, 0.6, 2); } }
   }
+  if (AI.ch === 'arty') { /* Lá chắn: on "Cẩn thận" when near the player (changes to robot first), or when targeted while in robot form */
+    if (AI.cauWant > 0) { AI.cauWant -= dt; if (AI.mode !== 'cau') AI.cauWant = 0; }
+    const nearP = pl.alive && Math.hypot(pl.pos.x - gh.pos.x, pl.pos.z - gh.pos.z) < 45;
+    if (!barrier.active && AI.en >= 95 && AI.dashT <= 0 && !AI.pOn && ((AI.cauWant > 0 && nearP) || (rb && aiThreat()))) {
+      if (!rb) AI.holdRobot = 2;
+      else if (AI.transT <= 0) { aiBarrier(tp); AI.cauWant = 0; AI.holdRobot = 0.9; AI.formCd = 0; }
+    }
+  }
   if (AI.ch === 'arty' && rb && AI.transT <= 0) {
     if (!AI.pOn && AI.pCd <= 0 && !AI.shOn && AI.dashT <= 0) {
       let near = 1e9; for (const k of B.keys) { const p = B.parts[k]; if (!p || (B.noCore && k === 'core') || (!p.alive && k !== 'core')) continue; near = Math.min(near, B.pp[k].distanceTo(gh.pos) - p.r); }
@@ -3796,6 +3805,12 @@ function aiSkills(dt, dist, rb, heli, tp) {
     }
   } else AI.pOn = false;
   return AI.sS === 'ch' || AI.pOn || (AI.stab && AI.dashT > 0);
+}
+
+function aiBarrier(tp) {
+  const yaw = Math.atan2(tp.x - gh.pos.x, tp.z - gh.pos.z);
+  AI.en -= 95; barrier.active = true; barrier.hp = barrier.max; barrier.t = 0; barrier.grow = 0; barrier.push = 0.35; barrier.yaw = yaw;
+  barrier.pos.set(gh.pos.x + Math.sin(yaw) * 9, 0, gh.pos.z + Math.cos(yaw) * 9); barrierMesh.visible = true; burst(V3(barrier.pos.x, 3, barrier.pos.z), 30, 14, 0x9aeaff, 0.6, 2);
 }
 /* ===== camera, HUD, game flow ===== */
 const camPosS = V3(0, 8, -60), camLookS = V3(0, 10, 0), _d = V3();
