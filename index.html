@@ -116,10 +116,10 @@ input,textarea{-webkit-user-select:text;user-select:text;touch-action:auto}
 #mpBar button{font-family:var(--font);background:#3a4658;color:#fff;border:0;padding:6px 12px;cursor:pointer}
 #mate{left:max(14px,env(safe-area-inset-left,0px));top:calc(max(10px,env(safe-area-inset-top,0px)) + 50px);width:min(190px,calc(var(--vw,1vw)*28))}
 .comm{position:fixed;z-index:12;pointer-events:auto}
-#comBtn{left:50%;transform:translateX(-50%);bottom:max(14px,env(safe-area-inset-bottom,0px));font:700 12px var(--font);letter-spacing:.18em;color:var(--fg);background:rgba(10,16,28,.7);border:2px solid var(--line);border-radius:22px;padding:10px 18px;cursor:pointer}
+#comBtn{left:50%;transform:translateX(-50%);bottom:max(14px,env(safe-area-inset-bottom,0px));font:700 12px var(--font);color:transparent;background:transparent;border:0;border-radius:22px;width:190px;height:78px;padding:0;cursor:pointer;-webkit-tap-highlight-color:transparent;outline:0}
 #comBtn[hidden],#comWheel[hidden]{display:none}
 #comWheel{left:50%;transform:translateX(-50%);bottom:max(64px,calc(env(safe-area-inset-bottom,0px) + 50px));display:flex;gap:8px;flex-wrap:wrap;justify-content:center;max-width:94%}
-#comWheel button{font:700 12px var(--font);letter-spacing:.1em;color:var(--fg);background:rgba(10,16,28,.88);border:2px solid var(--line);border-radius:10px;padding:10px 12px;min-width:84px;cursor:pointer}
+#comWheel button{font:700 12px var(--font);letter-spacing:.1em;color:var(--fg);background:rgba(10,16,28,.68);border:2px solid var(--line);border-radius:10px;padding:10px 12px;min-width:84px;cursor:pointer}
 #comWheel button i{display:block;font-style:normal;font-size:10px;color:var(--dim);margin-bottom:2px}
 #cmsg{left:0;right:0;top:max(96px,calc(env(safe-area-inset-top,0px) + 86px));text-align:center;opacity:0;transition:opacity .25s}
 #cmsg.on{opacity:1}
@@ -176,7 +176,7 @@ button.cta:disabled{opacity:.5;cursor:not-allowed}
 
 <div class="screen" id="menu">
   <div class="card">
-    <h1>Titan <em>Breaker</em> <small class="ver">v5.9</small></h1>
+    <h1>Titan <em>Breaker</em> <small class="ver">v6.1</small></h1>
     <div class="sub">Robot biến hình đấu boss khổng lồ</div>
     <div id="mpBar" hidden><span id="mpBarT"></span><button id="mpLeave">Rời phòng</button></div>
     <div class="plab">Boss</div>
@@ -3084,7 +3084,7 @@ function comRecv(e) { if (MP.on && G.state === 'playing') comShow(e.c, e.k, fals
 function comOpen(on) { comS.open = on && MP.on && G.state === 'playing' && !(!pl.alive && MP.revUsed[MP.me] >= 1); $('comWheel').hidden = !comS.open; }
 function comTick(dt) {
   comS.cd = Math.max(0, comS.cd - dt);
-  $('comBtn').hidden = !(MP.on && G.state === 'playing'); const cdim = MP.on && !pl.alive && MP.revUsed[MP.me] >= 1; $('comBtn').style.opacity = cdim ? 0.3 : ''; $('comBtn').style.pointerEvents = cdim ? 'none' : ''; if (cdim && comS.open) comOpen(false);
+  $('comBtn').hidden = !(MP.on && G.state === 'playing'); const cdim = MP.on && !pl.alive && MP.revUsed[MP.me] >= 1; $('comBtn').style.pointerEvents = cdim ? 'none' : ''; if (comS.pa && !pl.alive && comS.open) comOpen(false); comS.pa = pl.alive; if (cdim && comS.open) comOpen(false);
   if (!(MP.on && G.state === 'playing') && comS.open) comOpen(false);
   if (comS.msgT > 0) { comS.msgT -= dt; if (comS.msgT <= 0) { $('cmsg').classList.remove('on'); } }
   const pg = $('cping'), pl2 = $('cpingl');
@@ -3701,6 +3701,7 @@ function aiTick(dt) {
   if (AI.keyT <= 0 || !AI.key || (AI.key !== 'core' && !(B.parts[AI.key] && B.parts[AI.key].alive))) { AI.key = aiPickKey(); AI.keyT = 3.5; }
   if (!AI.key) return;
   const tp = B.pp[AI.key], dx = tp.x - gh.pos.x, dz = tp.z - gh.pos.z, dist = Math.max(0.1, Math.hypot(dx, dz));
+  if (!pl.alive && MP.revUsed.h >= 1 && AI.mode !== 'atk') { AI.mode = 'atk'; AI.focus = null; AI.keyT = 0; AI.cauWant = 0; }
   const rescue = !pl.alive && !gh.left && MP.revUsed.h < 1, rd = Math.hypot(pl.pos.x - gh.pos.x, pl.pos.z - gh.pos.z);
   /* shield */
   const threat = aiThreat();
@@ -3906,7 +3907,8 @@ function camoMat(n, v) {
   const m = new THREE.MeshStandardMaterial({ map: t, roughness: 0.62, metalness: 0.2 }); if (v) m.color.setScalar(0.72); return camoCache[key] = m;
 }
 const GOLD = new THREE.MeshStandardMaterial({ color: 0xf6c428, roughness: 0.35, metalness: 0.5 }), GOLD2 = new THREE.MeshStandardMaterial({ color: 0xc99a18, roughness: 0.4, metalness: 0.5 });
-const SIL1 = new THREE.MeshStandardMaterial({ color: 0xc4cad6, roughness: 0.3, metalness: 0.75 }), SIL2 = new THREE.MeshStandardMaterial({ color: 0x8e96a8, roughness: 0.35, metalness: 0.7 }), SILD = new THREE.MeshStandardMaterial({ color: 0x4a5062, roughness: 0.5, metalness: 0.6 });
+const SIL1 = new THREE.MeshStandardMaterial({ color: 0xeef1f7, roughness: 0.5, metalness: 0.1, emissive: 0x3a3f4c }), SIL2 = new THREE.MeshStandardMaterial({ color: 0xb8c0d0, roughness: 0.5, metalness: 0.1, emissive: 0x2a2e38 }), SILD = new THREE.MeshStandardMaterial({ color: 0x7c8498, roughness: 0.55, metalness: 0.1, emissive: 0x1c1f28 });
+const barrelMat0 = barrel.material;
 
 /* ---- models ---- */
 parts.forEach(p => { p.rpT = p.rp.clone(); p.rsT = p.rs.clone(); });
@@ -3923,7 +3925,6 @@ const HELI_YR = [ /* robot form: rp, rs (slim, tall) */
 const heliDeco = new THREE.Group(); pl.root.add(heliDeco); heliDeco.visible = false;
 for (const s of [-1, 1]) { const w = bx(GOLD2, heliDeco); w.scale.set(0.08, 2.9, 0.55); w.position.set(s * 0.95, 4.35, -0.75); w.rotation.z = -s * 0.38; const w2 = bx(M.dark, heliDeco); w2.scale.set(0.1, 2.2, 0.3); w2.position.set(s * 1.05, 4.2, -0.78); w2.rotation.z = -s * 0.38; }
 const crest = bx(GOLD, heliDeco); crest.scale.set(0.12, 0.9, 0.5); crest.position.set(0, 5.75, 0.1);
-const rings = []; for (let i = 0; i < 3; i++) { const r = bx(SILD, gunPivot); r.visible = false; rings.push(r); }
 const sbChildren = bigShield.children.map(c => c.material);
 const headBody = head.children[0], heliBlades = [rotor.children[1], rotor.children[2]];
 
@@ -3931,7 +3932,7 @@ function skinApply() {
   const sk = curSkin(), c = pl.char, H = c === 'heli', A = c === 'arty';
   /* restore defaults first */
   parts.forEach(p => { p.rp.copy(p.rpT); p.rs.copy(p.rsT); });
-  headBody.material = M.white; headBody.scale.set(0.95, 0.9, 0.95); heliDeco.visible = false; for (const r of rings) r.visible = false;
+  headBody.material = M.white; headBody.scale.set(0.95, 0.9, 0.95); heliDeco.visible = false; barrel.material = barrelMat0;
   bigShield.children.forEach((m, i) => { m.material = sbChildren[i]; });
   heliBlades[0].scale.set(8, 0.06, 0.45); heliBlades[1].scale.set(0.45, 0.06, 8);
   if (sk.startsWith('camo') && c === 'tank') {
@@ -3947,7 +3948,7 @@ function skinApply() {
     pl.maxHp = Math.round(pl.maxHp * 0.8);
   } else if (sk === 'artyS' && A) {
     parts.forEach((p, i) => { p.mesh.material = (i === 4 || i === 5) ? SILD : p.m0 === M.white ? SIL1 : p.m0 === M.blue ? SIL2 : p.m0 === M.red ? SILD : p.m0; });
-    headBody.material = SIL1; bigShield.children.forEach((m, i) => { m.material = i === 0 ? SIL1 : i === 1 ? SILD : i === 2 ? SIL2 : SILD; });
+    headBody.material = SIL1; barrel.material = SIL1; bigShield.children.forEach((m, i) => { m.material = i === 0 ? SIL1 : i === 1 ? SILD : i === 2 ? SIL2 : SILD; });
     pl.shMax = Math.round(pl.shMax * 0.6);
   }
   swReset();
@@ -3969,9 +3970,8 @@ function skinFrame(dt) {
   } else STL.a = 1;
   heliDeco.visible = sk === 'heliY' && pl.k > 0.5; heliDeco.scale.setScalar(Math.max(0.001, pl.k));
   if (artySilver()) {
-    const k = ease(pl.k), len = lerp(8.8, 6.8, k), bt = 0.42;
+    const k = ease(pl.k), len = lerp(11, 8.5, k), bt = 0.42;
     barrelB.visible = tipB.visible = false; barrel.scale.set(bt, bt, len); barrel.position.set(0, 0, len / 2); muzzle.position.set(0, 0, len + 0.3); tip.position.set(0, 0, len); tip.scale.set(0.5, 0.5, 0.3);
-    rings.forEach((r, i) => { r.visible = true; r.scale.set(0.62, 0.62, 0.3); r.position.set(0, 0, len * (0.3 + i * 0.25)); });
   }
 }
 { const _p = poseModel; poseModel = function (dt) { _p(dt); skinFrame(dt); }; }
