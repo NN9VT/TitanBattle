@@ -176,7 +176,7 @@ button.cta:disabled{opacity:.5;cursor:not-allowed}
 
 <div class="screen" id="menu">
   <div class="card">
-    <h1>Titan <em>Breaker</em> <small class="ver">v5.7</small></h1>
+    <h1>Titan <em>Breaker</em> <small class="ver">v5.9</small></h1>
     <div class="sub">Robot biến hình đấu boss khổng lồ</div>
     <div id="mpBar" hidden><span id="mpBarT"></span><button id="mpLeave">Rời phòng</button></div>
     <div class="plab">Boss</div>
@@ -739,7 +739,7 @@ function fireShot() {
   const m = new THREE.Mesh(shellGeo, robot ? beamMat : shellMat);
   if (robot) m.scale.set(1.4, 1.4, 2.4); else if (hg) m.scale.set(0.7, 0.7, 0.8); else m.scale.set(1.7, 1.7, 1.8);
   m.position.copy(mp); m.lookAt(mp.clone().add(d)); scene.add(m);
-  shots.push({ mesh: m, pos: mp.clone(), vel: d.multiplyScalar(robot ? 170 : hg ? 190 : 125), dmg: robot ? 30 : hg ? 2.8 : 33, life: 1.6, r: hg ? 1.3 : 0.7, coreMul: hg ? 0.85 : 1 });
+  shots.push({ mesh: m, pos: mp.clone(), vel: d.multiplyScalar(robot ? 170 : hg ? 185 : 125), dmg: robot ? 30 : hg ? 2.8 : 33, life: 1.6, r: hg ? 1.3 : 0.7, coreMul: hg ? 0.85 : 1 });
   burst(mp, hg ? 2 : 5, 8, robot ? 0x7af0ff : 0xffd070, 0.18, 0);
   if (hg) { pl.heat += 0.01; if (pl.heat >= 1) { pl.heat = 1; pl.ohT = 3; } }
   pl.fireCd = robot ? 0.55 : hg ? 0.08 : 1.0; pl.shotT = 0.3; shake(hg ? 0.02 : 0.05);
@@ -891,8 +891,8 @@ function updatePlayer(dt) {
     if (B !== B1 && B.alive && !B.rolling && !B.noPush) { const dx = B.pos.x - barrier.pos.x, dz = B.pos.z - barrier.pos.z, d = Math.hypot(dx, dz);
       if (d < 32 && d > 0.01) { B.pos.x += dx / d * 34 * dt; B.pos.z += dz / d * 34 * dt; const r = Math.hypot(B.pos.x, B.pos.z), lim = ARENA_R - 11; if (r > lim) { B.pos.x *= lim / r; B.pos.z *= lim / r; } } }
   }
-  if (IN.pressed.dodge && heliMode && !trans && !up && pl.en >= 30 && pl.dashT <= 0 && pl.dashCd <= 0 && !frozen) {
-    pl.en -= 30; pl.dashT = 0.4; pl.burst = true; pl.dashCd = 0.5;
+  if (IN.pressed.dodge && heliMode && !trans && !up && pl.en >= 33 && pl.dashT <= 0 && pl.dashCd <= 0 && !frozen) {
+    pl.en -= 33; pl.dashT = 0.4; pl.burst = true; pl.dashCd = 0.5;
     for (const e of eproj) if (e.kind === 'missile' && e.pos.distanceTo(pCenter()) < 14) { e.lostT = 0.1; burst(e.pos, 8, 8, 0x9aeaff, 0.4, 0); }
     const vy = (IN.boost ? 1 : 0) - ((keys.KeyC || touch.held.down) ? 1 : 0);
     if (has) pl.dashDir.set(dx, 0, dz); else if (vy) pl.dashDir.set(0, 0, 0); else pl.dashDir.set(-Math.cos(pl.aimYaw), 0, Math.sin(pl.aimYaw));
@@ -983,7 +983,7 @@ function fireRocket(side) {
   mp.addScaledVector(right, side * 1.3);
   const d = aimPoint.clone().sub(mp).normalize(); d.x += rnd(-0.03, 0.03); d.y += rnd(-0.03, 0.03); d.z += rnd(-0.03, 0.03); d.normalize();
   const m = new THREE.Mesh(shellGeo, rocketMat); m.scale.set(1.6, 1.6, 1.6); m.position.copy(mp); m.lookAt(mp.clone().add(d)); scene.add(m);
-  shots.push({ mesh: m, pos: mp.clone(), vel: d.multiplyScalar(95), dmg: 14, life: 2 });
+  shots.push({ mesh: m, pos: mp.clone(), vel: d.multiplyScalar(80), dmg: 14, life: 2 });
   burst(mp, 6, 8, 0xffa040, 0.3, 0); shake(0.08);
 }
 const punchRing = makeRing(0xff9a3c, 1);
@@ -2737,7 +2737,8 @@ function mpPick(n) {
   if (!MP.on) { if (stealthTry()) { const bb = n === 1 ? B1 : n === 2 ? B2 : B3; bb.timer = 1.4; return; } if (n === 1) startAttack(pickAttack()); else if (n === 2) startAttack2(pick2()); else startAttack3(pick3()); return; }
   if (!MP.host) return;
   mpSwapOut(); MP.tgt = mpChoose(); if (mpTgtRemote()) mpSwapIn();
-  const t = n === 1 ? pickAttack() : n === 2 ? pick2() : pick3();
+  const pk = () => n === 1 ? pickAttack() : n === 2 ? pick2() : pick3();
+  let t = pk(); const rt = atkRetarget(n, t); if (rt) { MP.tgt = rt; mpSwapOut(); if (mpTgtRemote()) mpSwapIn(); t = pk(); }
   mpSend({ t: 'a', y: t, g: MP.tgt });
   mpStartAtk(n, t);
 }
@@ -2851,6 +2852,17 @@ $('mpCode').addEventListener('input', e => { e.target.value = e.target.value.toU
 for (const id of ['charPick', 'bossPick', 'diffPick']) $(id).addEventListener('click', () => setTimeout(() => { if (MP.room) { mpPushPicks(); mpUpdateUI(); } }, 0));
 
 try { const m = localStorage.getItem('tb_hostmail'); if (m) $('mpEmail').value = m; } catch (_) { }
+
+/* two targets: ground attacks go to the grounded one, anti-air attacks to the airborne one */
+const ATK_LOW = { 1: ['stomp', 'art'], 2: ['jab', 'swipe', 'spin', 'leap', 'charge', 'roll'], 3: ['bomb', 'bite', 'tail', 'fire'] };
+const ATK_AIR = { 1: ['flak', 'aam'], 2: ['hom', 'rain'], 3: ['bolt'] };
+function atkRetarget(n, t) {
+  if (!(pl.alive && gh.alive && !gh.left)) return null;
+  const cur = MP.tgt === MP.me, cy = cur ? pl.pos.y : gh.pos.y, oy = cur ? gh.pos.y : pl.pos.y, other = cur ? MP.other : MP.me;
+  if (ATK_LOW[n].includes(t) && cy > 5.5 && oy <= 5.5) return other;
+  if (ATK_AIR[n].includes(t) && cy <= 5.5 && oy > 5.5) return other;
+  return null;
+}
 /* ===== Audio: WebAudio synth (no files) ===== */
 const SND = { ctx: null, master: null, rev: null, nz: null, muted: false, vol: 0.6, active: 0, bed: null, started: false, nextVoice: 9, lastHit: 0, lastShot: 0, lastBoom: 0, drumT: 0,
   partA: {}, phase: 1, bossAlive: true, lastCd: 0, kT: undefined, dashing: false, bar: false, melee: false, curve: null };
@@ -3064,14 +3076,15 @@ function comShow(c, k, mine) {
   sfx('c_' + c);
 }
 function comSend(c) {
+  if (!pl.alive && MP.revUsed[MP.me] >= 1) return;
   if (!MP.on || G.state !== 'playing' || comS.cd > 0) return; comS.cd = 1.2;
   const k = c === 'foc' ? comPickPart() : undefined; const o = { t: 'c', c }; if (k) o.k = k; mpSend(o); comShow(c, k, true); comOpen(false); if (MP.ai) aiCommand(c, k);
 }
 function comRecv(e) { if (MP.on && G.state === 'playing') comShow(e.c, e.k, false); }
-function comOpen(on) { comS.open = on && MP.on && G.state === 'playing'; $('comWheel').hidden = !comS.open; }
+function comOpen(on) { comS.open = on && MP.on && G.state === 'playing' && !(!pl.alive && MP.revUsed[MP.me] >= 1); $('comWheel').hidden = !comS.open; }
 function comTick(dt) {
   comS.cd = Math.max(0, comS.cd - dt);
-  $('comBtn').hidden = !(MP.on && G.state === 'playing');
+  $('comBtn').hidden = !(MP.on && G.state === 'playing'); const cdim = MP.on && !pl.alive && MP.revUsed[MP.me] >= 1; $('comBtn').style.opacity = cdim ? 0.3 : ''; $('comBtn').style.pointerEvents = cdim ? 'none' : ''; if (cdim && comS.open) comOpen(false);
   if (!(MP.on && G.state === 'playing') && comS.open) comOpen(false);
   if (comS.msgT > 0) { comS.msgT -= dt; if (comS.msgT <= 0) { $('cmsg').classList.remove('on'); } }
   const pg = $('cping'), pl2 = $('cpingl');
@@ -3688,18 +3701,19 @@ function aiTick(dt) {
   if (AI.keyT <= 0 || !AI.key || (AI.key !== 'core' && !(B.parts[AI.key] && B.parts[AI.key].alive))) { AI.key = aiPickKey(); AI.keyT = 3.5; }
   if (!AI.key) return;
   const tp = B.pp[AI.key], dx = tp.x - gh.pos.x, dz = tp.z - gh.pos.z, dist = Math.max(0.1, Math.hypot(dx, dz));
+  const rescue = !pl.alive && !gh.left && MP.revUsed.h < 1, rd = Math.hypot(pl.pos.x - gh.pos.x, pl.pos.z - gh.pos.z);
   /* shield */
   const threat = aiThreat();
   if (AI.shState === 'broken') { AI.shT -= dt; if (AI.shT <= 0) { AI.shState = 'ready'; AI.sh = AI.shMax * 0.4; } }
   else if (!AI.shOn && AI.shHit <= 0) AI.sh = Math.min(AI.shMax, AI.sh + 16 * dt);
-  const wantSh = AI.mode === 'cau' || (threat && (AI.mode === 'def' || AI.hp < AI.max * 0.4));
+  const wantSh = rescue ? (rd < 10 && threat) : (AI.mode === 'cau' || (threat && (AI.mode === 'def' || AI.hp < AI.max * 0.4)));
   AI.shOn = wantSh && AI.shState === 'ready' && AI.sh > 0 && !trans; if (AI.shOn) AI.sh = Math.max(0, AI.sh - 6 * dt); gh.sh = AI.shOn ? 1 : 0;
   /* evade: when the boss locks onto us, sprint sideways */
   if (threat && !AI.thr) AI.react = 0.3 + Math.random() * 0.2; AI.thr = threat; if (threat) AI.react -= dt;
-  if (threat && AI.react <= 0 && AI.evCd <= 0) aiDodge(dx, dz, heli, robot);
+  if (threat && AI.react <= 0 && AI.evCd <= 0) { if (rescue) { AI.ringDir = -(AI.ringDir || 1); AI.evCd = 1.2; } else aiDodge(dx, dz, heli, robot); }
   AI.evade = Math.max(0, AI.evade - dt);
   /* form */
-  const wantRobot = AI.holdRobot > 0 || (AI.mode === 'chg' ? dist < (heli ? 18 : 30) : dist < 13);
+  const wantRobot = !rescue && (AI.holdRobot > 0 || (AI.mode === 'chg' ? dist < (heli ? 18 : 30) : dist < 13));
   if (wantRobot !== robot && (AI.formCd <= 0 || AI.holdRobot > 0)) { gh.tk = wantRobot ? 1 : 0; AI.formCd = 4; AI.transT = heli ? 0.6 : 1.1; burst(MP.ghostC, 14, 9, 0x9aeaff, 0.4, 0); }
   const rb = gh.tk > 0.5;
   /* movement target */
@@ -3714,14 +3728,17 @@ function aiTick(dt) {
     const a = aw + AI.dir * 0.5; tx = tp.x + Math.sin(a) * R; tz = tp.z + Math.cos(a) * R;
   }
   if (AI.evade > 0) { const pa = Math.atan2(dx, dz) + AI.evDir * Math.PI / 2; tx = gh.pos.x + Math.sin(pa) * 30; tz = gh.pos.z + Math.cos(pa) * 30; }
-  if (!pl.alive && !gh.left) { tx = pl.pos.x; tz = pl.pos.z; }
+  if (rescue) {
+    if (rd > 7) { tx = pl.pos.x + (gh.pos.x - pl.pos.x) / rd * 4; tz = pl.pos.z + (gh.pos.z - pl.pos.z) / rd * 4; if (rd > 18 && AI.dashT <= 0 && AI.dashCd <= 0 && !robot && !AI.stab && !trans) { const hc = heli ? 33 : 35; if (AI.en >= hc) { AI.en -= hc; AI.dashT = heli ? 0.4 : 0.3; AI.dspd = heli ? 105 : 48; AI.dvx = (pl.pos.x - gh.pos.x) / rd; AI.dvz = (pl.pos.z - gh.pos.z) / rd; AI.dashCd = heli ? 0.5 : 0.4; burst(MP.ghostC, 20, 12, 0x7af0ff, 0.4, 0); } } }
+    else { AI.ringA = (AI.ringA || 0) + (AI.ringDir || 1) * 1.7 * dt; tx = pl.pos.x + Math.sin(AI.ringA) * 3.5; tz = pl.pos.z + Math.cos(AI.ringA) * 3.5; }
+  }
   if (Math.hypot(pl.pos.x - tx, pl.pos.z - tz) < 9 && pl.alive) { const ax = tx - pl.pos.x, az = tz - pl.pos.z, al = Math.max(0.1, Math.hypot(ax, az)); tx = pl.pos.x + ax / al * 11; tz = pl.pos.z + az / al * 11; }
-  const lim = ARENA_R - 8, tr = Math.hypot(tx, tz); if (tr > lim) { tx *= lim / tr; tz *= lim / tr; }
+  const lim = ARENA_R - 8, lim2 = rescue ? ARENA_R : lim, tr = Math.hypot(tx, tz); if (tr > lim2) { tx *= lim2 / tr; tz *= lim2 / tr; }
   const mx = tx - gh.tp.x, mz = tz - gh.tp.z, ml = Math.hypot(mx, mz);
-  let spd = (rb ? (AI.ch === 'arty' ? 8 : heli ? 15.6 : 10) : st[2]) * 0.85 * (AI.shOn ? 0.5 : 1) * (trans ? 0.4 : 1) * (AI.evade > 0 ? 1.25 : 1);
+  let spd = (rb ? (AI.ch === 'arty' ? 8 : heli ? 15.6 : 10) : st[2]) * 0.85 * (AI.shOn ? 0.5 : 1) * (trans ? 0.4 : 1) * (AI.evade > 0 ? 1.25 : 1) * (rescue && rd > 7 ? 1.3 : 1);
   if (AI.dashT > 0) { AI.dashT -= dt; gh.tp.x += AI.dvx * AI.dspd * dt; gh.tp.z += AI.dvz * AI.dspd * dt; const rr = Math.hypot(gh.tp.x, gh.tp.z); if (rr > lim) { gh.tp.x *= lim / rr; gh.tp.z *= lim / rr; } }
   else if (!(AI.sS === 'ch' || AI.pOn) && ml > 0.5) { const s = Math.min(ml, spd * dt) / ml; gh.tp.x += mx * s; gh.tp.z += mz * s; }
-  let wy = heli && !rb ? clamp(tp.y, 6, 16) : 0; if (AI.liftT > 0 && heli) { wy = Math.max(wy, rb ? 16 : 22); if (rb) { AI.en = Math.max(0, AI.en - 24 * dt); if (AI.en <= 0) AI.liftT = 0; } } gh.tp.y += clamp(wy - gh.tp.y, -14 * dt, 14 * dt);
+  let wy = heli && !rb ? (G.boss === 2 ? 22 : clamp(tp.y, 6, 16)) : 0; if (AI.liftT > 0 && heli) { wy = Math.max(wy, rb ? 16 : 22); if (rb) { AI.en = Math.max(0, AI.en - 24 * dt); if (AI.en <= 0) AI.liftT = 0; } } gh.tp.y += clamp(wy - gh.tp.y, -14 * dt, 14 * dt);
   gh.ty = Math.atan2(dx, dz); gh.ay = gh.ty; gh.ap = Math.atan2(tp.y - (gh.pos.y + 2), dist);
   /* revive the player */
   if (!pl.alive && MP.revUsed.h < 1) {
@@ -3756,7 +3773,7 @@ function aiDodge(dx, dz, heli, rb) {
   const pa = Math.atan2(dx, dz) + AI.evDir * Math.PI / 2; let sp = 0, cost = 0, t = 0;
   if (AI.sS === 'ch') AI.sS = 'idle'; AI.pOn = false;
   if (!AI.shOn && AI.dashCd <= 0 && AI.dashT <= 0 && !rb && !AI.stab) {
-    if (heli && AI.en >= 30) { sp = 105; t = 0.4; cost = 30; for (const e of eproj) if (e.kind === 'missile' && e.pos.distanceTo(MP.ghostC) < 14) e.lostT = 0.1; }
+    if (heli && AI.en >= 33) { sp = 105; t = 0.4; cost = 33; for (const e of eproj) if (e.kind === 'missile' && e.pos.distanceTo(MP.ghostC) < 14) e.lostT = 0.1; }
     else if (!heli && AI.en >= 35) { sp = 48; t = 0.3; cost = 35; }
   }
   if (sp) { AI.en -= cost; AI.dashT = t; AI.dspd = sp; AI.dvx = Math.sin(pa); AI.dvz = Math.cos(pa); AI.dashCd = heli ? 0.5 : 0.4; burst(MP.ghostC, 20, 12, 0x7af0ff, 0.4, 0); }
@@ -3963,7 +3980,7 @@ function skinFrame(dt) {
 const SW = { st: 'idle', t: 0, pos: V3(), dir: V3(0, 0, 1), cd: 0, hit: {}, spin: 0 };
 const swG = new THREE.Group(); swG.visible = false; scene.add(swG);
 { const b1 = bx(M.glow, swG); b1.scale.set(0.55, 0.2, 11); const b2 = bx(M.glow, swG); b2.scale.set(11, 0.2, 0.55); const c = bx(GOLD, swG); c.scale.set(1.3, 0.6, 1.3); }
-const SW_DMG = 90, SW_R = 5.5;
+const SW_DMG = 76.5, SW_R = 5.5;
 function swReset() { SW.st = 'idle'; SW.cd = 0; SW.hit = {}; swG.visible = false; }
 function swHits() {
   for (const key of B.keys) {
