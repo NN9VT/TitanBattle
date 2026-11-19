@@ -76,6 +76,7 @@ button.cta:focus-visible{outline:3px solid var(--cyan);outline-offset:3px}
 #joy{position:absolute;left:max(24px,env(safe-area-inset-left,0px));bottom:max(90px,env(safe-area-inset-bottom,0px));width:120px;height:120px;border-radius:50%;border:2px solid var(--line);background:rgba(79,216,255,.06);pointer-events:auto}
 #knob{position:absolute;left:35px;top:35px;width:50px;height:50px;border-radius:50%;background:rgba(79,216,255,.45)}
 .tb{position:absolute;pointer-events:auto;border-radius:50%;border:2px solid var(--line);background:rgba(10,16,28,.6);color:var(--fg);font:700 11px var(--font);letter-spacing:.08em;display:flex;align-items:center;justify-content:center;text-align:center}
+.tb svg{width:64%;height:64%;pointer-events:none}
 .tb.down{background:rgba(255,178,62,.55)}
 .tb.lock{background:rgba(255,226,170,.22);border-style:dashed;border-color:rgba(255,226,170,.8);color:rgba(255,236,200,.75)}
 #t-fire{right:max(24px,env(safe-area-inset-right,0px));bottom:max(30px,env(safe-area-inset-bottom,0px));width:92px;height:92px;font-size:14px}
@@ -163,20 +164,20 @@ button.cta:disabled{opacity:.5;cursor:not-allowed}
 
 <div id="touch">
   <div id="joy"><div id="knob"></div></div>
-  <div class="tb" id="t-fire">BẮN</div>
-  <div class="tb" id="t-shield">KHIÊN</div>
-  <div class="tb" id="t-dash">LƯỚT</div>
-  <div class="tb" id="t-trans">BIẾN<br>HÌNH</div>
-  <div class="tb" id="t-melee">KIẾM</div>
-  <div class="tb" id="t-down">XUỐNG</div>
-  <div class="tb" id="t-evade">BOOST</div>
-  <div class="tb" id="t-lock">KHÓA</div>
-  <div class="tb" id="t-next">ĐỔI</div>
+  <div class="tb" id="t-fire"></div>
+  <div class="tb" id="t-shield"></div>
+  <div class="tb" id="t-dash"></div>
+  <div class="tb" id="t-trans"></div>
+  <div class="tb" id="t-melee"></div>
+  <div class="tb" id="t-down"></div>
+  <div class="tb" id="t-evade"></div>
+  <div class="tb" id="t-lock"></div>
+  <div class="tb" id="t-next"></div>
 </div>
 
 <div class="screen" id="menu">
   <div class="card">
-    <h1>Titan <em>Breaker</em> <small class="ver">v6.2</small></h1>
+    <h1>Titan <em>Breaker</em> <small class="ver">v6.7</small></h1>
     <div class="sub">Robot biến hình đấu boss khổng lồ</div>
     <div id="mpBar" hidden><span id="mpBarT"></span><button id="mpLeave">Rời phòng</button></div>
     <div class="plab">Boss</div>
@@ -721,10 +722,10 @@ function fireArty() {
     d.x += rnd(-sp, sp); d.y += rnd(-sp, sp); d.z += rnd(-sp, sp); d.normalize();
     const m = new THREE.Mesh(shellGeo, ART.shell); m.scale.set(robot ? 1.6 : 2.2, robot ? 1.6 : 2.2, robot ? 2.2 : 3.0); m.position.copy(mp); m.lookAt(mp.clone().add(d)); scene.add(m);
     const dmg = robot ? 30 : sv ? 85 : 46;
-    shots.push({ mesh: m, pos: mp.clone(), vel: d.multiplyScalar((robot ? 85 : 62) * (sv ? 1.3 : 1)), dmg, life: 3.2, r: robot ? 1.2 : 1.6, splash: robot ? 6 : 9, sdmg: dmg * 0.6, ab: true });
+    shots.push({ mesh: m, pos: mp.clone(), vel: d.multiplyScalar((robot ? 85 : 62) * (sv ? 1.4 : 1)), dmg, life: 3.2, r: robot ? 1.2 : 1.6, splash: robot ? 7 : 9, sdmg: dmg * 0.6, ab: true });
     burst(mp, robot ? 8 : 14, 12, 0xffc070, 0.3, 0);
   }
-  pl.fireCd = robot ? 1.4 : 4.3; pl.shotT = 0.3; shake(robot ? 0.12 : 0.3);
+  pl.fireCd = robot ? 1.2 : 4.1; pl.shotT = 0.3; shake(robot ? 0.12 : 0.3);
 }
 function artySplash(s, direct) {
   const p = s.pos; explode(p, s.splash * 0.14, 0xffa040); burst(p, 26, 16, 0xffd070, 0.5, 3); flatRing(p.x, p.z, 1, s.splash, 0xffa040, 0.4, 1); shake(0.35); rockSplash(p, s.splash, s.sdmg, true);
@@ -3686,6 +3687,20 @@ function aiHit(dmg, mel) {
   const was = MP.applying, h = G.hitT; MP.applying = true; if (mel) G.mel = true;
   try { bossDamage(k, dmg, B.pp[k].clone()); } finally { MP.applying = was; G.mel = false; G.hitT = h; }
 }
+/* ranged shots can miss: harder at distance, vs fast and vs small targets; big slow parts stay ~100% */
+const AI_MAXR = { tank: 65, heli: 72, arty: 95 }; /* AI will not shoot beyond this */
+function aiHitChance() {
+  const k = AI.key, pt = k && B.parts[k]; if (!pt) return 1;
+  const v = (B._pv && B._pv[k]) || 0, dist = Math.hypot(B.pp[k].x - gh.pos.x, B.pp[k].z - gh.pos.z), sz = clamp(1.2 - pt.r / 8, 0.3, 1);
+  const dp = 0.30 * clamp((dist - 30) / 60, 0, 1) * clamp(v / 12, 0.15, 1), sp = 0.30 * clamp((v - 6) / 18, 0, 1);
+  const mr = AI_MAXR[AI.ch] || 70, ep = 0.25 * clamp((dist - mr * 0.75) / (mr * 0.25), 0, 1) * clamp(v / 12, 0.2, 1), am = AI.ch === 'arty' ? 1.7 : 1; /* arty shells fly slowly: misses more */
+  return clamp(1 - (dp * am + sp * am + ep) * sz, AI.ch === 'arty' ? 0.3 : 0.35, 1);
+}
+function aiHitR(dmg, pity) {
+  AI.miss = AI.miss || 0;
+  if (Math.random() < aiHitChance() || (pity && AI.miss >= pity)) { AI.miss = 0; aiHit(dmg); }
+  else { AI.miss++; const tp = B.pp[AI.key]; if (tp) burst(V3(tp.x + rnd(-6, 6), tp.y + rnd(-4, 4), tp.z + rnd(-6, 6)), 3, 8, 0xffd070, 0.25, 0); }
+}
 function aiThreat() { return MP.tgt === 'g' && (!!B.atk || (G.boss === 4 && (F4.jet.tgt === 'g' || F4.jug.tgt === 'g'))); }
 
 function aiTick(dt) {
@@ -3748,7 +3763,7 @@ function aiTick(dt) {
   } AI.revT = 0;
   /* attack */
   AI.fireT -= dt; const busy = aiSkills(dt, dist, rb, heli, tp); gh.m = AI.mFlash > 0 || AI.stab ? 1 : 0;
-  if (!AI.shOn && !trans && !busy && dist < 130) {
+  if (!AI.shOn && !trans && !busy && dist < (AI_MAXR[AI.ch] || 70)) {
     const slow = AI.mode === 'def' ? 1.6 : 1;
     if (AI.ohT > 0) { AI.ohT -= dt; if (AI.ohT <= 0) AI.heat = 0.3; }
     else if (heli && !rb && AI.heat > 0) AI.heat = Math.max(0, AI.heat - 0.12 * dt);
@@ -3756,10 +3771,10 @@ function aiTick(dt) {
       const reach = AI.ch === 'tank' ? 7.5 : heli ? 11 : 0;
       if (rb && reach && dist < reach + 4 + (tp.y > 0 ? 0 : 0) && AI.mode !== 'def') {
         const d = AI.ch === 'tank' ? 75 : 60; AI.fireT = (AI.ch === 'tank' ? 0.95 : 0.76) * slow; AI.mFlash = 0.35; aiHit(d * AI_DMG, true); burst(tp, 16, 14, 0x9aeaff, 0.5, 2);
-      } else if (rb) { AI.fireT = (AI.ch === 'arty' ? 1.4 : 0.55) * slow; aiHit((AI.ch === 'arty' ? 48 : 30) * AI_DMG); mpTracer(); }
-      else if (heli) { AI.fireT = 0.08 * slow; aiHit(2.8 * AI_DMG); if (AI.shotN++ % 3 === 0) mpTracer(); AI.heat += 0.035; if (AI.heat >= 1) { AI.heat = 1; AI.ohT = 2; } }
-      else if (AI.ch === 'tank') { AI.fireT = 1.0 * slow; aiHit(33 * AI_DMG); mpTracer(); }
-      else { AI.fireT = 4.3 * slow; aiHit(100 * AI_DMG); mpTracer(); }
+      } else if (rb) { AI.fireT = (AI.ch === 'arty' ? 1.2 : 0.55) * slow; aiHitR(30 * AI_DMG, 2); mpTracer(); }
+      else if (heli) { AI.fireT = 0.08 * slow; aiHitR(2.8 * AI_DMG, 0); if (AI.shotN++ % 3 === 0) mpTracer(); AI.heat += 0.035; if (AI.heat >= 1) { AI.heat = 1; AI.ohT = 2; } }
+      else if (AI.ch === 'tank') { AI.fireT = 1.0 * slow; aiHitR(33 * AI_DMG, 2); mpTracer(); }
+      else { AI.fireT = 4.1 * slow; aiHitR(92 * AI_DMG, 2); mpTracer(); }
     }
   }
 }
@@ -3797,8 +3812,8 @@ function aiPunch() {
   AI.pOn = false; AI.pCd = 4; AI.pCh = 0;
 }
 function aiSkills(dt, dist, rb, heli, tp) {
-  if (AI.rk > 0 && AI.rkT <= 0) { aiHit(14 * AI_DMG); mpTracer(); AI.rk--; AI.rkT = 0.07; }
-  if (heli && !rb && AI.rk <= 0 && AI.en >= 65 && !AI.shOn && dist < 120 && AI.dashT <= 0 && AI.transT <= 0) { AI.en -= 50; AI.rk = 6; AI.rkT = 0; }
+  if (AI.rk > 0 && AI.rkT <= 0) { aiHitR(14 * AI_DMG, 0); mpTracer(); AI.rk--; AI.rkT = 0.07; }
+  if (heli && !rb && AI.rk <= 0 && AI.en >= 65 && !AI.shOn && dist < AI_MAXR.heli && AI.dashT <= 0 && AI.transT <= 0) { AI.en -= 50; AI.rk = 6; AI.rkT = 0; }
   if (AI.ch === 'tank' && rb && AI.transT <= 0) {
     if (AI.sS === 'idle' && !AI.shOn && AI.en >= 70 && AI.dashCd <= 0 && AI.dashT <= 0 && dist > 9 && dist < 42 && (AI.mode === 'chg' || Math.random() < dt * 0.4)) { AI.sS = 'ch'; AI.sT = 0.5 + Math.random() * 0.5; burst(MP.ghostC, 16, 10, 0x9aeaff, 0.4, 0); }
     else if (AI.sS === 'ch') {
@@ -3844,7 +3859,7 @@ const SKINS = {
     { id: 'camo3', n: 'Camo 3', s: 'Tro núi lửa · tàng hình', need: 'Hạ Boss 3 bằng Xe tăng (Thường trở lên)' },
     { id: 'camo4', n: 'Camo 4', s: 'Tuyết · tàng hình', need: 'Hạ Boss 4 bằng Xe tăng (Thường trở lên)' }],
   heli: [{ id: 'heliY', n: 'Vàng', s: 'Máu −20% · robot không bắn, Kiếm phóng', need: 'Hạ Boss 3 (Thường trở lên)' }],
-  arty: [{ id: 'artyS', n: 'Bạc', s: '1 nòng dài · đạn +30% · khiên −40%', need: 'Hạ Boss 4 (Thường trở lên)' }],
+  arty: [{ id: 'artyS', n: 'Bạc', s: '1 nòng dài · đạn +40% · khiên chỉ 40%', need: 'Hạ Boss 4 (Thường trở lên)' }],
 };
 let SK_UNL = {}, SK_SEL = { tank: '', heli: '', arty: '' };
 try { SK_UNL = JSON.parse(localStorage.getItem('tb_sk') || '{}') || {}; Object.assign(SK_SEL, JSON.parse(localStorage.getItem('tb_sksel') || '{}')); } catch (_) { }
@@ -3949,7 +3964,7 @@ function skinApply() {
   } else if (sk === 'artyS' && A) {
     parts.forEach((p, i) => { p.mesh.material = (i === 4 || i === 5) ? SILD : p.m0 === M.white ? SIL1 : p.m0 === M.blue ? SIL2 : p.m0 === M.red ? SILD : p.m0; });
     headBody.material = SIL1; barrel.material = SIL1; bigShield.children.forEach((m, i) => { m.material = i === 0 ? SIL1 : i === 1 ? SILD : i === 2 ? SIL2 : SILD; });
-    pl.shMax = Math.round(pl.shMax * 0.6);
+    pl.shMax = Math.round(pl.shMax * 0.4);
   }
   swReset();
 }
@@ -4133,12 +4148,33 @@ function updateHud(dt) {
 }
 function setBar_(el, f) { el.querySelector('.bar > i').style.transform = 'scaleX(' + clamp(f, 0, 1) + ')'; }
 
+/* control-button icons (48x48, stroke) */
+const TB_ICON = {
+ fire: '<circle cx="24" cy="24" r="12"/><circle cx="24" cy="24" r="2.5" fill="currentColor"/><path d="M24 4v9M24 35v9M4 24h9M35 24h9"/>',
+ shield: '<path d="M24 5l15 5v11c0 10-6.5 17-15 21C15.500 38 9 31 9 21V10z"/><path d="M24 12v26" opacity=".5"/><path d="M15 19h18" opacity=".5"/>',
+ dash: '<path d="M22 11l13 13-13 13"/><path d="M11 11l13 13-13 13" opacity=".55"/><path d="M5 20h5M3 28h7" opacity=".7"/>',
+ boost: '<path d="M22 11l13 13-13 13"/><path d="M11 11l13 13-13 13" opacity=".55"/><path d="M5 20h5M3 28h7" opacity=".7"/>',
+ trans: '<path d="M37 18a15 15 0 0 0-26-3"/><path d="M11 6v9h9"/><path d="M11 30a15 15 0 0 0 26 3"/><path d="M37 42v-9h-9"/><path d="M24 17l7 7-7 7-7-7z" fill="currentColor" fill-opacity=".3"/>',
+ sword: '<path d="M19.500 23.500L42 6 24.500 28.500z" fill="currentColor" fill-opacity=".3"/><path d="M15 19l14 14"/><path d="M22 26L11 37"/><circle cx="9" cy="39" r="2.500"/>',
+ stab: '<path d="M45 24L27 17v14z" fill="currentColor" fill-opacity=".3"/><path d="M27 24H12"/><path d="M9 14h10M5 24h4M9 34h10" opacity=".65"/>',
+ punch: '<path d="M13 21c0-2 1.500-3 3-3h14c3 0 5 2 5 5v8c0 4-3 7-7 7h-8c-4 0-7-3-7-7z" fill="currentColor" fill-opacity=".2"/><path d="M17 18v-3a2 2 0 0 1 4 0v3M21 18v-4a2 2 0 0 1 4 0v4M25 18v-3a2 2 0 0 1 4 0v3"/><path d="M5 18a14 14 0 0 0 0 14M43 18a14 14 0 0 1 0 14" opacity=".6"/>',
+ barrier: '<path d="M24 4l17 6v12c0 11-7.500 18-17 22C14.500 40 7 33 7 22V10z" fill="currentColor" fill-opacity=".12"/><path d="M24 12l10 3.500v7c0 6.500-4.500 11-10 14-5.500-3-10-7.500-10-14v-7z" opacity=".7"/><path d="M24 20v10M19 25h10" opacity=".7"/>',
+ up: '<path d="M12 24l12-12 12 12"/><path d="M12 36l12-12 12 12" opacity=".55"/>',
+ down: '<path d="M12 24l12 12 12-12"/><path d="M12 12l12 12 12-12" opacity=".55"/>',
+ rocket: '<g transform="rotate(45 24 24)"><path d="M24 2C30 10 31 20 30 30H18C17 20 18 10 24 2z" fill="currentColor" fill-opacity=".2"/><circle cx="24" cy="18" r="3"/><path d="M18 24l-7 9h7M30 24l7 9h-7"/><path d="M21 34l3 9 3-9" opacity=".75"/></g>',
+ lock: '<path d="M6 16V8h8M34 8h8v8M42 32v8h-8M14 40H6v-8"/><circle cx="24" cy="24" r="6"/><circle cx="24" cy="24" r="1.500" fill="currentColor"/>',
+ swap: '<path d="M8 17h28M30 10l7 7-7 7"/><path d="M40 31H12M18 24l-7 7 7 7"/>',
+ evade: '<path d="M22 11l13 13-13 13"/><path d="M11 11l13 13-13 13" opacity=".55"/><path d="M5 20h5M3 28h7" opacity=".7"/>'
+};
+function tbIcon(id, key) { const el = document.getElementById(id); if (!el) return; if (!TB_ICON[key]) { el.textContent = '—'; el.dataset.ic = ''; return; } if (el.dataset.ic === key) return; el.dataset.ic = key; el.innerHTML = '<svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">' + TB_ICON[key] + '</svg>'; }
+function tbIconsInit() { tbIcon('t-fire', 'fire'); tbIcon('t-shield', 'shield'); tbIcon('t-trans', 'trans'); tbIcon('t-down', 'down'); tbIcon('t-evade', 'evade'); tbIcon('t-lock', 'lock'); tbIcon('t-next', 'swap'); }
+tbIconsInit();
 const tl = { m: '', d: '', dn: '' };
 function updateTouchLabels() {
   const robot = pl.k > 0.5, heli = pl.char === 'heli' && !robot;
   const m = robot ? (pl.char === 'arty' ? 'PUNCH' : 'KIẾM') : heli ? 'ROCKET' : '—', d = robot ? (pl.char === 'tank' ? 'ĐÂM' : pl.char === 'arty' ? 'SHIELD' : 'BAY') : heli ? 'LÊN' : 'LƯỚT', dn = heli ? '1' : '';
-  if (tl.m !== m) { tl.m = m; $('t-melee').textContent = m; }
-  if (tl.d !== d) { tl.d = d; $('t-dash').textContent = d; }
+  if (tl.m !== m) { tl.m = m; tbIcon('t-melee', { 'KIẾM': 'sword', 'PUNCH': 'punch', 'ROCKET': 'rocket' }[m]); }
+  if (tl.d !== d) { tl.d = d; tbIcon('t-dash', { 'LƯỚT': 'dash', 'ĐÂM': 'stab', 'SHIELD': 'barrier', 'BAY': 'up', 'LÊN': 'up' }[d]); }
   if (tl.dn !== dn) { tl.dn = dn; $('t-down').style.display = heli ? 'flex' : 'none'; $('t-evade').style.display = heli ? 'flex' : 'none'; }
 }
 function showHud(on) { $('quitBtn').hidden = !on; for (const id of ['bossbar', 'player', 'mode']) $(id).hidden = !on; $('cross').style.display = on ? '' : 'none'; if (!on) { $('lock').style.display = $('lockl').style.display = 'none'; setWarn(''); } }
