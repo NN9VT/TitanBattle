@@ -177,7 +177,7 @@ button.cta:disabled{opacity:.5;cursor:not-allowed}
 
 <div class="screen" id="menu">
   <div class="card">
-    <h1>Titan <em>Breaker</em> <small class="ver">v6.7</small></h1>
+    <h1>Titan <em>Breaker</em> <small class="ver">v6.9</small></h1>
     <div class="sub">Robot biến hình đấu boss khổng lồ</div>
     <div id="mpBar" hidden><span id="mpBarT"></span><button id="mpLeave">Rời phòng</button></div>
     <div class="plab">Boss</div>
@@ -562,8 +562,8 @@ part(bx(M.glow, pl.root), V3(0.8, 0.9, -1.95), V3(0.5, 0.35, 0.15), V3(0.55, 2.7
 const turret = new THREE.Group(); pl.root.add(turret);
 const turretMesh = part(bx(M.blue, turret), V3(0, 0, 0), V3(1.7, 0.7, 2.0), V3(0, 0.25, 0), V3(2.7, 0.9, 1.3));
 const HID = V3(0.001, 0.001, 0.001);
-part(bx(M.white, pl.root), V3(0, 1.2, 0), HID, V3(0, 2.9, 0), HID);
-part(bx(M.red, pl.root), V3(0, 1.2, 0), HID, V3(0, 2.9, 0), HID);
+part(bx(M.white, pl.root), V3(0, 1.2, 0), HID.clone(), V3(0, 2.9, 0), HID.clone());
+part(bx(M.red, pl.root), V3(0, 1.2, 0), HID.clone(), V3(0, 2.9, 0), HID.clone());
 const HELI = [
   [V3(-1.1, 0.3, 0.2), V3(0.14, 0.14, 3.4)], [V3(1.1, 0.3, 0.2), V3(0.14, 0.14, 3.4)], [V3(0, 1.9, 0), V3(1.9, 1.6, 3.8)], [V3(0, 1.9, 1.95), V3(1.0, 0.5, 0.15)],
   [V3(-1.0, 1.0, 0.2), V3(0.1, 1.4, 0.1)], [V3(1.0, 1.0, 0.2), V3(0.1, 1.4, 0.1)], [V3(-1.2, 1.8, -0.2), V3(0.6, 0.4, 1.4)], [V3(1.2, 1.8, -0.2), V3(0.6, 0.4, 1.4)],
@@ -4034,6 +4034,112 @@ function swordTick(dt) {
   swG.position.copy(SW.pos); emit(SW.pos.x, SW.pos.y, SW.pos.z, rnd(-2, 2), rnd(-2, 2), rnd(-2, 2), 0xffe27a, 0.3, 0);
 }
 { const _u = updatePlayer; updatePlayer = function (dt) { STL.t = Math.max(0, STL.t - dt); STL.cd = Math.max(0, STL.cd - dt); _u.apply(this, arguments); swordTick(dt); if (STL.t > 0 && !MP.swapped) for (const e of eproj) if (e.kind === 'missile' && !e.remote && !(e.lostT > 0.05)) e.lostT = 0.1; }; }
+/* ===== v6.8: new Tank model - detached, chamfered pieces (gap 0.14). Hitbox/gameplay unchanged (only meshes). ===== */
+const NT = (() => {
+  const rect = (a, b, c, d) => [[a, c], [b, c], [b, d], [a, d]];
+  const rr = (z0, z1, y0, y1, r, n) => { const o = [], arc = (cz, cy, a0) => { for (let k = 0; k <= n; k++) { const a = a0 + k * (Math.PI / 2) / n; o.push([cz + r * Math.cos(a), cy + r * Math.sin(a)]); } }; arc(z1 - r, y1 - r, 0); arc(z0 + r, y1 - r, Math.PI / 2); arc(z0 + r, y0 + r, Math.PI); arc(z1 - r, y0 + r, 1.5 * Math.PI); return o; };
+  const chOct = (x0, x1, z0, z1, c) => [[x0 + c, z0], [x1 - c, z0], [x1, z0 + c], [x1, z1 - c], [x1 - c, z1], [x0 + c, z1], [x0, z1 - c], [x0, z0 + c]];
+  const oct = (cx, cy, r) => [...Array(8).keys()].map(k => { const a = Math.PI / 8 + k * Math.PI / 4; return [cx + r * Math.cos(a), cy + r * Math.sin(a)]; });
+  /* a solid = list of convex prisms; poly in 2D, mapped to 3D, extruded between e0..e1; sx mirrors X */
+  const pX = (poly, x0, x1) => ({ poly, e0: x0, e1: x1, map: (p, t) => [t, p[1], p[0]] });
+  const pY = (poly, y0, y1) => ({ poly, e0: y0, e1: y1, map: (p, t) => [p[0], t, p[1]] });
+  const pZ = (poly, z0, z1) => ({ poly, e0: z0, e1: z1, map: (p, t) => [p[0], p[1], t] });
+  /* miter inset of a convex 2D polygon by d (all edges move inward by d) */
+  const inset = (poly, d) => { if (!d) return poly; const n = poly.length; let A = 0; for (let i = 0; i < n; i++) { const j = (i + 1) % n; A += poly[i][0] * poly[j][1] - poly[j][0] * poly[i][1]; } const sg = A > 0 ? 1 : -1;
+    const nr = (u, v) => { const dx = v[0] - u[0], dy = v[1] - u[1], l = Math.hypot(dx, dy) || 1; return [-sg * dy / l, sg * dx / l]; };
+    return poly.map((p, i) => { const n1 = nr(poly[(i + n - 1) % n], p), n2 = nr(p, poly[(i + 1) % n]), k = 1 + n1[0] * n2[0] + n1[1] * n2[1]; return [p[0] + (n1[0] + n2[0]) * d / k, p[1] + (n1[1] + n2[1]) * d / k]; }); };
+  /* build one geometry from prisms (world coords), normalised to a unit box centred on 0; returns {g, c, s} */
+  function solid(prs, sx, d) {
+    sx = sx || 1; d = d || 0; const T = [];
+    for (const pr0 of prs) {
+      const pr = pr0.raw || !d ? pr0 : { poly: inset(pr0.poly, d), e0: pr0.e0 + d, e1: pr0.e1 - d, map: pr0.map };
+      const n = pr.poly.length, V0 = pr.poly.map(p => pr.map(p, pr.e0)), V1 = pr.poly.map(p => pr.map(p, pr.e1));
+      const all = V0.concat(V1).map(v => [v[0] * sx, v[1], v[2]]), A = all.slice(0, n), B = all.slice(n);
+      const cen = [0, 1, 2].map(i => all.reduce((s, v) => s + v[i], 0) / all.length);
+      const tri = (a, b, c) => { const u = [b[0] - a[0], b[1] - a[1], b[2] - a[2]], w = [c[0] - a[0], c[1] - a[1], c[2] - a[2]]; let nm = [u[1] * w[2] - u[2] * w[1], u[2] * w[0] - u[0] * w[2], u[0] * w[1] - u[1] * w[0]]; const fc = [(a[0] + b[0] + c[0]) / 3 - cen[0], (a[1] + b[1] + c[1]) / 3 - cen[1], (a[2] + b[2] + c[2]) / 3 - cen[2]]; if (nm[0] * fc[0] + nm[1] * fc[1] + nm[2] * fc[2] < 0) T.push([a, c, b]); else T.push([a, b, c]); };
+      for (let i = 1; i < n - 1; i++) { tri(A[0], A[i], A[i + 1]); tri(B[0], B[i], B[i + 1]); }
+      for (let i = 0; i < n; i++) { const j = (i + 1) % n; tri(A[i], A[j], B[j]); tri(A[i], B[j], B[i]); }
+    }
+    const mn = [1e9, 1e9, 1e9], mx = [-1e9, -1e9, -1e9]; for (const t of T) for (const v of t) for (let i = 0; i < 3; i++) { mn[i] = Math.min(mn[i], v[i]); mx[i] = Math.max(mx[i], v[i]); }
+    const c = [0, 1, 2].map(i => (mn[i] + mx[i]) / 2), s = [0, 1, 2].map(i => Math.max(1e-3, mx[i] - mn[i]));
+    const pos = [], nor = [], uv = [];
+    for (const t of T) {
+      const a = t[0], b = t[1], d = t[2], u = [b[0] - a[0], b[1] - a[1], b[2] - a[2]], w = [d[0] - a[0], d[1] - a[1], d[2] - a[2]];
+      let nm = [u[1] * w[2] - u[2] * w[1], u[2] * w[0] - u[0] * w[2], u[0] * w[1] - u[1] * w[0]]; const l = Math.hypot(nm[0], nm[1], nm[2]) || 1; nm = nm.map(x => x / l);
+      const ax = Math.abs(nm[0]) > Math.abs(nm[1]) && Math.abs(nm[0]) > Math.abs(nm[2]) ? 0 : Math.abs(nm[1]) > Math.abs(nm[2]) ? 1 : 2, i1 = (ax + 1) % 3, i2 = (ax + 2) % 3;
+      const nn0 = [nm[0] * s[0], nm[1] * s[1], nm[2] * s[2]], nl = Math.hypot(nn0[0], nn0[1], nn0[2]) || 1, nn = nn0.map(x => x / nl);
+      for (const v of t) { const q = [(v[0] - c[0]) / s[0], (v[1] - c[1]) / s[1], (v[2] - c[2]) / s[2]]; pos.push(q[0], q[1], q[2]); nor.push(nn[0], nn[1], nn[2]); uv.push(q[i1] + 0.5, q[i2] + 0.5); }
+    }
+    const g = new THREE.BufferGeometry();
+    g.setAttribute('position', new THREE.BufferAttribute(new Float32Array(pos), 3));
+    g.setAttribute('normal', new THREE.BufferAttribute(new Float32Array(nor), 3));
+    g.setAttribute('uv', new THREE.BufferAttribute(new Float32Array(uv), 2));
+    return { g, c: V3(c[0], c[1], c[2]), s: V3(s[0], s[1], s[2]) };
+  }
+  const box = (x0, x1, y0, y1, z0, z1) => ({ g: null, c: V3((x0 + x1) / 2, (y0 + y1) / 2, (z0 + z1) / 2), s: V3(x1 - x0, y1 - y0, z1 - z0) });
+  const side = (f) => [f(-1), f(1)];
+  /* ---- vehicle ---- */
+  const VG = 0.05; /* vehicle form: every face pulled in by VG, so gaps are 0.14 + 2*VG = 0.24 */
+  const trk = side(s => solid([pX(rr(-2.1, 2.1, -VG, 0.9, 0.4, 3), 1.0, 2.0)], s, VG));
+  const bellyIn = inset([[-1.45, .62], [-1.25, .42], [1.2, .42], [1.4, .62], [1.4, 1.12], [-1.45, 1.12]], VG).map(p => p[1] > 1 ? [p[0], 1.25] : p);
+  const hullV = solid([pX([[-1.5, 1.04], [1.5, 1.04], [1.66, 1.2], [1.25, 1.45], [-1.55, 1.45], [-1.76, 1.25]], -1.2, 1.2), Object.assign(pX(bellyIn, -.86 + VG, .86 - VG), { raw: true })], 1, VG);
+  const noseV = solid([pX([[1.8, .98], [2.1, .98], [2.1, 1.16], [1.95, 1.34], [1.8, 1.34]], -.8, .8)], 1, VG);
+  const skirt = side(s => solid([pX([[-1.55, 1.2], [-1.4, 1.04], [1.3, 1.04], [1.55, 1.22], [1.55, 1.45], [-1.55, 1.45]], 1.34, 1.64)], s, VG));
+  const turV = solid([pY(chOct(-.85, .85, -1.2, .8, .36), 1.59, 2.1)], 1, VG);
+  /* ---- robot ---- */
+  const leg = side(s => solid([pX([[-.6, .18], [-.42, 0], [.42, 0], [.6, .18], [.6, 2.0], [.42, 2.3], [-.42, 2.3], [-.6, 2.0]], .275, 1.225)], s));
+  const torso = solid([pX([[-.6, 3.0], [.6, 3.0], [.6, 3.45], [.42, 3.7], [-.42, 3.7], [-.6, 3.45]], -.95, .95), pX([[-.5, 2.44], [.5, 2.44], [.5, 3.1], [-.5, 3.1]], -.7, .7)]);
+  const arm = side(s => solid([pX([[-.425, 2.62], [-.3, 2.44], [.3, 2.44], [.425, 2.62], [.425, 3.52], [.3, 3.7], [-.3, 3.7], [-.425, 3.52]], 1.175, 1.925)], s));
+  const shoulder = solid([pY(chOct(-1.35, 1.35, -.65, .65, .3), 3.84, 4.5)]);
+  const head = solid([pY(chOct(-.475, .475, -.475, .475, .2), 4.64, 5.45)]);
+  const og = solid([pZ(oct(0, 0, .5), -.5, .5)]);
+  const TUR_V = V3(0, 1.75, -.2), TUR_R = V3(0, 3.95, 0);
+  const sub = (a, b) => V3(a.x - b.x, a.y - b.y, a.z - b.z);
+  /* per-part: v = vehicle form {g,c,s}, r = robot form (g null -> unit box). turret mesh is a child of the turret group */
+  const P = [
+    { v: trk[0], r: leg[0] }, { v: trk[1], r: leg[1] },
+    { v: hullV, r: torso },
+    { v: noseV, r: box(-.5, .5, 2.55, 2.95, .74, .9) },
+    { v: skirt[0], r: arm[0] }, { v: skirt[1], r: arm[1] },
+    { v: box(-.95, -.55, .95, 1.25, -2.05, -1.95), r: box(-.75, -.35, 2.55, 3.05, -.9, -.74) },
+    { v: box(.55, .95, .95, 1.25, -2.05, -1.95), r: box(.35, .75, 2.55, 3.05, -.9, -.74) },
+    { v: { g: turV.g, c: sub(turV.c, TUR_V), s: turV.s }, r: { g: shoulder.g, c: sub(shoulder.c, TUR_R), s: shoulder.s } },
+  ];
+  return { P, head, og };
+})();
+const ntHead = { body: headBody, visor, fins: head.children.slice(2), o: null };
+ntHead.o = { bp: headBody.position.clone(), vp: visor.position.clone(), vs: visor.scale.clone(), f: ntHead.fins.map(f => ({ p: f.position.clone(), s: f.scale.clone(), rz: f.rotation.z })) };
+const ntTank = () => pl.char === 'tank';
+function ntApply() {
+  const T = ntTank();
+  parts.forEach((p, i) => {
+    const d = NT.P[i]; if (!d) return;
+    if (T) { p.tp.copy(d.v.c); p.ts.copy(d.v.s); p.rp.copy(d.r.c); p.rs.copy(d.r.s); } else p.mesh.geometry = UB;
+  });
+  if (T) {
+    headBody.geometry = NT.head.g; headBody.position.set(0, 0.045, 0); headBody.scale.set(0.95, 0.81, 0.95);
+    visor.position.set(0, 0.05, 0.665); visor.scale.set(0.6, 0.22, 0.1);
+    ntHead.fins.forEach((f, i) => { const s = i ? 1 : -1; f.position.set(s * 0.32, 0.845, 0.3); f.scale.set(0.1, 0.51, 0.1); f.rotation.z = 0; });
+    barrel.geometry = tip.geometry = NT.og.g;
+  } else {
+    headBody.geometry = UB; headBody.position.copy(ntHead.o.bp); visor.position.copy(ntHead.o.vp); visor.scale.copy(ntHead.o.vs);
+    ntHead.fins.forEach((f, i) => { f.position.copy(ntHead.o.f[i].p); f.scale.copy(ntHead.o.f[i].s); f.rotation.z = ntHead.o.f[i].rz; });
+    barrel.geometry = tip.geometry = UB;
+  }
+}
+{ const _a = applyChar; applyChar = function () { _a.apply(this, arguments); ntApply(); }; }
+{
+  const _p = poseModel;
+  poseModel = function (dt) {
+    _p.apply(this, arguments);
+    if (!ntTank()) return;
+    const robotForm = pl.k >= 0.5;
+    parts.forEach((p, i) => { const d = NT.P[i]; if (!d) return; const g = (robotForm ? d.r.g : d.v.g) || UB; if (p.mesh.geometry !== g) p.mesh.geometry = g; });
+    const k = ease(pl.k), len = lerp(3.0, 2.3, k), s0 = lerp(0.39, 0.065, k), e0 = len - lerp(0.31, 0.265, k), bt = lerp(0.277, 0.296, k), tt = 0.388;
+    barrel.scale.set(bt, bt, e0 - s0); barrel.position.set(0, 0, (s0 + e0) / 2); tip.scale.set(tt, tt, lerp(0.2, 0.25, k)); tip.position.z = len + lerp(0.03, 0, k);
+  };
+}
+ntApply();
 /* ===== camera, HUD, game flow ===== */
 const camPosS = V3(0, 8, -60), camLookS = V3(0, 10, 0), _d = V3();
 let bannerT = 0;
