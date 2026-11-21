@@ -85,6 +85,8 @@ button.cta:focus-visible{outline:3px solid var(--cyan);outline-offset:3px}
 #t-trans{right:max(104px,env(safe-area-inset-right,0px));bottom:max(100px,env(safe-area-inset-bottom,0px));width:58px;height:58px}
 #t-lock{right:max(24px,env(safe-area-inset-right,0px));top:66px;width:50px;height:50px}
 #t-next{right:max(80px,env(safe-area-inset-right,0px));top:66px;width:50px;height:50px}
+#t-view{right:max(136px,env(safe-area-inset-right,0px));top:66px;width:50px;height:50px}
+.tb.on{background:rgba(79,216,255,.35);border-color:rgba(79,216,255,.9)}
 #t-melee{right:max(178px,env(safe-area-inset-right,0px));bottom:max(96px,env(safe-area-inset-bottom,0px));width:52px;height:52px}
 html.compact #parts .part{font-size:9px}html.compact #bossbar .bar{height:12px}html.compact #player{width:calc(var(--vw,1vw)*24);bottom:auto;top:calc(max(10px,env(safe-area-inset-top,0px)) + 100px)}html.compact .lab{font-size:9px}html.compact .bar{height:9px}html.compact #banner{top:18%}html.compact h1{font-size:clamp(28px,calc(var(--vw,1vw)*6),52px)}html.compact .keys{font-size:12px;gap:3px 14px;margin-bottom:10px}html.compact .sub{margin:4px 0 10px}
 .pick{display:flex;gap:10px;margin:0 0 12px;flex-wrap:wrap}
@@ -119,6 +121,9 @@ input,textarea{-webkit-user-select:text;user-select:text;touch-action:auto}
 .comm{position:fixed;z-index:12;pointer-events:auto}
 #comBtn{left:50%;transform:translateX(-50%);bottom:max(14px,env(safe-area-inset-bottom,0px));font:700 12px var(--font);color:transparent;background:transparent;border:0;border-radius:22px;width:190px;height:78px;padding:0;cursor:pointer;-webkit-tap-highlight-color:transparent;outline:0}
 #comBtn[hidden],#comWheel[hidden]{display:none}
+#comBtn svg,#comBtn i{opacity:0;transition:opacity .5s}#comBtn svg{width:40px;height:40px;display:block;margin:12px auto 0}#comBtn i{display:none;font:700 11px var(--font);font-style:normal;letter-spacing:.1em}
+#comBtn.flash{color:var(--cyan);border:2px solid var(--cyan);background:rgba(20,40,60,.35);animation:comFlash .7s ease-in-out infinite}#comBtn.flash svg,#comBtn.flash i{opacity:1}@media(pointer:fine){#comBtn.flash i{display:block}}
+@keyframes comFlash{0%,100%{box-shadow:0 0 0 0 rgba(102,230,255,.0);opacity:.55}50%{box-shadow:0 0 18px 2px rgba(102,230,255,.6);opacity:1}}
 #comWheel{left:50%;transform:translateX(-50%);bottom:max(64px,calc(env(safe-area-inset-bottom,0px) + 50px));display:flex;gap:8px;flex-wrap:wrap;justify-content:center;max-width:94%}
 #comWheel button{font:700 12px var(--font);letter-spacing:.1em;color:var(--fg);background:rgba(10,16,28,.68);border:2px solid var(--line);border-radius:10px;padding:10px 12px;min-width:84px;cursor:pointer}
 #comWheel button i{display:block;font-style:normal;font-size:10px;color:var(--dim);margin-bottom:2px}
@@ -146,7 +151,7 @@ button.cta:disabled{opacity:.5;cursor:not-allowed}
 </div>
 <div class="hud" id="mate" hidden><div class="lab"><span id="mateN">ĐỒNG ĐỘI</span><span id="mateV"></span></div><div class="bar" id="mateHp"><i></i></div></div>
 <div class="hud" id="cmsg" hidden></div><div class="hud" id="cping"></div><div class="hud" id="cpingl"></div>
-<div class="comm" id="comWheel" hidden></div><button class="comm" id="comBtn" hidden>LỆNH · V</button>
+<div class="comm" id="comWheel" hidden></div><button class="comm" id="comBtn" hidden aria-label="Giao tiếp"><svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M7 9h24a4 4 0 0 1 4 4v13a4 4 0 0 1-4 4H20l-7 6v-6H7a4 4 0 0 1-4-4V13a4 4 0 0 1 4-4z"/><path d="M12 19.5h.01M19 19.5h.01M26 19.5h.01"/><path d="M40 15c2 2 2 6 0 8"/><path d="M44 12c4 4 4 11 0 15"/></svg><i>V</i></button>
 <div class="hud" id="cross"></div>
 <div class="hud" id="lock"></div>
 <div class="hud" id="lockl"></div>
@@ -173,11 +178,12 @@ button.cta:disabled{opacity:.5;cursor:not-allowed}
   <div class="tb" id="t-evade"></div>
   <div class="tb" id="t-lock"></div>
   <div class="tb" id="t-next"></div>
+  <div class="tb" id="t-view"></div>
 </div>
 
 <div class="screen" id="menu">
   <div class="card">
-    <h1>Titan <em>Breaker</em> <small class="ver">v6.9</small></h1>
+    <h1>Titan <em>Breaker</em> <small class="ver">v7.7</small></h1>
     <div class="sub">Robot biến hình đấu boss khổng lồ</div>
     <div id="mpBar" hidden><span id="mpBarT"></span><button id="mpLeave">Rời phòng</button></div>
     <div class="plab">Boss</div>
@@ -189,9 +195,9 @@ button.cta:disabled{opacity:.5;cursor:not-allowed}
     </div>
     <div class="plab">Nhân vật</div>
     <div class="pick" id="charPick">
-      <button class="opt" data-c="tank" aria-pressed="true"><b>Xe tăng</b><span>Giáp dày, khiên bền, lướt né</span></button>
-      <button class="opt" data-c="heli" aria-pressed="false"><b>Trực thăng</b><span>Bay lơ lửng, súng máy + rocket, mỏng giáp</span></button>
-      <button class="opt" data-c="arty" aria-pressed="false"><b>Pháo hạng nặng</b><span>Xe 6 bánh, pháo 2 nòng, đạn chậm nổ lớn, rất trâu</span></button>
+      <button class="opt" data-c="tank" aria-pressed="true"><b>Tankbot</b><span>Giáp dày, khiên bền, lướt né</span></button>
+      <button class="opt" data-c="heli" aria-pressed="false"><b>Machdot</b><span>Bay lơ lửng, súng máy + rocket, mỏng giáp</span></button>
+      <button class="opt" data-c="arty" aria-pressed="false"><b>Heavyshot</b><span>Xe 6 bánh, pháo 2 nòng, đạn chậm nổ lớn, rất trâu</span></button>
     </div>
     <div class="plab">Skin</div>
     <div class="pick" id="skinPick"></div>
@@ -207,12 +213,14 @@ button.cta:disabled{opacity:.5;cursor:not-allowed}
       <div><kbd>Chuột</kbd> / <kbd>← ↑ → ↓</kbd> xoay camera</div>
       <div><kbd>Chuột trái</kbd> / <kbd>J</kbd> bắn</div>
       <div><kbd>Shift</kbd> / <kbd>K</kbd> / <kbd>Chuột phải</kbd> giữ để dựng khiên</div>
-      <div><kbd>Space</kbd> lướt (xe tăng, pháo); robot: xe tăng giữ để bay lên rồi thả ra để phóng kiếm đâm (70 NL), trực thăng giữ để bay, pháo dựng Shield (hết NL, 4 giây)</div>
+      <div><kbd>Space</kbd> lướt (Tankbot, Heavyshot); robot: Tankbot giữ để bay lên rồi thả ra để phóng kiếm đâm (70 NL), Machdot giữ để bay, Heavyshot dựng Shield (hết NL, 4 giây)</div>
       <div><kbd>T</kbd> biến hình</div>
-      <div><kbd>F</kbd> chém kiếm beam (robot), bắn rocket loạt (trực thăng); pháo robot: giữ F nạp Punch (sóng cam làm chậm, phá đạn), thả để tung</div>
-      <div><kbd>Space</kbd> / <kbd>C</kbd> trực thăng bay lên / xuống</div>
-      <div><kbd>Z</kbd> trực thăng bứt tốc rất nhanh (không bất tử, làm tên lửa tìm gần đó mất bám 0.1 giây, tốn 30 NL)</div>
+      <div><kbd>F</kbd> chém kiếm beam (robot), bắn rocket loạt (Machdot); Heavyshot robot: giữ F nạp Punch (sóng cam làm chậm, phá đạn), thả để tung</div>
+      <div><kbd>Space</kbd> / <kbd>C</kbd> Machdot bay lên / xuống</div>
+      <div><kbd>Z</kbd> Machdot bứt tốc rất nhanh (không bất tử, làm tên lửa tìm gần đó mất bám 0.1 giây, tốn 30 NL)</div>
       <div><kbd>R</kbd> khóa mục tiêu, <kbd>Tab</kbd> / <kbd>Q</kbd> <kbd>E</kbd> đổi bộ phận</div>
+      <div><kbd>B</kbd> bật/tắt góc nhìn phía trước nhân vật</div>
+      <div>Va chạm: Tankbot, Machdot và Valkyrie bị đẩy; Heavyshot, Juggernaut và boss thì không. Hai bên cùng bị đẩy thì mỗi bên chịu một nửa lực</div>
       <div><kbd>P</kbd> tạm dừng</div>
       <div><kbd>V</kbd> mở bảng lệnh đồng đội (2 người), hoặc bấm <kbd>1</kbd>–<kbd>5</kbd></div>
     </div>
@@ -452,6 +460,7 @@ window.addEventListener('keydown', e => {
   if (e.code === 'KeyR') press('lock');
   if (e.code === 'Tab' || e.code === 'KeyE') press('next');
   if (e.code === 'KeyQ') press('prev');
+  if (e.code === 'KeyB') press('view');
   if (e.code === 'KeyF') press('melee');
   if (e.code === 'KeyZ') press('dodge');
   if (e.code === 'KeyP') press('pause');
@@ -490,7 +499,7 @@ if (isTouch) {
   };
   tbind('t-fire', 'fire'); tbind('t-shield', 'shield'); tbind('t-dash', 'space');
   $('t-dash').addEventListener('touchstart', () => press('space'), { passive: true });
-  tbind('t-down', 'down'); tbind('t-evade', 'e', 'dodge'); tbind('t-trans', 't', 'transform'); tbind('t-melee', 'm', 'melee'); tbind('t-lock', 'l', 'lock'); tbind('t-next', 'n', 'next');
+  tbind('t-down', 'down'); tbind('t-evade', 'e', 'dodge'); tbind('t-trans', 't', 'transform'); tbind('t-melee', 'm', 'melee'); tbind('t-lock', 'l', 'lock'); tbind('t-next', 'n', 'next'); tbind('t-view', 'v2', 'view');
   window.addEventListener('touchstart', e => {
     for (const t of e.changedTouches) { const q = gp(t.clientX, t.clientY); if (q.x > VW * 0.4 && touch.look === null && !t.target.closest('.tb') && !t.target.closest('.screen') && !t.target.closest('#rotBtn') && !t.target.closest('.comm')) touch.look = { id: t.identifier, x: q.x, y: q.y }; }
   }, { passive: true });
@@ -549,30 +558,12 @@ const pl = {
   en: 100, mode: 'tank', k: 0, kTarget: 0, transCd: 0, fireCd: 0, dashT: 0, dashDir: V3(0, 0, 1), invuln: 0,
   meleeT: 0, meleeCd: 0, meleeHit: false, rockets: 0, rocketT: 0, dashVy: 0, heat: 0, ohT: 0, slowT: 0, parT: 0, dashCd: 0, burst: false, lastBlocked: false, char: 'tank', lean: 0, roll: 0, boosting: false, boostLock: false, grounded: true, alive: true, stun: 0, regenDelay: 0,
 };
-const parts = [];
-function part(mesh, tp, ts, rp, rs) { parts.push({ mesh, tp, ts, rp, rs, tpT: tp.clone(), tsT: ts.clone(), m0: mesh.material }); return mesh; }
-const legL = part(bx(M.blue, pl.root), V3(-1.5, 0.45, 0), V3(1.0, 0.9, 4.2), V3(-0.75, 1.15, 0), V3(0.95, 2.3, 1.2));
-const legR = part(bx(M.blue, pl.root), V3(1.5, 0.45, 0), V3(1.0, 0.9, 4.2), V3(0.75, 1.15, 0), V3(0.95, 2.3, 1.2));
-part(bx(M.white, pl.root), V3(0, 1.15, 0), V3(2.4, 0.8, 3.8), V3(0, 2.95, 0), V3(1.9, 1.5, 1.2));
-part(bx(M.red, pl.root), V3(0, 0.95, 1.9), V3(1.6, 0.35, 0.3), V3(0, 2.45, 0.62), V3(1.0, 0.5, 0.15));
-part(bx(M.white, pl.root), V3(-1.4, 1.2, 0), V3(0.3, 0.7, 3.2), V3(-1.55, 3.3, 0), V3(0.75, 1.9, 0.85));
-part(bx(M.white, pl.root), V3(1.4, 1.2, 0), V3(0.3, 0.7, 3.2), V3(1.55, 3.3, 0), V3(0.75, 1.9, 0.85));
-part(bx(M.glow, pl.root), V3(-0.8, 0.9, -1.95), V3(0.5, 0.35, 0.15), V3(-0.55, 2.7, -0.65), V3(0.4, 0.5, 0.15));
-part(bx(M.glow, pl.root), V3(0.8, 0.9, -1.95), V3(0.5, 0.35, 0.15), V3(0.55, 2.7, -0.65), V3(0.4, 0.5, 0.15));
-const turret = new THREE.Group(); pl.root.add(turret);
-const turretMesh = part(bx(M.blue, turret), V3(0, 0, 0), V3(1.7, 0.7, 2.0), V3(0, 0.25, 0), V3(2.7, 0.9, 1.3));
 const HID = V3(0.001, 0.001, 0.001);
-part(bx(M.white, pl.root), V3(0, 1.2, 0), HID.clone(), V3(0, 2.9, 0), HID.clone());
-part(bx(M.red, pl.root), V3(0, 1.2, 0), HID.clone(), V3(0, 2.9, 0), HID.clone());
 const HELI = [
   [V3(-1.1, 0.3, 0.2), V3(0.14, 0.14, 3.4)], [V3(1.1, 0.3, 0.2), V3(0.14, 0.14, 3.4)], [V3(0, 1.9, 0), V3(1.9, 1.6, 3.8)], [V3(0, 1.9, 1.95), V3(1.0, 0.5, 0.15)],
   [V3(-1.0, 1.0, 0.2), V3(0.1, 1.4, 0.1)], [V3(1.0, 1.0, 0.2), V3(0.1, 1.4, 0.1)], [V3(-1.2, 1.8, -0.2), V3(0.6, 0.4, 1.4)], [V3(1.2, 1.8, -0.2), V3(0.6, 0.4, 1.4)],
   [V3(0, 0, 0), V3(1.5, 0.9, 1.7)], [V3(0, 2.2, -3.0), V3(0.45, 0.5, 3.6)], [V3(0, 2.9, -4.6), V3(0.12, 1.1, 0.8)],
 ];
-const rotor = new THREE.Group(); pl.root.add(rotor); rotor.position.set(0, 3.4, 0.2);
-bx(M.dark, rotor).scale.set(0.25, 0.5, 0.25);
-{ const b1 = bx(M.dark, rotor); b1.scale.set(8, 0.06, 0.45); b1.position.y = 0.3; const b2 = bx(M.dark, rotor); b2.scale.set(0.45, 0.06, 8); b2.position.y = 0.3; }
-rotor.visible = false;
 const ART = {
   olive: new THREE.MeshStandardMaterial({ color: 0x7a6a48, roughness: 0.55, metalness: 0.45 }),
   brown: new THREE.MeshStandardMaterial({ color: 0x4a4130, roughness: 0.6, metalness: 0.4 }),
@@ -584,6 +575,45 @@ const ARTY = [
   [V3(-1.45, 1.2, 0), V3(0.3, 0.8, 4.4)], [V3(1.45, 1.2, 0), V3(0.3, 0.8, 4.4)], [V3(-0.9, 1.0, 2.65), V3(0.5, 0.35, 0.15)], [V3(0.9, 1.0, 2.65), V3(0.5, 0.35, 0.15)],
   [V3(0, 0, 0), V3(2.1, 0.9, 2.4)], [V3(0, 1.75, 1.9), V3(1.9, 1.0, 1.3)], [V3(0, 1.8, -2.0), V3(1.9, 0.7, 1.1)],
 ];
+/* One "rig" = the whole transforming model (parts, turret, barrel, rotor, wheels, shield, head). The player and the AI/online partner each get their own rig, so both always look the same. */
+function makeRig(root) {
+  const R = { root, parts: [], lean: 0, roll: 0, ch: null };
+  const part = (mesh, tp, ts, rp, rs) => { R.parts.push({ mesh, tp, ts, rp, rs, tpT: tp.clone(), tsT: ts.clone(), rpT: rp.clone(), rsT: rs.clone(), m0: mesh.material }); return mesh; };
+  R.legL = part(bx(M.blue, root), V3(-1.5, 0.45, 0), V3(1.0, 0.9, 4.2), V3(-0.75, 1.15, 0), V3(0.95, 2.3, 1.2));
+  R.legR = part(bx(M.blue, root), V3(1.5, 0.45, 0), V3(1.0, 0.9, 4.2), V3(0.75, 1.15, 0), V3(0.95, 2.3, 1.2));
+  part(bx(M.white, root), V3(0, 1.15, 0), V3(2.4, 0.8, 3.8), V3(0, 2.95, 0), V3(1.9, 1.5, 1.2));
+  part(bx(M.red, root), V3(0, 0.95, 1.9), V3(1.6, 0.35, 0.3), V3(0, 2.45, 0.62), V3(1.0, 0.5, 0.15));
+  part(bx(M.white, root), V3(-1.4, 1.2, 0), V3(0.3, 0.7, 3.2), V3(-1.55, 3.3, 0), V3(0.75, 1.9, 0.85));
+  part(bx(M.white, root), V3(1.4, 1.2, 0), V3(0.3, 0.7, 3.2), V3(1.55, 3.3, 0), V3(0.75, 1.9, 0.85));
+  part(bx(M.glow, root), V3(-0.8, 0.9, -1.95), V3(0.5, 0.35, 0.15), V3(-0.55, 2.7, -0.65), V3(0.4, 0.5, 0.15));
+  part(bx(M.glow, root), V3(0.8, 0.9, -1.95), V3(0.5, 0.35, 0.15), V3(0.55, 2.7, -0.65), V3(0.4, 0.5, 0.15));
+  R.turret = new THREE.Group(); root.add(R.turret);
+  R.turretMesh = part(bx(M.blue, R.turret), V3(0, 0, 0), V3(1.7, 0.7, 2.0), V3(0, 0.25, 0), V3(2.7, 0.9, 1.3));
+  part(bx(M.white, root), V3(0, 1.2, 0), HID.clone(), V3(0, 2.9, 0), HID.clone());
+  part(bx(M.red, root), V3(0, 1.2, 0), HID.clone(), V3(0, 2.9, 0), HID.clone());
+  R.rotor = new THREE.Group(); root.add(R.rotor); R.rotor.position.set(0, 3.4, 0.2);
+  bx(M.dark, R.rotor).scale.set(0.25, 0.5, 0.25);
+  for (const [x, z] of [[2, 0], [-2, 0], [0, 2], [0, -2]]) { const b = bx(M.dark, R.rotor); b.scale.set(x ? 3.5 : 0.45, 0.06, z ? 3.5 : 0.45); b.position.set(x, 0.3, z); } /* hub + 4 separate blades (children 1..4) */
+  R.rotor.visible = false;
+  R.gunPivot = new THREE.Group(); R.turret.add(R.gunPivot);
+  R.barrel = bx(M.dark, R.gunPivot);
+  R.muzzle = new THREE.Object3D(); R.gunPivot.add(R.muzzle);
+  R.tip = bx(M.yellow, R.gunPivot); R.tip.scale.set(0.42, 0.42, 0.25);
+  R.barrelB = bx(M.dark, R.gunPivot); R.tipB = bx(M.yellow, R.gunPivot); R.tipB.scale.set(0.5, 0.5, 0.3); R.barrelB.visible = R.tipB.visible = false;
+  R.muzzleB = new THREE.Object3D(); R.gunPivot.add(R.muzzleB);
+  R.wheels = new THREE.Group(); root.add(R.wheels); R.wheels.visible = false;
+  { const wg = new THREE.CylinderGeometry(0.68, 0.68, 0.55, 14); wg.rotateZ(Math.PI / 2); const wm = new THREE.MeshStandardMaterial({ color: 0x15181d, roughness: 0.8 });
+    for (const s of [-1, 1]) for (const z of [-1.9, 0, 1.9]) { const w = new THREE.Mesh(wg, wm); w.position.set(s * 1.85, 0.68, z); w.castShadow = true; R.wheels.add(w); const hub = bx(M.yellow, w); hub.scale.set(0.6, 0.3, 0.3); hub.position.x = s * 0.02; } }
+  R.bigShield = new THREE.Group(); root.add(R.bigShield); R.bigShield.visible = false;
+  { const bs = R.bigShield, a = bx(ART.olive, bs); a.scale.set(0.5, 3.4, 2.5); const b = bx(M.dark, bs); b.scale.set(0.56, 2.6, 1.8); const c = bx(M.yellow, bs); c.scale.set(0.62, 0.3, 1.5); c.position.y = 0.6; const d = bx(ART.red, bs); d.scale.set(0.64, 0.7, 0.7); d.position.y = -0.5; bs.position.set(-2.6, 3.0, 0.9); }
+  R.head = new THREE.Group(); root.add(R.head);
+  R.headBody = bx(M.white, R.head); R.headBody.scale.set(0.95, 0.9, 0.95);
+  R.visor = bx(M.glow, R.head); R.visor.scale.set(0.7, 0.18, 0.1); R.visor.position.set(0, 0.05, 0.5);
+  for (const s of [-1, 1]) { const f = bx(M.yellow, R.head); f.scale.set(0.1, 0.7, 0.1); f.position.set(s * 0.32, 0.75, 0.3); f.rotation.z = -s * 0.5; }
+  return R;
+}
+const PR = makeRig(pl.root);
+const { parts, legL, legR, turret, turretMesh, rotor, gunPivot, barrel, muzzle, tip, barrelB, tipB, muzzleB, wheels, bigShield, head, visor } = PR;
 const barrier = { active: false, hp: 0, max: 250, t: 0, life: 5, pos: V3(), yaw: 0, grow: 0, push: 0 };
 const barrierMesh = new THREE.Group(); barrierMesh.visible = false; scene.add(barrierMesh);
 const barrierMat = regGlow(new THREE.MeshBasicMaterial({ color: 0x66e6ff, transparent: true, opacity: 0.35, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide }), 0x66e6ff);
@@ -637,30 +667,21 @@ function barrierHit(e) {
   }
   return false;
 }
+function applyCharRig(R, ch) {
+  const H = ch === 'heli', A = ch === 'arty';
+  R.parts.forEach((p, i) => {
+    if (H && HELI[i]) { p.tp.copy(HELI[i][0]); p.ts.copy(HELI[i][1]); } else if (A && ARTY[i]) { p.tp.copy(ARTY[i][0]); p.ts.copy(ARTY[i][1]); } else { p.tp.copy(p.tpT); p.ts.copy(p.tsT); }
+    p.rp.copy(p.rpT); p.rs.copy(p.rsT);
+    p.mesh.material = A ? ((i === 4 || i === 5) ? ART.red : p.m0 === M.white ? ART.olive : p.m0 === M.blue ? ART.brown : p.m0 === M.red ? ART.red : p.m0) : (!H && p.m0 === M.blue) ? M.mint : p.m0;
+  });
+  R.ch = ch; if (typeof ntApplyRig === 'function') ntApplyRig(R, ch);
+}
 function applyChar() {
   barrier.active = false; barrierMesh.visible = false; pl.stab = false; pl.castT = 0; pl.charging = false;
   const H = pl.char === 'heli', A = pl.char === 'arty';
-  parts.forEach((p, i) => {
-    if (H && HELI[i]) { p.tp.copy(HELI[i][0]); p.ts.copy(HELI[i][1]); } else if (A && ARTY[i]) { p.tp.copy(ARTY[i][0]); p.ts.copy(ARTY[i][1]); } else { p.tp.copy(p.tpT); p.ts.copy(p.tsT); }
-    p.mesh.material = A ? ((i === 4 || i === 5) ? ART.red : p.m0 === M.white ? ART.olive : p.m0 === M.blue ? ART.brown : p.m0 === M.red ? ART.red : p.m0) : (!H && p.m0 === M.blue) ? M.mint : p.m0;
-  });
+  applyCharRig(PR, pl.char);
   applySaber(); pl.maxHp = H ? 180 : A ? 260 : 220; pl.shMax = H ? 100 : A ? 150 : 120;
 }
-const gunPivot = new THREE.Group(); turret.add(gunPivot);
-const barrel = bx(M.dark, gunPivot);
-const muzzle = new THREE.Object3D(); gunPivot.add(muzzle);
-const tip = bx(M.yellow, gunPivot); tip.scale.set(0.42, 0.42, 0.25);
-const barrelB = bx(M.dark, gunPivot), tipB = bx(M.yellow, gunPivot); tipB.scale.set(0.5, 0.5, 0.3); barrelB.visible = tipB.visible = false;
-const muzzleB = new THREE.Object3D(); gunPivot.add(muzzleB);
-const wheels = new THREE.Group(); pl.root.add(wheels); wheels.visible = false;
-{ const wg = new THREE.CylinderGeometry(0.68, 0.68, 0.55, 14); wg.rotateZ(Math.PI / 2); const wm = new THREE.MeshStandardMaterial({ color: 0x15181d, roughness: 0.8 });
-  for (const s of [-1, 1]) for (const z of [-1.9, 0, 1.9]) { const w = new THREE.Mesh(wg, wm); w.position.set(s * 1.85, 0.68, z); w.castShadow = true; wheels.add(w); const hub = bx(M.yellow, w); hub.scale.set(0.6, 0.3, 0.3); hub.position.x = s * 0.02; } }
-const bigShield = new THREE.Group(); pl.root.add(bigShield); bigShield.visible = false;
-{ const a = bx(ART.olive, bigShield); a.scale.set(0.5, 3.4, 2.5); const b = bx(M.dark, bigShield); b.scale.set(0.56, 2.6, 1.8); const c = bx(M.yellow, bigShield); c.scale.set(0.62, 0.3, 1.5); c.position.y = 0.6; const d = bx(ART.red, bigShield); d.scale.set(0.64, 0.7, 0.7); d.position.y = -0.5; bigShield.position.set(-2.6, 3.0, 0.9); }
-const head = new THREE.Group(); pl.root.add(head);
-bx(M.white, head).scale.set(0.95, 0.9, 0.95);
-const visor = bx(M.glow, head); visor.scale.set(0.7, 0.18, 0.1); visor.position.set(0, 0.05, 0.5);
-for (const s of [-1, 1]) { const f = bx(M.yellow, head); f.scale.set(0.1, 0.7, 0.1); f.position.set(s * 0.32, 0.75, 0.3); f.rotation.z = -s * 0.5; }
 const saberPivot = new THREE.Group(); pl.root.add(saberPivot); saberPivot.position.set(1.8, 3.3, 0.8); saberPivot.visible = false;
 const SABER = {
   tank: { len: 7, reach: 7.5, dmg: 75, cd: 0.95, mat: new THREE.MeshBasicMaterial({ color: 0xffffff }) },
@@ -679,31 +700,35 @@ shieldMesh.add(new THREE.Mesh(new THREE.IcosahedronGeometry(3.65, 2), shieldWire
 shieldMesh.visible = false; scene.add(shieldMesh);
 
 const ease = t => t * t * (3 - 2 * t);
+function poseRig(R, st, dt) {
+  const k = ease(st.k), HC = st.char === 'heli', AR = st.char === 'arty', root = R.root;
+  for (const p of R.parts) { p.mesh.position.lerpVectors(p.tp, p.rp, k); p.mesh.scale.lerpVectors(p.ts, p.rs, k); }
+  R.turret.position.set(0, lerp(HC ? 2.55 : AR ? 2.0 : 1.75, 3.95, k), lerp(HC ? 0.9 : AR ? -0.3 : -0.2, 0, k));
+  R.gunPivot.position.set(lerp(0, 1.75, k), lerp(HC ? -0.75 : 0.1, -0.9, k), lerp(HC ? 0.9 : AR ? 0.4 : 0.8, 0.5, k));
+  const len = lerp(HC ? 2.0 : AR ? 4.4 : 3.0, AR ? 3.4 : 2.3, k), bt = AR ? 0.42 : 0.32, off = AR ? lerp(0.5, 0.34, k) : 0; R.barrel.scale.set(bt, bt, len); R.barrel.position.set(-off, 0, len / 2); R.muzzle.position.set(-off, 0, len + 0.3); R.tip.position.set(-off, 0, len);
+  R.barrelB.visible = R.tipB.visible = AR; if (AR) { R.barrelB.scale.set(bt, bt, len); R.barrelB.position.set(off, 0, len / 2); R.muzzleB.position.set(off, 0, len + 0.3); R.tipB.position.set(off, 0, len); R.tip.scale.set(0.5, 0.5, 0.3); } else R.tip.scale.set(0.42, 0.42, 0.25);
+  R.wheels.visible = AR && k < 0.5; R.wheels.scale.setScalar(Math.max(0.001, 1 - k * 2)); { const fw = st.vel.x * Math.sin(st.yaw) + st.vel.z * Math.cos(st.yaw); for (const w of R.wheels.children) w.rotation.x += fw * dt / 0.68; }
+  R.bigShield.visible = AR && k > 0.5; R.bigShield.scale.setScalar(Math.max(0.001, k));
+  root.scale.setScalar(AR ? lerp(1.05, 1.3, k) : 1);
+  R.head.position.set(0, lerp(HC ? 2.4 : 1.9, 5.0, k), lerp(0.3, 0, k)); R.head.scale.setScalar(Math.max(0.001, k * k));
+  const hop = Math.sin(Math.PI * st.k) * 1.4 * (st.k > 0 && st.k < 1 ? 1 : 0);
+  R.hop = hop;
+  root.rotation.order = 'YXZ';
+  const Hf = HC && st.k < 0.5, sy = Math.sin(st.yaw), cy = Math.cos(st.yaw);
+  const lt = Hf ? clamp((st.vel.x * sy + st.vel.z * cy) / 21, -1, 1) * 0.24 : 0, rt = Hf ? clamp((-st.vel.x * cy + st.vel.z * sy) / 21, -1, 1) * 0.2 : 0;
+  R.lean = lerp(R.lean || 0, lt, damp(5, dt)); R.roll = lerp(R.roll || 0, rt, damp(5, dt));
+  root.rotation.y = st.yaw; root.rotation.x = R.lean; root.rotation.z = R.roll;
+  R.rotor.visible = HC && st.k < 0.98; R.rotor.scale.setScalar(Math.max(0.001, 1 - st.k * 1.1)); R.rotor.rotation.y += dt * (HC ? 38 : 0);
+  R.turret.rotation.y = (1 - k) * angDiff(st.yaw, st.aimYaw);
+  R.gunPivot.rotation.x = -st.aimPitch;
+  R.legL.rotation.x = R.legR.rotation.x = k > 0.9 && st.vel.length() > 2 ? Math.sin(G.time * 9) * 0.25 : 0;
+  R.legR.rotation.x = -R.legL.rotation.x;
+  if (typeof ntPoseRig === 'function') ntPoseRig(R, st);
+}
 function poseModel(dt) {
-  const k = ease(pl.k);
-  for (const p of parts) { p.mesh.position.lerpVectors(p.tp, p.rp, k); p.mesh.scale.lerpVectors(p.ts, p.rs, k); }
-  const HC = pl.char === 'heli';
-  const AR = pl.char === 'arty';
-  turret.position.set(0, lerp(HC ? 2.55 : AR ? 2.0 : 1.75, 3.95, k), lerp(HC ? 0.9 : AR ? -0.3 : -0.2, 0, k));
-  gunPivot.position.set(lerp(0, 1.75, k), lerp(HC ? -0.75 : 0.1, -0.9, k), lerp(HC ? 0.9 : AR ? 0.4 : 0.8, 0.5, k));
-  const len = lerp(HC ? 2.0 : AR ? 4.4 : 3.0, AR ? 3.4 : 2.3, k), bt = AR ? 0.42 : 0.32, off = AR ? lerp(0.5, 0.34, k) : 0; barrel.scale.set(bt, bt, len); barrel.position.set(-off, 0, len / 2); muzzle.position.set(-off, 0, len + 0.3); tip.position.set(-off, 0, len);
-  barrelB.visible = tipB.visible = AR; if (AR) { barrelB.scale.set(bt, bt, len); barrelB.position.set(off, 0, len / 2); muzzleB.position.set(off, 0, len + 0.3); tipB.position.set(off, 0, len); tip.scale.set(0.5, 0.5, 0.3); } else tip.scale.set(0.42, 0.42, 0.25);
-  wheels.visible = AR && k < 0.5; wheels.scale.setScalar(Math.max(0.001, 1 - k * 2)); { const fw = pl.vel.x * Math.sin(pl.yaw) + pl.vel.z * Math.cos(pl.yaw); for (const w of wheels.children) w.rotation.x += fw * dt / 0.68; }
-  bigShield.visible = AR && k > 0.5; bigShield.scale.setScalar(Math.max(0.001, k));
-  pl.root.scale.setScalar(AR ? lerp(1.05, 1.3, k) : 1);
-  head.position.set(0, lerp(HC ? 2.4 : 1.9, 5.0, k), lerp(0.3, 0, k)); head.scale.setScalar(Math.max(0.001, k * k));
-  const hop = Math.sin(Math.PI * pl.k) * 1.4 * (pl.k > 0 && pl.k < 1 ? 1 : 0);
-  pl.root.position.set(pl.pos.x, pl.pos.y + hop, pl.pos.z);
-  pl.root.rotation.order = 'YXZ'; pl.root.rotation.y = pl.yaw;
-  const Hf = HC && pl.k < 0.5, sy = Math.sin(pl.yaw), cy = Math.cos(pl.yaw);
-  const lt = Hf ? clamp((pl.vel.x * sy + pl.vel.z * cy) / 21, -1, 1) * 0.24 : 0, rt = Hf ? clamp((-pl.vel.x * cy + pl.vel.z * sy) / 21, -1, 1) * 0.2 : 0;
-  pl.lean = lerp(pl.lean || 0, lt, damp(5, dt)); pl.roll = lerp(pl.roll || 0, rt, damp(5, dt));
-  pl.root.rotation.x = pl.lean; pl.root.rotation.z = pl.roll;
-  rotor.visible = HC && pl.k < 0.98; rotor.scale.setScalar(Math.max(0.001, 1 - pl.k * 1.1)); rotor.rotation.y += dt * (HC ? 38 : 0);
-  turret.rotation.y = (1 - k) * angDiff(pl.yaw, pl.aimYaw);
-  gunPivot.rotation.x = -pl.aimPitch;
-  legL.rotation.x = legR.rotation.x = k > 0.9 && pl.vel.length() > 2 ? Math.sin(G.time * 9) * 0.25 * (legL === legL ? 1 : 1) : 0;
-  legR.rotation.x = -legL.rotation.x;
+  poseRig(PR, pl, dt);
+  pl.lean = PR.lean; pl.roll = PR.roll;
+  pl.root.position.set(pl.pos.x, pl.pos.y + PR.hop, pl.pos.z);
 }
 function pCenter(out) { return (out || V3()).set(pl.pos.x, pl.pos.y + lerp(1.4, 2.6, pl.k), pl.pos.z); }
 
@@ -833,12 +858,12 @@ function updatePlayer(dt) {
   /* transform */
   if (IN.pressed.transform && pl.transCd <= 0 && pl.k === pl.kTarget && !frozen) {
     pl.kTarget = pl.kTarget ? 0 : 1; pl.transCd = pl.char === 'heli' ? 1.1 : 2.2; burst(pCenter(), 24, 10, 0x9aeaff, 0.5, 0); flatRing(pl.pos.x, pl.pos.z, 1, 7, 0x9aeaff, 0.5, 0.8);
-    say(pl.kTarget ? 'DẠNG ROBOT' : 'DẠNG XE TĂNG', '', 1.2, true);
+    say('BIẾN HÌNH', '', 1.2, true);
   }
   { const tr = dt / (pl.char === 'heli' ? 0.55 : 1.1); pl.k += clamp(pl.kTarget - pl.k, -tr, tr); }
   const trans = pl.k !== 0 && pl.k !== 1;
   const robot = pl.k > 0.5, heliMode = pl.char === 'heli' && pl.k < 0.5;
-  $('modev').textContent = trans ? 'BIẾN HÌNH…' : robot ? 'ROBOT' : heliMode ? 'TRỰC THĂNG' : 'XE TĂNG';
+  $('modev').textContent = trans ? 'BIẾN HÌNH…' : robot ? 'ROBOT' : heliMode ? 'BAY' : 'XE';
   if (trans) { setLock('shield', false, autoLock.shield ? 'KHÓA KHIÊN: TẮT' : ''); setLock('fire', false, autoLock.fire ? 'AUTO BẮN: TẮT' : ''); }
   if (autoLock.shield && (pl.shState === 'broken' || !pl.alive)) setLock('shield', false, 'KHIÊN VỠ');
   if (autoLock.fire && (pl.ohT > 0 || !pl.alive || robot || pl.char !== 'heli')) setLock('fire', false, pl.ohT > 0 ? 'QUÁ NHIỆT: TẮT AUTO' : '');
@@ -923,6 +948,7 @@ function updatePlayer(dt) {
   if (pl.pos.y > 34) { pl.pos.y = 34; pl.vy = Math.min(0, pl.vy); }
   if (pl.boosting) emit(pl.pos.x + rnd(-0.5, 0.5), pl.pos.y + 1, pl.pos.z + rnd(-0.5, 0.5), rnd(-2, 2), -rnd(6, 12), rnd(-2, 2), 0x6ad8ff, 0.4, 0);
   if (!pl.boosting && !(pl.dashT > 0) && !pl.charging) pl.en = Math.min(100, pl.en + (robot ? (pl.grounded ? 20 : 7) : pl.char === 'heli' ? 22 : 17) * (pl.char === 'arty' ? 0.7 : pl.char === 'tank' ? 0.9 : 1) * dt);
+  if (typeof unitPush === 'function') unitPush();
   /* arena bounds + boss body */
   const r = Math.hypot(pl.pos.x, pl.pos.z);
   if (r > ARENA_R - 2) { pl.pos.x *= (ARENA_R - 2) / r; pl.pos.z *= (ARENA_R - 2) / r; }
@@ -1020,7 +1046,7 @@ function doMelee() {
 }
 /* ===== Boss: model, parts, damage ===== */
 const B1 = {
-  title: 'Guardian', pos: V3(0, 0, 0), colR: 11, colH: 16, keys: ['core', 'gat', 'art', 'head', 'aa1', 'aa2'], minor: ['aa1', 'aa2'],
+  title: 'Guardian', pos: V3(0, 0, 0), colR: 13, colH: 16, keys: ['core', 'gat', 'art', 'head', 'aa1', 'aa2'], minor: ['aa1', 'aa2'],
   start: { x: 0, z: -44, yaw: 0 }, phaseMsg: { 2: 'Guardian kích hoạt tên lửa và sập sàn', 3: 'Guardian nổi điên' }, ringHex: 0xff6a2a,
   root: new THREE.Group(), yaw: 0, phase: 1, alive: true, state: 'idle', timer: 3, atk: null, last: '', stagger: 0, dying: 0,
   parts: {
@@ -1046,43 +1072,43 @@ function bb(mat, w, h, d, x, y, z, parent) { const m = new THREE.Mesh(UB, mat); 
 function cyl(mat, r, h, x, y, z, parent, rx, rz) { const m = new THREE.Mesh(new THREE.CylinderGeometry(r, r, h, 12), mat); m.position.set(x, y, z); if (rx) m.rotation.x = rx; if (rz) m.rotation.z = rz; m.castShadow = true; (parent || B.root).add(m); return m; }
 const mk = (parent, x, y, z) => { const o = new THREE.Object3D(); o.position.set(x, y, z); parent.add(o); return o; };
 const arms = {}, AA = {};
-B1.mats = AM; B1.coreMult = () => [0.6, 1.0, 1.2, 1.4][destroyedCount()]; B1.bodyTest = p => p.y < 26 && Math.hypot(p.x, p.z) < 7.5;
+B1.mats = AM; B1.coreMult = () => [0.6, 1.0, 1.2, 1.4][destroyedCount()]; B1.bodyTest = p => p.y < 28 && Math.hypot(p.x, p.z) < 9.5;
 B1.onDestroy = k => { if (k === 'head') BM.eye.color.setHex(0x222222); };
 (function buildBoss() {
   const R = B.root;
   for (const s of [-1, 1]) {
-    bb(AM.legs, 5.4, 13, 6.4, s * 5.5, 7, 0); bb(AM.legs, 7, 1.8, 10.5, s * 5.5, 0.9, 1.6);
-    bb(BM.hot, 5.6, 0.5, 0.5, s * 5.5, 8, 3.3); bb(BM.dark, 4, 2, 4, s * 5.5, 14, 0);
+    bb(AM.legs, 7.4, 13, 8.2, s * 6.2, 7, 0); bb(AM.legs, 9, 1.8, 12.5, s * 6.2, 0.9, 1.8);
+    bb(BM.hot, 7.6, 0.5, 0.5, s * 6.2, 8, 4.3); bb(BM.dark, 5.4, 2.4, 5.4, s * 6.2, 14.2, 0);
   }
-  bb(AM.legs, 16, 4, 9, 0, 15.8, 0); bb(BM.dark, 9, 3, 6, 0, 18.7, 0);
+  bb(AM.legs, 22, 4.6, 11.5, 0, 15.9, 0); bb(BM.dark, 12.5, 3.4, 8, 0, 19.0, 0);
   const chest = new THREE.Group(); chest.position.y = 23.6; R.add(chest); B.chest = chest;
-  bb(AM.core, 17, 10, 10, 0, 0, 0, chest); bb(AM.core, 13, 3, 4, 0, 6, -1, chest);
-  const coreMesh = new THREE.Mesh(new THREE.SphereGeometry(2.5, 20, 14), BM.coreM); coreMesh.position.set(0, 0.4, 5.4); chest.add(coreMesh); B.coreMesh = coreMesh;
-  const ring = new THREE.Mesh(new THREE.TorusGeometry(3.4, 0.5, 8, 24), BM.dark); ring.position.set(0, 0.4, 5.2); chest.add(ring);
-  for (const s of [-1, 1]) { bb(BM.dark, 2.2, 8, 3, s * 5, 28, -6.5); bb(BM.hot, 0.5, 6, 0.5, s * 5, 28, -4.9); }
+  bb(AM.core, 23, 12.5, 13, 0, 0.8, 0, chest); bb(AM.core, 17, 3.4, 5.4, 0, 8.3, -1, chest);
+  const coreMesh = new THREE.Mesh(new THREE.SphereGeometry(2.5, 20, 14), BM.coreM); coreMesh.position.set(0, 0.4, 7.0); chest.add(coreMesh); B.coreMesh = coreMesh;
+  const ring = new THREE.Mesh(new THREE.TorusGeometry(3.4, 0.5, 8, 24), BM.dark); ring.position.set(0, 0.4, 6.8); chest.add(ring);
+  for (const s of [-1, 1]) { bb(BM.dark, 2.8, 9, 3.6, s * 6, 28.5, -9.2); bb(BM.hot, 0.6, 6.4, 0.6, s * 6, 28.5, -7.1); }
   const hd = new THREE.Group(); hd.position.set(0, 31.9, 0.6); R.add(hd); B.headG = hd;
-  bb(AM.head, 5.6, 4.8, 5.6, 0, 0, 0, hd);
-  B.eyeMesh = bb(BM.eye, 4.2, 0.9, 0.4, 0, 0.3, 2.9, hd);
-  for (const s of [-1, 1]) { const h = bb(AM.head, 0.7, 3.6, 0.7, s * 1.8, 3.6, 0.6, hd); h.rotation.z = -s * 0.45; }
-  B.eyeM = mk(hd, 0, 0.3, 3.1);
+  bb(AM.head, 7.6, 6.2, 7.2, 0, 0.4, 0, hd);
+  B.eyeMesh = bb(BM.eye, 5.6, 1.1, 0.5, 0, 0.7, 3.8, hd);
+  for (const s of [-1, 1]) { const h = bb(AM.head, 0.9, 4.2, 0.9, s * 2.5, 4.9, 0.6, hd); h.rotation.z = -s * 0.45; }
+  B.eyeM = mk(hd, 0, 0.5, 4.0);
   for (const s of [-1, 1]) {
-    const g = new THREE.Group(); g.position.set(s * 11.8, 27, 0); R.add(g);
+    const g = new THREE.Group(); g.position.set(s * 14.4, 27, 0); R.add(g);
     const key = s === 1 ? 'gat' : 'art', mat = AM[key];
-    bb(mat, 7.4, 6.4, 7.4, 0, 0.4, 0, g); bb(mat, 4.6, 9.4, 4.6, 0, -5.6, 0, g);
-    const elb = new THREE.Mesh(new THREE.SphereGeometry(2.7, 14, 10), BM.dark); elb.position.y = -10.4; g.add(elb);
-    bb(mat, 5.4, 8.4, 5.4, 0, -14.6, 0, g); bb(BM.hot, 5.6, 0.4, 5.6, 0, -11.6, 0, g);
+    bb(mat, 9.6, 8.4, 9.6, 0, 0.4, 0, g); bb(mat, 6.4, 9.4, 6.4, 0, -5.8, 0, g);
+    const elb = new THREE.Mesh(new THREE.SphereGeometry(3.4, 14, 10), BM.dark); elb.position.y = -10.6; g.add(elb);
+    bb(mat, 7.6, 8.4, 7.6, 0, -14.8, 0, g); bb(BM.hot, 7.8, 0.4, 7.8, 0, -11.7, 0, g);
     if (key === 'gat') {
       const gb = new THREE.Group(); gb.position.set(0, -17, 2); g.add(gb);
       for (let i = 0; i < 3; i++) { const a = i / 3 * TAU; const c = cyl(BM.dark, 0.7, 8, Math.cos(a) * 1.3, Math.sin(a) * 1.3, 3, gb, Math.PI / 2); }
       arms.gatBarrels = gb; arms.gatMuz = mk(g, 0, -17, 8);
     } else {
-      cyl(BM.dark, 2.1, 7, 0, -19, 0, g); cyl(BM.hot, 2.3, 0.6, 0, -22.4, 0, g); arms.artMuz = mk(g, 0, -23, 0);
+      cyl(BM.dark, 2.7, 7, 0, -19.2, 0, g); cyl(BM.hot, 3.0, 0.6, 0, -22.6, 0, g); arms.artMuz = mk(g, 0, -23, 0);
     }
     const hit = mk(g, 0, -9.5, 0); arms[key] = { g, hit, s };
   }
   for (const s of [-1, 1]) {
     const key = s === 1 ? 'aa1' : 'aa2', mat = AM[key];
-    const tg = new THREE.Group(); tg.position.set(s * 11.8, 31.0, 0.6); R.add(tg);
+    const tg = new THREE.Group(); tg.position.set(s * 13.2, 31.7, 0.6); R.add(tg);
     cyl(mat, 1.7, 1.4, 0, 0, 0, tg); bb(mat, 2.8, 1.8, 2.8, 0, 1.3, 0, tg);
     const pv = new THREE.Group(); pv.position.y = 1.4; tg.add(pv);
     for (const x of [-0.7, 0.7]) cyl(BM.dark, 0.32, 4.4, x, 0, 2.6, pv, Math.PI / 2);
@@ -2472,7 +2498,7 @@ const FB_DEFAULT = {
   messagingSenderId: "953531909917",
   appId: "1:953531909917:web:3142b6d449f3abcc14c3f4"
 };
-const CHARS = ['tank', 'heli', 'arty'], CNAME = { tank: 'Xe tăng', heli: 'Trực thăng', arty: 'Pháo hạng nặng' };
+const CHARS = ['tank', 'heli', 'arty'], CNAME = { tank: 'Tankbot', heli: 'Machdot', arty: 'Heavyshot' };
 const MP = { room: false, on: false, host: false, me: 'h', other: 'g', code: '', db: null, lref: null, evRef: null, lobby: null, lastGo: 0, tgt: 'h', applying: false, swapped: false,
   fireN: 0, lastFireCd: 0, sendT: 0, bsT: 0, bsnap: null, revUsed: { h: 0, g: 0 }, revT: 0, deadAt: 0, seed: 1, ghostC: V3(), offs: [], hudT: 0, ringT: 0, busy: false };
 const gh = { pos: V3(), tp: V3(), vel: V3(), yaw: 0, ty: 0, ay: 0, ap: 0, k: 0, tk: 0, ch: 'heli', alive: true, hp: 100, left: false, last: 0, fireN: 0, sh: 0, bar: 0, m: 0, first: true };
@@ -2762,25 +2788,8 @@ const ghostG = new THREE.Group(); ghostG.visible = false; scene.add(ghostG);
 const GV = {};
 function mkp(mat, parent, sx, sy, sz, x, y, z) { const m = bx(mat, parent); m.scale.set(sx, sy, sz); m.position.set(x, y, z); return m; }
 function grp(parent, x, y, z) { const g = new THREE.Group(); g.position.set(x, y, z); g.rotation.order = 'YXZ'; parent.add(g); return g; }
-GV.tank = grp(ghostG, 0, 0, 0);
-mkp(M.mint, GV.tank, 1, .9, 4.2, -1.5, .45, 0); mkp(M.mint, GV.tank, 1, .9, 4.2, 1.5, .45, 0); mkp(M.white, GV.tank, 2.4, .8, 3.8, 0, 1.15, 0);
-GV.tankT = grp(GV.tank, 0, 1.75, 0); mkp(M.mint, GV.tankT, 1.7, .7, 2, 0, .2, 0); mkp(M.dark, GV.tankT, .32, .32, 3, 0, .2, 2.2);
-GV.heli = grp(ghostG, 0, 0, 0);
-mkp(M.white, GV.heli, 1.9, 1.6, 3.8, 0, 1.9, 0); mkp(M.white, GV.heli, .45, .5, 3.6, 0, 2.2, -3); mkp(M.white, GV.heli, .12, 1.1, .8, 0, 2.9, -4.6);
-mkp(M.dark, GV.heli, .14, .14, 3.4, -1.1, .3, .2); mkp(M.dark, GV.heli, .14, .14, 3.4, 1.1, .3, .2); mkp(M.dark, GV.heli, .1, 1.4, .1, -1, 1, .2); mkp(M.dark, GV.heli, .1, 1.4, .1, 1, 1, .2);
-GV.heliR = grp(GV.heli, 0, 3.4, .2); mkp(M.dark, GV.heliR, .25, .5, .25, 0, 0, 0); mkp(M.dark, GV.heliR, 8, .06, .45, 0, .3, 0); mkp(M.dark, GV.heliR, .45, .06, 8, 0, .3, 0);
-GV.heliG = grp(GV.heli, 0, 1.2, 1.2); mkp(M.dark, GV.heliG, .22, .22, 2, 0, 0, 1);
-GV.arty = grp(ghostG, 0, 0, 0);
-mkp(ART.olive, GV.arty, 2.6, .9, 5.2, 0, 1.2, 0); mkp(ART.brown, GV.arty, .9, .5, 5.4, -1.55, .55, -.1); mkp(ART.brown, GV.arty, .9, .5, 5.4, 1.55, .55, -.1);
-for (const s of [-1, 1]) for (const z of [-1.9, 0, 1.9]) mkp(M.dark, GV.arty, .55, 1.3, 1.3, s * 1.85, .68, z);
-GV.artyT = grp(GV.arty, 0, 2.0, -.3); mkp(ART.olive, GV.artyT, 1.9, 1, 1.3, 0, .3, 0); mkp(M.dark, GV.artyT, .42, .42, 4.4, -.5, .3, 2.4); mkp(M.dark, GV.artyT, .42, .42, 4.4, .5, .3, 2.4);
-GV.robot = grp(ghostG, 0, 0, 0);
-GV.legs = [mkp(M.blue, GV.robot, .95, 2.3, 1.2, -.75, 1.15, 0), mkp(M.blue, GV.robot, .95, 2.3, 1.2, .75, 1.15, 0)];
-GV.torsoW = mkp(M.white, GV.robot, 1.9, 1.5, 1.2, 0, 2.95, 0); GV.torsoA = mkp(ART.olive, GV.robot, 2.3, 1.7, 1.5, 0, 2.95, 0);
-mkp(M.white, GV.robot, .75, 1.9, .85, -1.55, 3.3, 0); mkp(M.white, GV.robot, .75, 1.9, .85, 1.55, 3.3, 0);
-mkp(M.white, GV.robot, .95, .9, .95, 0, 4.2, 0); mkp(M.glow, GV.robot, .7, .18, .1, 0, 4.25, .5);
-GV.robG = grp(GV.robot, 1.75, 3.4, .5); mkp(M.dark, GV.robG, .4, .4, 2.5, 0, 0, 1.2); mkp(M.yellow, GV.robG, .45, .45, .3, 0, 0, 2.5);
-GV.robShield = mkp(ART.olive, GV.robot, .5, 3.4, 2.5, -2.1, 3.1, .6);
+const GR = makeRig(ghostG); /* same model as the player's (shared rig), default skin */
+GV.robot = grp(ghostG, 0, 0, 0); /* holds only the saber beam */
 GV.saber = mkp(M.glow, GV.robot, .3, .3, 7, 1.8, 3.3, 4.2); GV.saber.visible = false;
 const ghostShield = new THREE.Mesh(new THREE.SphereGeometry(3.6, 16, 12), shieldMat); ghostShield.visible = false; scene.add(ghostShield);
 const ghostBar = barrierMesh.clone(true); ghostBar.visible = false; scene.add(ghostBar);
@@ -2800,13 +2809,12 @@ function mpUpdateGhost(dt) {
   MP.ghostC.set(gh.pos.x, gh.pos.y + lerp(1.4, 2.6, gh.k), gh.pos.z);
   const show = gh.alive && !gh.left; ghostG.visible = show;
   if (show) {
-    ghostG.position.copy(gh.pos); ghostG.rotation.y = gh.yaw;
-    const rb = gh.k > 0.5, ch = gh.ch, rel = angDiff(gh.yaw, gh.ay);
-    GV.tank.visible = !rb && ch === 'tank'; GV.heli.visible = !rb && ch === 'heli'; GV.arty.visible = !rb && ch === 'arty'; GV.robot.visible = rb;
-    GV.tankT.rotation.set(-gh.ap, rel, 0); GV.artyT.rotation.set(-gh.ap, rel, 0); GV.heliG.rotation.set(-gh.ap, rel, 0); GV.robG.rotation.set(-gh.ap, rel, 0);
-    GV.heliR.rotation.y += dt * 30;
-    GV.torsoW.visible = ch !== 'arty'; GV.torsoA.visible = ch === 'arty'; GV.robShield.visible = ch === 'arty'; GV.robot.scale.setScalar(ch === 'arty' ? 1.3 : 1.05);
-    GV.saber.visible = !!gh.m && rb; { const sb = SABER[ch] || SABER.tank; GV.saber.material = sb.mat; GV.saber.scale.z = sb.len; GV.saber.position.z = 0.7 + sb.len / 2; const lm = ch === 'tank' ? M.mint : M.blue; for (const l of GV.legs) l.material = lm; }
+    const rb = gh.k > 0.5, ch = gh.ch;
+    if (GR.ch !== ch) applyCharRig(GR, ch);
+    poseRig(GR, { char: ch, k: gh.k, vel: gh.vel, yaw: gh.yaw, aimYaw: gh.ay, aimPitch: gh.ap }, dt);
+    ghostG.position.set(gh.pos.x, gh.pos.y + GR.hop, gh.pos.z);
+    GV.robot.visible = rb;
+    GV.saber.visible = !!gh.m && rb; { const sb = SABER[ch] || SABER.tank; GV.saber.material = sb.mat; GV.saber.scale.z = sb.len; GV.saber.position.z = 0.7 + sb.len / 2; }
     ghostShield.visible = !!gh.sh; ghostShield.position.set(gh.pos.x, gh.pos.y + 2.4, gh.pos.z);
   } else ghostShield.visible = false;
   if (gh.bar) { ghostBar.visible = true; ghostBar.position.set(gh.bar[0], 0, gh.bar[1]); ghostBar.rotation.y = gh.bar[2]; } else ghostBar.visible = false;
@@ -3085,7 +3093,7 @@ function comRecv(e) { if (MP.on && G.state === 'playing') comShow(e.c, e.k, fals
 function comOpen(on) { comS.open = on && MP.on && G.state === 'playing' && !(!pl.alive && MP.revUsed[MP.me] >= 1); $('comWheel').hidden = !comS.open; }
 function comTick(dt) {
   comS.cd = Math.max(0, comS.cd - dt);
-  $('comBtn').hidden = !(MP.on && G.state === 'playing'); const cdim = MP.on && !pl.alive && MP.revUsed[MP.me] >= 1; $('comBtn').style.pointerEvents = cdim ? 'none' : ''; if (comS.pa && !pl.alive && comS.open) comOpen(false); comS.pa = pl.alive; if (cdim && comS.open) comOpen(false);
+  $('comBtn').hidden = !(MP.on && G.state === 'playing'); $('comBtn').classList.toggle('flash', MP.on && G.state === 'playing' && G.intro > 0); const cdim = MP.on && !pl.alive && MP.revUsed[MP.me] >= 1; $('comBtn').style.pointerEvents = cdim ? 'none' : ''; if (comS.pa && !pl.alive && comS.open) comOpen(false); comS.pa = pl.alive; if (cdim && comS.open) comOpen(false);
   if (!(MP.on && G.state === 'playing') && comS.open) comOpen(false);
   if (comS.msgT > 0) { comS.msgT -= dt; if (comS.msgT <= 0) { $('cmsg').classList.remove('on'); } }
   const pg = $('cping'), pl2 = $('cpingl');
@@ -3376,7 +3384,7 @@ function updateJet(f, dt) {
 /* ---------------- Juggernaut ---------------- */
 function shell4(f, s, th) {
   const ang = f.yaw + s * Math.PI / 2 + th, base = V3(Math.sin(ang), 0, Math.cos(ang));
-  const mp = V3(f.pos.x + base.x * 4.6, f.mode === 'tank' ? 2.9 : 7.2, f.pos.z + base.z * 4.6);
+  const mp = V3(f.pos.x + base.x * 9.8, f.mode === 'tank' ? 5.6 : 9, f.pos.z + base.z * 9.8);
   const d = leadAim(mp, 74, DIFFS[G.diff].lead);
   const m = new THREE.Mesh(sh4Geo, sh4Mat); m.position.copy(mp); scene.add(m);
   shells4.push({ pos: mp.clone(), vel: d.multiplyScalar(74), t: 0, mesh: m });
@@ -3441,7 +3449,7 @@ function updateJug(f, dt) {
       if (f.guard && !jet.dead) { const ddx = (jet.pos.x + (pl.pos.x - jet.pos.x) * 0.25) - f.pos.x, ddz = (jet.pos.z + (pl.pos.z - jet.pos.z) * 0.25) - f.pos.z, dd = Math.hypot(ddx, ddz); if (dd > 2) { const st = Math.min(dd, 8 * dt); f.pos.x += ddx / dd * st; f.pos.z += ddz / dd * st; } }
       else if (f.retreat) { f.pos.x -= dx / Math.max(d, 1) * 4.7 * dt; f.pos.z -= dz / Math.max(d, 1) * 4.7 * dt; }
       else { const k = clamp((d - 42) / 10, -1, 1); f.pos.x += dx / Math.max(d, 1) * k * sp * dt; f.pos.z += dz / Math.max(d, 1) * k * sp * dt; }
-      b4Clamp(f.pos, 8); b4Avoid(f.pos, 5.6);
+      b4Clamp(f.pos, 8); b4Avoid(f.pos, 6.8);
       // two side cannons, each only fires at its own side
       for (const s of [1, -1]) {
         f.cd[s] -= dt;
@@ -3449,7 +3457,7 @@ function updateJug(f, dt) {
         GM.sp[s].rotation.y = lerp(GM.sp[s].rotation.y, clamp(rel, -1.05, 1.05), damp(8, dt));
         if (inArc && d < RC && d > 12 && f.cd[s] <= 0) {
           f.chg[s] += dt;
-          emit(f.pos.x + Math.sin(f.yaw + s * 1.5708) * 4.2, 2.9, f.pos.z + Math.cos(f.yaw + s * 1.5708) * 4.2, rnd(-2, 2), rnd(-2, 2), rnd(-2, 2), 0xffb040, 0.3, 0);
+          emit(f.pos.x + Math.sin(f.yaw + s * 1.5708) * 9.5, 5.6, f.pos.z + Math.cos(f.yaw + s * 1.5708) * 9.5, rnd(-2, 2), rnd(-2, 2), rnd(-2, 2), 0xffb040, 0.3, 0);
           if (f.chg[s] >= 0.5 / SPD()) { f.chg[s] = 0; f.cd[s] = (f.guard ? 2.0 : 3.0) / SPD(); shell4(f, s, clamp(rel, -1.05, 1.05)); }
         } else if (!inArc) f.chg[s] = 0;
       }
@@ -3457,7 +3465,7 @@ function updateJug(f, dt) {
       GM.mg.forEach((m, i) => {
         const st = f.mg[i], front = m.z > 0, rel = Math.abs(angDiff(f.yaw, bearing)), ok = front ? rel < 1.95 : rel > 1.2;
         const wy = angDiff(f.yaw, bearing); m.g.rotation.y = ok ? wy : (front ? 0 : Math.PI);
-        jugMG(f, st, V3(f.pos.x + Math.cos(f.yaw) * m.x + Math.sin(f.yaw) * m.z, 3.7, f.pos.z - Math.sin(f.yaw) * m.x + Math.cos(f.yaw) * m.z), dt, ok && d < RM);
+        jugMG(f, st, V3(f.pos.x + Math.cos(f.yaw) * m.x + Math.sin(f.yaw) * m.z, 5.4, f.pos.z - Math.sin(f.yaw) * m.x + Math.cos(f.yaw) * m.z), dt, ok && d < RM);
       });
       // transform to robot when the player hugs the hull
       if (d < 15) f.closeT += dt; else f.closeT = Math.max(0, f.closeT - dt * 0.5);
@@ -3474,7 +3482,7 @@ function updateJug(f, dt) {
         f.slamCd -= dt;
         if (d < 15 && f.slamCd <= 0) f.atk = jugSlam(f);
         if (d > 26) f.farT += dt; else f.farT = 0;
-        for (const sd of [-1, 1]) jugMG(f, f.mg[sd === 1 ? 0 : 1], V3(f.pos.x + Math.cos(f.yaw) * sd * 2.8 + Math.sin(f.yaw) * 3, 7.7, f.pos.z - Math.sin(f.yaw) * sd * 2.8 + Math.cos(f.yaw) * 3), dt, d >= 15 && d < RM);
+        for (const sd of [-1, 1]) jugMG(f, f.mg[sd === 1 ? 0 : 1], V3(f.pos.x + Math.cos(f.yaw) * sd * 3.5 + Math.sin(f.yaw) * 2.4, 10.9, f.pos.z - Math.sin(f.yaw) * sd * 3.5 + Math.cos(f.yaw) * 2.4), dt, d >= 15 && d < RM);
         if (f.robotT <= 0 || (f.robotAge >= 8 && f.farT > 2.5)) { jugToTank(f); if (b4Host() && MP.on) mpSend({ t: 'a', o: 'jug', y: 'tk', g: f.tgt }); }
       }
       b4Clamp(f.pos, 8); b4Avoid(f.pos, 4.2);
@@ -3528,9 +3536,9 @@ function b4Pose(dt) {
 function refreshPP4() {
   const J = F4.jet, U = F4.jug, pj = B4.pp.jet, pu = B4.pp.jug;
   if (J.dead) pj.set(0, -999, 0); else pj.set(J.pos.x, (J.mode === 'fly' ? J.y : 2.6) + (J.mode === 'fly' ? 0 : 0), J.pos.z);
-  if (U.dead) pu.set(0, -999, 0); else pu.set(U.pos.x, U.mode === 'tank' ? 2.8 : 4.8, U.pos.z);
+  if (U.dead) pu.set(0, -999, 0); else pu.set(U.pos.x, U.mode === 'tank' ? 3.5 : 5.6, U.pos.z);
   B4.parts.jet.r = J.dead ? 0.01 : J.mode === 'fly' ? 3.4 : 2.6;
-  B4.parts.jug.r = U.dead ? 0.01 : U.mode === 'tank' ? 5.4 : 4.2;
+  B4.parts.jug.r = U.dead ? 0.01 : U.mode === 'tank' ? 6.5 : 5.0;
 }
 B4.refresh = refreshPP4;
 B4.bodyTest = () => false;
@@ -3608,12 +3616,7 @@ function updateBoss4(dt) {
   if (barrier.push > 0) {
     for (const f of [J, U]) { if (f.dead || (f === J && f.mode === 'fly')) continue; const dx = f.pos.x - barrier.pos.x, dz = f.pos.z - barrier.pos.z, d = Math.hypot(dx, dz); if (d < 32 && d > 0.01) { f.pos.x += dx / d * 34 * dt; f.pos.z += dz / d * 34 * dt; b4Clamp(f.pos, 8); } }
   }
-  // solid bodies
-  for (const [f, rr] of [[J, 2.2], [U, U.mode === 'tank' ? 5.4 : 3.8]]) {
-    if (f.dead || (f === J && f.mode === 'fly')) continue;
-    const bx = pl.pos.x - f.pos.x, bz = pl.pos.z - f.pos.z, br = Math.hypot(bx, bz), lim = rr + 2.4;
-    if (br < lim && pl.pos.y < 8) { const k = lim / Math.max(br, 0.01); pl.pos.x = f.pos.x + bx * k; pl.pos.z = f.pos.z + bz * k; }
-  }
+  // solid bodies: handled by unitPush() (p18.js): Valkyrie can be pushed, Juggernaut cannot
   B4.pos.copy(U.dead ? J.pos : U.pos);
   b4Show(); b4Pose(dt);
 }
@@ -3742,6 +3745,8 @@ function aiTick(dt) {
     let R = st[3] * (AI.mode === 'def' || AI.mode === 'cau' ? 1.45 : 1);
     if (AI.mode === 'chg') R = rb ? 6.5 : 14;
     const a = aw + AI.dir * 0.5; tx = tp.x + Math.sin(a) * R; tz = tp.z + Math.cos(a) * R;
+    /* Retreat with < 30% HP: slip behind the player (the side away from the target) while the player is close */
+    if (AI.mode === 'def' && AI.hp < AI.max * 0.3 && pl.alive && rd < 45) { const bx = pl.pos.x - tp.x, bz = pl.pos.z - tp.z, bl = Math.max(0.1, Math.hypot(bx, bz)); tx = pl.pos.x + bx / bl * 11; tz = pl.pos.z + bz / bl * 11; }
   }
   if (AI.evade > 0) { const pa = Math.atan2(dx, dz) + AI.evDir * Math.PI / 2; tx = gh.pos.x + Math.sin(pa) * 30; tz = gh.pos.z + Math.cos(pa) * 30; }
   if (rescue) {
@@ -3854,10 +3859,10 @@ function aiBarrier(tp) {
 /* ===== Skins: tank camo x4, yellow heli (thrown sword), silver arty (long barrel); stealth vs bosses ===== */
 const SKINS = {
   tank: [
-    { id: 'camo1', n: 'Camo 1', s: 'Thép đêm · tàng hình', need: 'Hạ Boss 1 bằng Xe tăng (Thường trở lên)' },
-    { id: 'camo2', n: 'Camo 2', s: 'Sa mạc · tàng hình', need: 'Hạ Boss 2 bằng Xe tăng (Thường trở lên)' },
-    { id: 'camo3', n: 'Camo 3', s: 'Tro núi lửa · tàng hình', need: 'Hạ Boss 3 bằng Xe tăng (Thường trở lên)' },
-    { id: 'camo4', n: 'Camo 4', s: 'Tuyết · tàng hình', need: 'Hạ Boss 4 bằng Xe tăng (Thường trở lên)' }],
+    { id: 'camo1', n: 'Camo 1', s: 'Thép đêm · tàng hình', need: 'Hạ Boss 1 bằng Tankbot (Thường trở lên)' },
+    { id: 'camo2', n: 'Camo 2', s: 'Sa mạc · tàng hình', need: 'Hạ Boss 2 bằng Tankbot (Thường trở lên)' },
+    { id: 'camo3', n: 'Camo 3', s: 'Tro núi lửa · tàng hình', need: 'Hạ Boss 3 bằng Tankbot (Thường trở lên)' },
+    { id: 'camo4', n: 'Camo 4', s: 'Tuyết · tàng hình', need: 'Hạ Boss 4 bằng Tankbot (Thường trở lên)' }],
   heli: [{ id: 'heliY', n: 'Vàng', s: 'Máu −20% · robot không bắn, Kiếm phóng', need: 'Hạ Boss 3 (Thường trở lên)' }],
   arty: [{ id: 'artyS', n: 'Bạc', s: '1 nòng dài · đạn +40% · khiên chỉ 40%', need: 'Hạ Boss 4 (Thường trở lên)' }],
 };
@@ -3875,7 +3880,7 @@ function skinWin(win) {
   if (pl.char === 'tank') add('camo' + G.boss);
   if (G.boss === 3) add('heliY'); if (G.boss === 4) add('artyS');
   if (!got.length) return; skinSave(); skinUI();
-  const nm = id => { for (const c in SKINS) for (const s of SKINS[c]) if (s.id === id) return (c === 'tank' ? 'Xe tăng ' : c === 'heli' ? 'Trực thăng ' : 'Pháo ') + s.n + (s.s ? ' (' + s.s.split(' · ')[0] + ')' : ''); return id; };
+  const nm = id => { for (const c in SKINS) for (const s of SKINS[c]) if (s.id === id) return (c === 'tank' ? 'Tankbot ' : c === 'heli' ? 'Machdot ' : 'Heavyshot ') + s.n + (s.s ? ' (' + s.s.split(' · ')[0] + ')' : ''); return id; };
   $('stats').textContent += '  ·  MỞ KHÓA SKIN: ' + got.map(nm).join(', ');
 }
 
@@ -3921,8 +3926,8 @@ function camoMat(n, v) {
   const t = new THREE.CanvasTexture(cv); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(1.5, 1.5);
   const m = new THREE.MeshStandardMaterial({ map: t, roughness: 0.62, metalness: 0.2 }); if (v) m.color.setScalar(0.72); return camoCache[key] = m;
 }
-const GOLD = new THREE.MeshStandardMaterial({ color: 0xf6c428, roughness: 0.35, metalness: 0.5 }), GOLD2 = new THREE.MeshStandardMaterial({ color: 0xc99a18, roughness: 0.4, metalness: 0.5 });
-const SIL1 = new THREE.MeshStandardMaterial({ color: 0xeef1f7, roughness: 0.5, metalness: 0.1, emissive: 0x3a3f4c }), SIL2 = new THREE.MeshStandardMaterial({ color: 0xb8c0d0, roughness: 0.5, metalness: 0.1, emissive: 0x2a2e38 }), SILD = new THREE.MeshStandardMaterial({ color: 0x7c8498, roughness: 0.55, metalness: 0.1, emissive: 0x1c1f28 });
+const GOLD = new THREE.MeshStandardMaterial({ color: 0xffd414, roughness: 0.45, metalness: 0.12, emissive: 0x4a3a00 }), GOLD2 = new THREE.MeshStandardMaterial({ color: 0xf0bc00, roughness: 0.45, metalness: 0.15, emissive: 0x2e2300 });
+const SIL1 = new THREE.MeshStandardMaterial({ color: 0xdde1ea, roughness: 0.5, metalness: 0.1, emissive: 0x30343f }), SIL2 = new THREE.MeshStandardMaterial({ color: 0xaab2c3, roughness: 0.5, metalness: 0.1, emissive: 0x232730 }), SILD = new THREE.MeshStandardMaterial({ color: 0x727a8e, roughness: 0.55, metalness: 0.1, emissive: 0x181b23 });
 const barrelMat0 = barrel.material;
 
 /* ---- models ---- */
@@ -3941,7 +3946,7 @@ const heliDeco = new THREE.Group(); pl.root.add(heliDeco); heliDeco.visible = fa
 for (const s of [-1, 1]) { const w = bx(GOLD2, heliDeco); w.scale.set(0.08, 2.9, 0.55); w.position.set(s * 0.95, 4.35, -0.75); w.rotation.z = -s * 0.38; const w2 = bx(M.dark, heliDeco); w2.scale.set(0.1, 2.2, 0.3); w2.position.set(s * 1.05, 4.2, -0.78); w2.rotation.z = -s * 0.38; }
 const crest = bx(GOLD, heliDeco); crest.scale.set(0.12, 0.9, 0.5); crest.position.set(0, 5.75, 0.1);
 const sbChildren = bigShield.children.map(c => c.material);
-const headBody = head.children[0], heliBlades = [rotor.children[1], rotor.children[2]];
+const headBody = head.children[0], heliBlades = rotor.children.slice(1);
 
 function skinApply() {
   const sk = curSkin(), c = pl.char, H = c === 'heli', A = c === 'arty';
@@ -3949,7 +3954,6 @@ function skinApply() {
   parts.forEach(p => { p.rp.copy(p.rpT); p.rs.copy(p.rsT); });
   headBody.material = M.white; headBody.scale.set(0.95, 0.9, 0.95); heliDeco.visible = false; barrel.material = barrelMat0;
   bigShield.children.forEach((m, i) => { m.material = sbChildren[i]; });
-  heliBlades[0].scale.set(8, 0.06, 0.45); heliBlades[1].scale.set(0.45, 0.06, 8);
   if (sk.startsWith('camo') && c === 'tank') {
     const n = +sk.slice(4), A1 = camoMat(n, 0), B1m = camoMat(n, 1);
     parts.forEach(p => { p.mesh.material = p.m0 === M.white ? A1 : (p.m0 === M.blue ? B1m : p.m0 === M.red ? B1m : p.m0); });
@@ -3959,7 +3963,7 @@ function skinApply() {
       if (HELI_Y[i]) { p.tp.copy(HELI_Y[i][0]); p.ts.copy(HELI_Y[i][1]); p.rp.copy(HELI_YR[i][0]); p.rs.copy(HELI_YR[i][1]); }
       p.mesh.material = p.m0 === M.white ? GOLD : p.m0 === M.blue ? GOLD2 : p.m0 === M.red ? (i === 10 ? GOLD2 : M.dark) : p.m0;
     });
-    headBody.material = GOLD; headBody.scale.set(0.8, 0.85, 0.8); heliBlades[0].scale.set(10.5, 0.04, 0.3); heliBlades[1].scale.set(0.3, 0.04, 10.5);
+    headBody.material = GOLD; headBody.scale.set(0.8, 0.85, 0.8);
     pl.maxHp = Math.round(pl.maxHp * 0.8);
   } else if (sk === 'artyS' && A) {
     parts.forEach((p, i) => { p.mesh.material = (i === 4 || i === 5) ? SILD : p.m0 === M.white ? SIL1 : p.m0 === M.blue ? SIL2 : p.m0 === M.red ? SILD : p.m0; });
@@ -3989,7 +3993,7 @@ function skinFrame(dt) {
   heliDeco.visible = sk === 'heliY' && pl.k > 0.5; heliDeco.scale.setScalar(Math.max(0.001, pl.k));
   if (artySilver()) {
     const k = ease(pl.k), len = lerp(11, 8.5, k), bt = 0.42;
-    barrelB.visible = tipB.visible = false; barrel.scale.set(bt, bt, len); barrel.position.set(0, 0, len / 2); muzzle.position.set(0, 0, len + 0.3); tip.position.set(0, 0, len); tip.scale.set(0.5, 0.5, 0.3);
+    barrelB.visible = tipB.visible = false; { const s0 = lerp(0.99, 0.065, k), e0 = len - 0.39; barrel.scale.set(bt, bt, e0 - s0); barrel.position.set(0, 0, (s0 + e0) / 2); } muzzle.position.set(0, 0, len + 0.3); tip.position.set(0, 0, len); tip.scale.set(0.5, 0.5, 0.3);
   }
 }
 { const _p = poseModel; poseModel = function (dt) { _p(dt); skinFrame(dt); }; }
@@ -4048,18 +4052,7 @@ const NT = (() => {
   const inset = (poly, d) => { if (!d) return poly; const n = poly.length; let A = 0; for (let i = 0; i < n; i++) { const j = (i + 1) % n; A += poly[i][0] * poly[j][1] - poly[j][0] * poly[i][1]; } const sg = A > 0 ? 1 : -1;
     const nr = (u, v) => { const dx = v[0] - u[0], dy = v[1] - u[1], l = Math.hypot(dx, dy) || 1; return [-sg * dy / l, sg * dx / l]; };
     return poly.map((p, i) => { const n1 = nr(poly[(i + n - 1) % n], p), n2 = nr(p, poly[(i + 1) % n]), k = 1 + n1[0] * n2[0] + n1[1] * n2[1]; return [p[0] + (n1[0] + n2[0]) * d / k, p[1] + (n1[1] + n2[1]) * d / k]; }); };
-  /* build one geometry from prisms (world coords), normalised to a unit box centred on 0; returns {g, c, s} */
-  function solid(prs, sx, d) {
-    sx = sx || 1; d = d || 0; const T = [];
-    for (const pr0 of prs) {
-      const pr = pr0.raw || !d ? pr0 : { poly: inset(pr0.poly, d), e0: pr0.e0 + d, e1: pr0.e1 - d, map: pr0.map };
-      const n = pr.poly.length, V0 = pr.poly.map(p => pr.map(p, pr.e0)), V1 = pr.poly.map(p => pr.map(p, pr.e1));
-      const all = V0.concat(V1).map(v => [v[0] * sx, v[1], v[2]]), A = all.slice(0, n), B = all.slice(n);
-      const cen = [0, 1, 2].map(i => all.reduce((s, v) => s + v[i], 0) / all.length);
-      const tri = (a, b, c) => { const u = [b[0] - a[0], b[1] - a[1], b[2] - a[2]], w = [c[0] - a[0], c[1] - a[1], c[2] - a[2]]; let nm = [u[1] * w[2] - u[2] * w[1], u[2] * w[0] - u[0] * w[2], u[0] * w[1] - u[1] * w[0]]; const fc = [(a[0] + b[0] + c[0]) / 3 - cen[0], (a[1] + b[1] + c[1]) / 3 - cen[1], (a[2] + b[2] + c[2]) / 3 - cen[2]]; if (nm[0] * fc[0] + nm[1] * fc[1] + nm[2] * fc[2] < 0) T.push([a, c, b]); else T.push([a, b, c]); };
-      for (let i = 1; i < n - 1; i++) { tri(A[0], A[i], A[i + 1]); tri(B[0], B[i], B[i + 1]); }
-      for (let i = 0; i < n; i++) { const j = (i + 1) % n; tri(A[i], A[j], B[j]); tri(A[i], B[j], B[i]); }
-    }
+  function finish(T) {
     const mn = [1e9, 1e9, 1e9], mx = [-1e9, -1e9, -1e9]; for (const t of T) for (const v of t) for (let i = 0; i < 3; i++) { mn[i] = Math.min(mn[i], v[i]); mx[i] = Math.max(mx[i], v[i]); }
     const c = [0, 1, 2].map(i => (mn[i] + mx[i]) / 2), s = [0, 1, 2].map(i => Math.max(1e-3, mx[i] - mn[i]));
     const pos = [], nor = [], uv = [];
@@ -4075,6 +4068,39 @@ const NT = (() => {
     g.setAttribute('normal', new THREE.BufferAttribute(new Float32Array(nor), 3));
     g.setAttribute('uv', new THREE.BufferAttribute(new Float32Array(uv), 2));
     return { g, c: V3(c[0], c[1], c[2]), s: V3(s[0], s[1], s[2]) };
+  }
+  const fil = (poly, r, n) => { if (!r) return poly; n = n || 4; const m = poly.length, out = []; for (let i = 0; i < m; i++) { const p = poly[i], a = poly[(i + m - 1) % m], b = poly[(i + 1) % m]; const la = Math.hypot(a[0] - p[0], a[1] - p[1]), lb = Math.hypot(b[0] - p[0], b[1] - p[1]), q = Math.min(r, la * .45, lb * .45); const p0 = [p[0] + (a[0] - p[0]) / la * q, p[1] + (a[1] - p[1]) / la * q], p1 = [p[0] + (b[0] - p[0]) / lb * q, p[1] + (b[1] - p[1]) / lb * q]; for (let k = 0; k <= n; k++) { const t = k / n, u = 1 - t; out.push([u * u * p0[0] + 2 * t * u * p[0] + t * t * p1[0], u * u * p0[1] + 2 * t * u * p[1] + t * t * p1[1]]); } } return out; };
+  const LX = (poly, x0, x1, c, r, d) => ({ poly, e0: x0, e1: x1, c, r: r || 0, d: d || 0, map: (p, t) => [t, p[1], p[0]] });
+  const LY = (poly, y0, y1, c, r, d) => ({ poly, e0: y0, e1: y1, c, r: r || 0, d: d || 0, map: (p, t) => [p[0], t, p[1]] });
+  /* rounded solid: poly filleted (r), pulled in by gap d, both ends rounded (c); every spec is one convex piece */
+  function lsolid(specs, sx) {
+    sx = sx || 1; const T = [];
+    for (const sp of specs) {
+      const poly = inset(fil(sp.poly, sp.r), sp.d), e0 = sp.e0 + sp.d, e1 = sp.e1 - sp.d, c = Math.max(0.001, Math.min(sp.c, (e1 - e0) / 2 - 0.002)), n = 3, R = [];
+      for (let k = 0; k <= n; k++) { const u = k / n; R.push([inset(poly, c * (1 - Math.sin(u * Math.PI / 2))), e0 + c * (1 - Math.cos(u * Math.PI / 2))]); }
+      for (let k = n; k >= 0; k--) { const u = k / n; R.push([inset(poly, c * (1 - Math.sin(u * Math.PI / 2))), e1 - c * (1 - Math.cos(u * Math.PI / 2))]); }
+      const V = R.map(([pp, t]) => pp.map(p => { const v = sp.map(p, t); return [v[0] * sx, v[1], v[2]]; })), m = poly.length, all = V.flat();
+      const cen = [0, 1, 2].map(i => all.reduce((q, v) => q + v[i], 0) / all.length);
+      const tri = (a, b, c) => { const u = [b[0] - a[0], b[1] - a[1], b[2] - a[2]], w = [c[0] - a[0], c[1] - a[1], c[2] - a[2]]; const nm = [u[1] * w[2] - u[2] * w[1], u[2] * w[0] - u[0] * w[2], u[0] * w[1] - u[1] * w[0]]; const fc = [(a[0] + b[0] + c[0]) / 3 - cen[0], (a[1] + b[1] + c[1]) / 3 - cen[1], (a[2] + b[2] + c[2]) / 3 - cen[2]]; if (nm[0] * fc[0] + nm[1] * fc[1] + nm[2] * fc[2] < 0) T.push([a, c, b]); else T.push([a, b, c]); };
+      const last = V[V.length - 1];
+      for (let i = 1; i < m - 1; i++) { tri(V[0][0], V[0][i], V[0][i + 1]); tri(last[0], last[i], last[i + 1]); }
+      for (let k = 0; k < V.length - 1; k++) for (let i = 0; i < m; i++) { const j = (i + 1) % m; tri(V[k][i], V[k][j], V[k + 1][j]); tri(V[k][i], V[k + 1][j], V[k + 1][i]); }
+    }
+    return finish(T);
+  }
+  /* build one geometry from prisms (world coords), normalised to a unit box centred on 0; returns {g, c, s} */
+  function solid(prs, sx, d) {
+    sx = sx || 1; d = d || 0; const T = [];
+    for (const pr0 of prs) {
+      const pr = pr0.raw || !d ? pr0 : { poly: inset(pr0.poly, d), e0: pr0.e0 + d, e1: pr0.e1 - d, map: pr0.map };
+      const n = pr.poly.length, V0 = pr.poly.map(p => pr.map(p, pr.e0)), V1 = pr.poly.map(p => pr.map(p, pr.e1));
+      const all = V0.concat(V1).map(v => [v[0] * sx, v[1], v[2]]), A = all.slice(0, n), B = all.slice(n);
+      const cen = [0, 1, 2].map(i => all.reduce((s, v) => s + v[i], 0) / all.length);
+      const tri = (a, b, c) => { const u = [b[0] - a[0], b[1] - a[1], b[2] - a[2]], w = [c[0] - a[0], c[1] - a[1], c[2] - a[2]]; let nm = [u[1] * w[2] - u[2] * w[1], u[2] * w[0] - u[0] * w[2], u[0] * w[1] - u[1] * w[0]]; const fc = [(a[0] + b[0] + c[0]) / 3 - cen[0], (a[1] + b[1] + c[1]) / 3 - cen[1], (a[2] + b[2] + c[2]) / 3 - cen[2]]; if (nm[0] * fc[0] + nm[1] * fc[1] + nm[2] * fc[2] < 0) T.push([a, c, b]); else T.push([a, b, c]); };
+      for (let i = 1; i < n - 1; i++) { tri(A[0], A[i], A[i + 1]); tri(B[0], B[i], B[i + 1]); }
+      for (let i = 0; i < n; i++) { const j = (i + 1) % n; tri(A[i], A[j], B[j]); tri(A[i], B[j], B[i]); }
+    }
+    return finish(T);
   }
   const box = (x0, x1, y0, y1, z0, z1) => ({ g: null, c: V3((x0 + x1) / 2, (y0 + y1) / 2, (z0 + z1) / 2), s: V3(x1 - x0, y1 - y0, z1 - z0) });
   const side = (f) => [f(-1), f(1)];
@@ -4105,41 +4131,221 @@ const NT = (() => {
     { v: box(.55, .95, .95, 1.25, -2.05, -1.95), r: box(.35, .75, 2.55, 3.05, -.9, -.74) },
     { v: { g: turV.g, c: sub(turV.c, TUR_V), s: turV.s }, r: { g: shoulder.g, c: sub(shoulder.c, TUR_R), s: shoulder.s } },
   ];
-  return { P, head, og };
+  /* ---- rounded robot frame (Machdot, Heavyshot) ---- */
+  const circP = (cx, cy, r, n) => [...Array(n).keys()].map(k => { const a = k * 2 * Math.PI / n; return [cx + r * Math.cos(a), cy + r * Math.sin(a)]; });
+  const rectP = (x0, x1, z0, z1) => [[x0, z0], [x1, z0], [x1, z1], [x0, z1]];
+  const legR = side(s => lsolid([LX([[-.6, .18], [-.42, 0], [.42, 0], [.6, .18], [.6, 2.0], [.42, 2.3], [-.42, 2.3], [-.6, 2.0]], .275, 1.225, .14, .3, 0)], s));
+  const torsoR = lsolid([LX([[-.6, 3.0], [.6, 3.0], [.6, 3.45], [.42, 3.7], [-.42, 3.7], [-.6, 3.45]], -.95, .95, .16, .28, 0), LX([[-.5, 2.44], [.5, 2.44], [.5, 3.1], [-.5, 3.1]], -.7, .7, .12, .2, 0)]);
+  const chestR = lsolid([LX(rect(.74, .9, 2.55, 2.95), -.5, .5, .05, .07, 0)]);
+  const armR = side(s => lsolid([LX([[-.425, 2.62], [-.3, 2.44], [.3, 2.44], [.425, 2.62], [.425, 3.52], [.3, 3.7], [-.3, 3.7], [-.425, 3.52]], 1.175, 1.925, .12, .2, 0)], s));
+  const glowR = side(s => lsolid([LX(rect(-.9, -.74, 2.55, 3.05), .35, .75, .05, .08, 0)], s));
+  const shoulderR = lsolid([LY(rectP(-1.35, 1.35, -.65, .65), 3.84, 4.5, .14, .5, 0)]);
+  const headR = lsolid([LY(rectP(-.475, .475, -.475, .475), 4.64, 5.45, .15, .28, 0)]);
+  const rb = lsolid([LX(rect(-.5, .5, -.5, .5), -.5, .5, .1, .15, 0)]);
+  const os = lsolid([LY(oct(0, 0, .5), -.5, .5, .03, 0, 0)]);
+  const rel = (f, off) => ({ g: f.g, c: sub(f.c, off), s: f.s });
+  const robotR = (TR) => [{ r: legR[0] }, { r: legR[1] }, { r: torsoR }, { r: chestR }, { r: armR[0] }, { r: armR[1] }, { r: glowR[0] }, { r: glowR[1] }, { r: rel(shoulderR, TR) }];
+  /* ---- Heavyshot vehicle ---- */
+  const rail = side(s => lsolid([LX([[-2.8, .5], [-2.55, .3], [2.45, .3], [2.7, .5], [2.7, .8], [-2.8, .8]], 1.1, 1.64, .1, .22, VG)], s));
+  const hullA = lsolid([LX([[-2.2, 1.08], [2.1, 1.08], [2.4, 1.3], [2.1, 1.65], [-2.1, 1.65], [-2.4, 1.35]], -1.2, 1.2, .16, .35, VG), LX([[-2.2, .7], [-2.05, .55], [1.95, .55], [2.1, .7], [2.1, 1.4], [-2.2, 1.4]], -.96, .96, .14, .22, VG)]);
+  const noseA = lsolid([LX([[2.59, .95], [2.85, .95], [2.85, 1.17], [2.71, 1.3], [2.59, 1.3]], -.8, .8, .03, .05, 0)]);
+  const skirtA = side(s => lsolid([LX([[-2.1, 1.3], [-1.95, 1.12], [1.9, 1.12], [2.15, 1.3], [2.15, 1.65], [-2.1, 1.65]], 1.34, 1.64, .08, .15, VG)], s));
+  const lightA = side(s => lsolid([LX(rect(2.6, 2.74, .95, 1.25), .94, 1.24, .04, .05, 0)], s));
+  const turA = lsolid([LY(rectP(-1.05, 1.05, -1.5, .9), 1.79, 2.45, .15, .6, VG)]);
+  const barA = lsolid([LX(rect(1.04, 2.4, 1.79, 2.3), -.15, .15, .06, .12, VG)]);
+  const rearA = lsolid([LX([[-2.34, 2.0], [-2.2, 1.79], [-1.64, 1.79], [-1.64, 2.15], [-2.2, 2.15]], -.95, .95, .1, .15, VG)]);
+  const TUR_A = V3(0, 2.0, -.3);
+  const RA = robotR(TUR_R);
+  const AP = [{ v: rail[0] }, { v: rail[1] }, { v: hullA }, { v: noseA }, { v: skirtA[0] }, { v: skirtA[1] }, { v: lightA[0] }, { v: lightA[1] }, { v: rel(turA, TUR_A) }, { v: barA }, { v: rearA }];
+  AP.forEach((d, i) => { if (RA[i]) d.r = RA[i].r; });
+  const wheelG = side(s => lsolid([LX(circP(0, 0, .68, 18), s > 0 ? 1.78 : -2.2, s > 0 ? 2.2 : -1.78, .1, 0, VG)]));
+  const hubG = side(s => lsolid([LX(circP(0, 0, .15, 10), s > 0 ? 2.39 : -2.49, s > 0 ? 2.49 : -2.39, .04, 0, 0)]));
+  const shieldA = [lsolid([LX([[-.15, 1.3], [1.95, 1.3], [2.15, 1.5], [2.15, 4.5], [1.95, 4.7], [-.15, 4.7], [-.35, 4.5], [-.35, 1.5]], -2.85, -2.51, .1, .45, 0)]), lsolid([LX(rect(0, 1.8, 1.7, 3.3), -2.37, -2.21, .05, .15, 0)]), lsolid([LX(rect(.15, 1.65, 3.45, 3.75), -2.37, -2.21, .05, .1, 0)]), lsolid([LX(rect(.25, 1.55, 3.9, 4.4), -2.37, -2.21, .05, .12, 0)])];
+  /* ---- Machdot (heli): vehicle form + rotor of 4 separate blades; robot form = shared rounded frame ---- */
+  const LZ = (poly, z0, z1, c, r, d) => ({ poly, e0: z0, e1: z1, c, r: r || 0, d: d || 0, map: (p, t) => [p[0], p[1], t] });
+  const skidH = side(s => lsolid([LZ(oct(1.1, .32, .1), -1.5, 1.9, .06, 0, 0)], s));
+  const strutH = side(s => lsolid([LY(oct(1.1, .2, .07), .66, .95, .03, 0, 0)], s));
+  const fusH = lsolid([LX([[-1.9, 1.3], [-1.75, 1.14], [1.4, 1.14], [1.75, 1.45], [1.75, 2.2], [1.3, 2.5], [-1.75, 2.5], [-1.9, 2.35]], -.95, .95, .22, .5, VG)]);
+  const noseH = lsolid([LX([[1.94, 2.15], [2.05, 2.15], [2.05, 2.45], [1.94, 2.45]], -.5, .5, .03, .04, 0)]);
+  const podH = side(s => lsolid([LX(rect(-.9, .5, 1.6, 2.0), 1.09, 1.49, .09, .16, VG)], s));
+  const canH = lsolid([LY(rectP(-.75, .75, .15, 1.75), 2.64, 3.0, .15, .5, VG)]);
+  const boomH = lsolid([LX([[-4.8, 2.1], [-4.8, 2.35], [-2.04, 2.5], [-2.04, 1.95]], -.2, .2, .09, .12, VG)]);
+  const finH = lsolid([LX([[-5.0, 2.54], [-4.4, 2.54], [-4.2, 3.5], [-4.7, 3.5]], -.07, .07, .03, .14, 0)]);
+  const TUR_H = V3(0, 2.55, .9), ROT_H = V3(0, 3.4, .2);
+  const rotorSet = (L, W) => { const a = W + .24, pq = fil([[a, -W], [L, -W], [L, W], [a, W]], W * .9, 3), o = [lsolid([LY(oct(0, .2, .2), 3.15, 3.65, .05, 0, VG)])];
+    [[1, 0], [-1, 0], [0, 1], [0, -1]].forEach(d => o.push(lsolid([LY(pq.map(p => d[0] ? [d[0] * p[0], p[1] + .2] : [p[1], d[1] * p[0] + .2]), 3.84, 3.92, .03, 0, 0)]))); return o.map(f => rel(f, ROT_H)); };
+  const rotor = rotorSet(4, .225), rotorY = rotorSet(5.25, .15);
+  const HP = [{ v: skidH[0] }, { v: skidH[1] }, { v: fusH }, { v: noseH }, { v: strutH[0] }, { v: strutH[1] }, { v: podH[0] }, { v: podH[1] }, { v: rel(canH, TUR_H) }, { v: boomH }, { v: finH }];
+  HP.forEach((d, i) => { if (RA[i]) d.r = RA[i].r; });
+  /* ---- Machdot vàng: slimmer, own shape (vehicle + slim robot); rotor from rotorY ---- */
+  const skidY = side(s => lsolid([LZ(oct(.9, .3, .07), -1.8, 2.0, .05, 0, 0)], s));
+  const strutY = side(s => lsolid([LY(oct(.8, .2, .05), .61, 1.01, .03, 0, 0)], s));
+  const fusY = lsolid([LX([[-2.1, 1.3], [-1.95, 1.2], [1.6, 1.2], [2.1, 1.5], [2.1, 2.15], [1.5, 2.5], [-1.95, 2.5], [-2.1, 2.35]], -.7, .7, .2, .5, VG)]);
+  const noseY = lsolid([LX([[2.29, 1.65], [2.4, 1.65], [2.4, 2.05], [2.29, 2.05]], -.4, .4, .03, .04, 0)]);
+  const podY = side(s => lsolid([LX(rect(-.65, .45, 1.65, 1.95), .84, 1.34, .06, .1, VG)], s));
+  const canY = lsolid([LY(rectP(-.55, .55, .2, 1.7), 2.64, 3.0, .15, .5, VG)]);
+  const boomY = lsolid([LX([[-5.8, 2.05], [-5.8, 2.3], [-2.24, 2.45], [-2.24, 1.95]], -.14, .14, .07, .1, VG)]);
+  const finY = lsolid([LX([[-6.1, 2.5], [-5.3, 2.5], [-5.1, 3.5], [-5.7, 3.5]], -.05, .05, .03, .14, 0)]);
+  const legY = side(s => lsolid([LX([[-.4, .18], [-.28, 0], [.28, 0], [.4, .18], [.4, 2.1], [.28, 2.4], [-.28, 2.4], [-.4, 2.1]], .4, 1.0, .12, .22, 0)], s));
+  const torY = lsolid([LX([[-.45, 2.54], [.45, 2.54], [.45, 3.9], [-.45, 3.9]], -.7, .7, .14, .22, 0)]);
+  const chY = lsolid([LX(rect(.59, .71, 2.9, 3.4), -.4, .4, .04, .06, 0)]);
+  const armY = side(s => lsolid([LX([[-.3, 2.15], [-.2, 2.0], [.2, 2.0], [.3, 2.15], [.3, 3.75], [.2, 3.9], [-.2, 3.9], [-.3, 3.75]], .84, 1.29, .1, .16, 0)], s));
+  const glY = side(s => lsolid([LX(rect(-.71, -.59, 2.8, 3.3), .15, .55, .04, .06, 0)], s));
+  const shY = lsolid([LY(rectP(-1.3, 1.3, -.5, .5), 4.04, 4.44, .12, .3, 0)]);
+  const HY = [{ v: skidY[0], r: legY[0] }, { v: skidY[1], r: legY[1] }, { v: fusY, r: torY }, { v: noseY, r: chY }, { v: strutY[0], r: armY[0] }, { v: strutY[1], r: armY[1] }, { v: podY[0], r: glY[0] }, { v: podY[1], r: glY[1] }, { v: rel(canY, TUR_H), r: rel(shY, TUR_R) }, { v: boomY }, { v: finY }];
+  const set = { tank: P, arty: AP, heli: HP, heliY: HY };
+  const lxs = (poly, x0, x1, c, r) => lsolid([LX(poly, x0, x1, c, r, 0)]), lys = (poly, y0, y1, c, r) => lsolid([LY(poly, y0, y1, c, r, 0)]);
+  const cylX = (r, len, c) => lsolid([LX(circP(0, 0, r, 14), -len / 2, len / 2, c, 0, 0)]), cylZ = (r, len, c) => lsolid([LZ(circP(0, 0, r, 14), -len / 2, len / 2, c, 0, 0)]);
+  const rbox = (w, h, d, r, c) => lsolid([LX(rect(-d / 2, d / 2, -h / 2, h / 2), -w / 2, w / 2, c, r, 0)]);
+  return { P, set, rbox, lxs, lys, cylX, cylZ, circP, rect, rectP, rotor, rotorY, head, headR, rb, os, og, wheelG, hubG, shieldA };
 })();
-const ntHead = { body: headBody, visor, fins: head.children.slice(2), o: null };
-ntHead.o = { bp: headBody.position.clone(), vp: visor.position.clone(), vs: visor.scale.clone(), f: ntHead.fins.map(f => ({ p: f.position.clone(), s: f.scale.clone(), rz: f.rotation.z })) };
-const ntTank = () => pl.char === 'tank';
-function ntApply() {
-  const T = ntTank();
-  parts.forEach((p, i) => {
-    const d = NT.P[i]; if (!d) return;
-    if (T) { p.tp.copy(d.v.c); p.ts.copy(d.v.s); p.rp.copy(d.r.c); p.rs.copy(d.r.s); } else p.mesh.geometry = UB;
+function ntApplyRig(R, ch) {
+  const sk = R === PR ? curSkin() : '', key = ch === 'heli' && sk === 'heliY' ? 'heliY' : ch, YL = key === 'heliY';
+  const S = NT.set[key]; R.S = S; const T = ch === 'tank', hb = R.headBody, vz = R.visor, fins = R.head.children.slice(2);
+  R.parts.forEach((p, i) => {
+    const d = S && S[i]; if (!d) { if (S) return; p.mesh.geometry = UB; return; }
+    p.tp.copy(d.v.c); p.ts.copy(d.v.s); if (d.r) { p.rp.copy(d.r.c); p.rs.copy(d.r.s); }
   });
-  if (T) {
-    headBody.geometry = NT.head.g; headBody.position.set(0, 0.045, 0); headBody.scale.set(0.95, 0.81, 0.95);
-    visor.position.set(0, 0.05, 0.665); visor.scale.set(0.6, 0.22, 0.1);
-    ntHead.fins.forEach((f, i) => { const s = i ? 1 : -1; f.position.set(s * 0.32, 0.845, 0.3); f.scale.set(0.1, 0.51, 0.1); f.rotation.z = 0; });
-    barrel.geometry = tip.geometry = NT.og.g;
+  if (S) {
+    hb.geometry = T ? NT.head.g : NT.headR.g; hb.position.set(0, 0.045, 0); hb.scale.set(YL ? 0.8 : 0.95, YL ? 0.76 : 0.81, YL ? 0.8 : 0.95);
+    vz.geometry = T ? UB : NT.rb.g; vz.position.set(0, 0.05, YL ? 0.595 : 0.665); vz.scale.set(0.6, 0.22, 0.1);
+    fins.forEach((f, i) => { const s = i ? 1 : -1; f.geometry = T ? UB : NT.os.g; f.position.set(s * 0.32, 0.845, 0.3); f.scale.set(0.1, 0.51, 0.1); f.rotation.z = 0; });
   } else {
-    headBody.geometry = UB; headBody.position.copy(ntHead.o.bp); visor.position.copy(ntHead.o.vp); visor.scale.copy(ntHead.o.vs);
-    ntHead.fins.forEach((f, i) => { f.position.copy(ntHead.o.f[i].p); f.scale.copy(ntHead.o.f[i].s); f.rotation.z = ntHead.o.f[i].rz; });
-    barrel.geometry = tip.geometry = UB;
+    hb.geometry = UB; hb.position.set(0, 0, 0); if (R !== PR) hb.scale.set(0.95, 0.9, 0.95);
+    vz.geometry = UB; vz.position.set(0, 0.05, 0.5); vz.scale.set(0.7, 0.18, 0.1);
+    fins.forEach((f, i) => { const s = i ? 1 : -1; f.geometry = UB; f.position.set(s * 0.32, 0.75, 0.3); f.scale.set(0.1, 0.7, 0.1); f.rotation.z = -s * 0.5; });
+  }
+  if (ch === 'heli') { const RS = YL ? NT.rotorY : NT.rotor; R.rotor.children.forEach((m, i) => { const q = RS[i]; if (!q) return; m.geometry = q.g; m.position.set(q.c.x, q.c.y, q.c.z); m.scale.copy(q.s); m.rotation.set(0, 0, 0); }); }
+  R.barrel.geometry = R.tip.geometry = R.barrelB.geometry = R.tipB.geometry = S ? NT.og.g : UB;
+  if (!R.nw) { /* one-time: swap Heavyshot wheels and robot shield to the new rounded pieces */
+    R.nw = 1; R.wheels.children.slice().forEach(c => R.wheels.remove(c));
+    const wm = new THREE.MeshStandardMaterial({ color: 0x15181d, roughness: 0.8 });
+    for (const sd of [0, 1]) for (const z of [-1.9, 0, 1.9]) {
+      const g = new THREE.Group(); g.position.set(0, 0.68, z); R.wheels.add(g);
+      const w = new THREE.Mesh(NT.wheelG[sd].g, wm); w.position.set(NT.wheelG[sd].c.x, 0, 0); w.scale.copy(NT.wheelG[sd].s); w.castShadow = true; g.add(w);
+      const h = new THREE.Mesh(NT.hubG[sd].g, M.yellow); h.position.set(NT.hubG[sd].c.x, 0, 0); h.scale.copy(NT.hubG[sd].s); g.add(h);
+    }
+    R.bigShield.children.forEach((c, i) => { const q = NT.shieldA[i]; c.geometry = q.g; c.position.set(q.c.x - R.bigShield.position.x, q.c.y - R.bigShield.position.y, q.c.z - R.bigShield.position.z); c.scale.copy(q.s); });
   }
 }
-{ const _a = applyChar; applyChar = function () { _a.apply(this, arguments); ntApply(); }; }
-{
-  const _p = poseModel;
-  poseModel = function (dt) {
-    _p.apply(this, arguments);
-    if (!ntTank()) return;
-    const robotForm = pl.k >= 0.5;
-    parts.forEach((p, i) => { const d = NT.P[i]; if (!d) return; const g = (robotForm ? d.r.g : d.v.g) || UB; if (p.mesh.geometry !== g) p.mesh.geometry = g; });
-    const k = ease(pl.k), len = lerp(3.0, 2.3, k), s0 = lerp(0.39, 0.065, k), e0 = len - lerp(0.31, 0.265, k), bt = lerp(0.277, 0.296, k), tt = 0.388;
-    barrel.scale.set(bt, bt, e0 - s0); barrel.position.set(0, 0, (s0 + e0) / 2); tip.scale.set(tt, tt, lerp(0.2, 0.25, k)); tip.position.z = len + lerp(0.03, 0, k);
-  };
+{ const _a = applyChar; applyChar = function () { _a.apply(this, arguments); ntApplyRig(PR, pl.char); }; }
+function ntPoseRig(R, st) {
+  const S = R.S; if (!S) return;
+  const robotForm = st.k >= 0.5, T = st.char === 'tank';
+  R.parts.forEach((p, i) => { const d = S[i]; if (!d) return; const g = ((robotForm && d.r) ? d.r.g : d.v.g) || UB; if (p.mesh.geometry !== g) p.mesh.geometry = g; });
+  const k = ease(st.k);
+  if (st.char !== 'arty') {
+    const Hc = st.char === 'heli', len = lerp(Hc ? 2.0 : 3.0, 2.3, k), s0 = lerp(Hc ? 0.14 : 0.39, 0.065, k), e0 = len - lerp(Hc ? 0.37 : 0.31, 0.265, k), bt = lerp(Hc ? 0.3 : 0.277, 0.296, k), tt = Hc ? lerp(0.42, 0.388, k) : 0.388;
+    R.barrel.scale.set(bt, bt, e0 - s0); R.barrel.position.set(0, 0, (s0 + e0) / 2); R.tip.scale.set(tt, tt, Hc ? 0.25 : lerp(0.2, 0.25, k)); R.tip.position.z = len + (Hc ? 0 : lerp(0.03, 0, k));
+  } else {
+    const len = lerp(4.4, 3.4, k), s0 = lerp(0.99, 0.065, k), e0 = len - lerp(0.35, 0.29, k), bt = lerp(0.296, 0.388, k), tt = lerp(0.37, 0.462, k), tz = lerp(0.2, 0.3, k), off = lerp(0.5, 0.34, k);
+    for (const [b, t, sg] of [[R.barrel, R.tip, -1], [R.barrelB, R.tipB, 1]]) { b.scale.set(bt, bt, e0 - s0); b.position.set(sg * off, 0, (s0 + e0) / 2); t.scale.set(tt, tt, tz); t.position.set(sg * off, 0, len); }
+  }
 }
-ntApply();
+ntApplyRig(PR, pl.char);
+heliDeco.children.forEach(m => { m.geometry = NT.rb.g; });
+/* ===== v7.5: unit push physics =====
+   Pushable: Tankbot, Machdot, Valkyrie (grounded). Immovable: Heavyshot, Juggernaut (and bosses, handled by their own body collision).
+   Two pushable units that overlap split the separation 50/50 (so a dash into a pushable unit only gets half the distance, the other half pushes it).
+   A pushable unit against an immovable one takes the whole separation (it is simply blocked).
+   Units only collide when their height ranges overlap (a flying Machdot passes over ground units); a dead teammate has no collision (revive ring).
+   Online: each machine only moves its own local player; the remote partner is never moved here, and the host moves Valkyrie. */
+const PU = { r: { tank: [2.1, 1.6], heli: [1.9, 1.5], arty: [2.7, 2.4] }, h: { tank: [2.2, 6], heli: [3, 6], arty: [2.6, 7] }, mov: { tank: 1, heli: 1, arty: 0 } };
+function puUnits() {
+  const L = [], un = (c, k) => ({ r: lerp(PU.r[c][0], PU.r[c][1], k), h: lerp(PU.h[c][0], PU.h[c][1], k), mov: PU.mov[c] });
+  if (pl.alive) L.push(Object.assign(un(pl.char, pl.k), { pos: pl.pos, y: pl.pos.y, mv(dx, dz) { pl.pos.x += dx; pl.pos.z += dz; } }));
+  if (MP.on && gh.alive && !gh.left && gh.ch && PU.r[gh.ch]) {
+    const u = Object.assign(un(gh.ch, gh.k), { pos: gh.pos, y: gh.pos.y });
+    if (MP.ai) u.mv = (dx, dz) => { for (const p of [gh.pos, gh.tp]) { p.x += dx; p.z += dz; const r = Math.hypot(p.x, p.z), lim = ARENA_R - 3; if (r > lim) { p.x *= lim / r; p.z *= lim / r; } collideRocks(p); } };
+    L.push(u);
+  }
+  if (B === B4 && B.alive) {
+    const J = F4.jet, U = F4.jug;
+    if (!J.dead && J.mode === 'robot') L.push({ r: 2.2, h: 7, mov: 1, pos: J.pos, y: 0, mv: b4Host() ? (dx, dz) => { J.pos.x += dx; J.pos.z += dz; b4Clamp(J.pos, 8); b4Avoid(J.pos, 3); } : null });
+    if (!U.dead) L.push({ r: U.mode === 'tank' ? 6.5 : 4.7, h: U.mode === 'tank' ? 7.5 : 11, mov: 0, pos: U.pos, y: 0 });
+  }
+  return L;
+}
+function unitPush() {
+  if (MP.swapped || G.state !== 'playing' || G.intro > 0) return;
+  const L = puUnits();
+  for (let i = 0; i < L.length; i++) for (let j = i + 1; j < L.length; j++) {
+    const a = L[i], b = L[j]; if (!a.mov && !b.mov) continue;
+    if (!(a.y < b.y + b.h && b.y < a.y + a.h)) continue;
+    let dx = a.pos.x - b.pos.x, dz = a.pos.z - b.pos.z, d = Math.hypot(dx, dz); const lim = a.r + b.r; if (d >= lim) continue;
+    if (d < 0.01) { dx = 1; dz = 0; d = 1; }
+    const p = Math.min(lim - d, 4), nx = dx / d, nz = dz / d, both = a.mov && b.mov, wa = both ? 0.5 : a.mov ? 1 : 0, wb = both ? 0.5 : b.mov ? 1 : 0;
+    if (a.mv && wa) a.mv(nx * p * wa, nz * p * wa);
+    if (b.mv && wb) b.mv(-nx * p * wb, -nz * p * wb);
+  }
+}
+/* ===== v7.6: boss models in the player style: every box piece becomes a rounded piece, pulled in so touching pieces get a gap. Visual only (hit tests use part radii). ===== */
+(function () {
+  const cache = {};
+  function restyle(root) {
+    if (!root || typeof root.traverse !== 'function') return;
+    root.traverse(m => {
+      if (!m.isMesh || m.geometry !== UB || (m.userData && m.userData.rs)) return;
+      const S = m.scale, mn = Math.min(S.x, S.y, S.z); if (!(mn > 0.05)) return;
+      const g = Math.min(1.0, 0.3 * mn), w = S.x - g, h = S.y - g, d = S.z - g, key = [w, h, d].map(v => v.toFixed(2)).join(',');
+      let q = cache[key]; if (!q) { const r = Math.min(1.2, 0.3 * Math.min(w, h, d)); q = cache[key] = NT.rbox(w, h, d, r, r * 0.8); }
+      m.geometry = q.g; m.scale.set(q.s.x, q.s.y, q.s.z); m.userData = m.userData || {}; m.userData.rs = 1;
+    });
+  }
+  for (const r of [B1.root, B2.root, B3.root, JM.root, GM.root]) restyle(r);
+})();
+/* ===== v7.7: Juggernaut rebuilt in the player style (detached rounded pieces, ~20-25% bigger). Animated hooks kept: GM.sp (side cannons), GM.mg (machine guns), GM.armor, GM.tank / GM.rob groups. ===== */
+(function () {
+  const rb = (w, h, d, r) => NT.rbox(w, h, d, r, r * 0.8);
+  const mesh = (mat, parent, q, x, y, z) => { const m = new THREE.Mesh(q.g, mat); m.scale.set(q.s.x, q.s.y, q.s.z); m.position.set(q.c.x + (x || 0), q.c.y + (y || 0), q.c.z + (z || 0)); m.castShadow = true; m.receiveShadow = true; parent.add(m); return m; };
+  const clear = o => { for (const c of o.children.slice()) if (c.isMesh) o.remove(c); };
+  const xr = (a, b, s) => s > 0 ? [a, b] : [-b, -a];
+  const T = GM.tank, G = GM.rob, K = M4.blk, S = M4.steel, A = M4.armor, R = M4.red;
+  /* ---- tank form ---- */
+  for (const c of T.children.slice()) if (c.isMesh && c !== GM.armor) T.remove(c);
+  for (const s of [-1, 1]) {
+    const [x0, x1] = xr(2.0, 3.8, s);
+    mesh(K, T, NT.lxs([[-4.8, 0.5], [-3.9, 0], [3.9, 0], [4.8, 0.5], [4.8, 2.0], [3.2, 2.6], [-3.2, 2.6], [-4.8, 2.0]], x0, x1, 0.3, 0.45));
+    for (const z of [-3.3, -1.65, 0, 1.65, 3.3]) mesh(S, T, NT.cylX(0.75, 0.3, 0.08), s * 4.3, 1.3, z);
+  }
+  mesh(A, T, NT.lxs([[-4.2, 1.2], [-3.9, 0.9], [3.9, 0.9], [4.2, 1.2], [4.2, 2.4], [-4.2, 2.4]], -1.7, 1.7, 0.25, 0.4));
+  mesh(K, T, NT.lxs([[-3.9, 2.9], [3.5, 2.9], [4.2, 3.3], [4.2, 3.7], [3.5, 4.0], [-3.9, 4.0]], -3.6, 3.6, 0.35, 0.6));
+  mesh(S, T, NT.lys(NT.rectP(-1.8, 1.8, -2.3, 1.9), 4.3, 5.5, 0.35, 1.1));
+  mesh(K, T, NT.lys(NT.circP(0, -0.2, 0.55, 12), 5.8, 6.2, 0.1, 0));
+  mesh(R, T, NT.lxs(NT.rect(4.5, 4.65, 3.2, 3.7), -1.2, 1.2, 0.04, 0.06));
+  mesh(S, T, NT.lxs(NT.rect(-4.9, -4.25, 3.0, 3.9), -2.2, 2.2, 0.2, 0.3));
+  for (const s of [-1, 1]) {
+    const pv = GM.sp[s], sp = pv.parent; clear(sp); clear(pv);
+    sp.position.set(s * 3.2, 4.65, 0); pv.position.set(s * 0.6, 0, 0);
+    mesh(S, sp, rb(2.2, 0.8, 2.8, 0.35));
+    mesh(K, pv, NT.cylX(0.42, 3.8, 0.12), s * 2.3, 0, 0); mesh(R, pv, NT.cylX(0.58, 0.5, 0.1), s * 4.75, 0, 0); mesh(S, pv, NT.cylX(0.6, 0.9, 0.1), s * 0.2, 0, 0);
+  }
+  GM.mg.forEach(m => {
+    const sx = Math.sign(m.x) || 1, sz = Math.sign(m.z) || 1; clear(m.g);
+    m.g.position.set(sx * 1.9, 4.55, sz * 3.4); m.x = sx * 1.9 * 1.2; m.z = sz * 3.4 * 1.2;
+    mesh(S, m.g, rb(0.9, 0.5, 0.9, 0.2)); mesh(K, m.g, NT.cylZ(0.17, 1.7, 0.06), 0, 0, 0.95);
+  });
+  { const q = rb(7.2, 3.2, 0.6, 0.5), a = GM.armor; a.geometry = q.g; a.scale.set(q.s.x, q.s.y, q.s.z); a.position.set(0, 3.1, 5.4); }
+  T.scale.setScalar(1.2);
+  /* ---- robot form ---- */
+  for (const c of G.children.slice()) if (c.isMesh) G.remove(c);
+  for (const s of [-1, 1]) {
+    const [x0, x1] = xr(0.6, 2.8, s);
+    mesh(S, G, NT.lxs([[-1.8, 0], [2.5, 0], [3.0, 0.45], [3.0, 0.9], [-1.8, 0.9]], x0, x1, 0.2, 0.3));
+    mesh(K, G, rb(1.9, 2.9, 2.1, 0.5), s * 1.7, 2.6, 0.3); mesh(S, G, rb(1.7, 1.2, 0.8, 0.3), s * 1.7, 4.55, 2.0);
+    mesh(K, G, rb(2.1, 2.4, 2.3, 0.5), s * 1.7, 5.7, 0);
+    mesh(S, G, rb(2.3, 2.3, 2.8, 0.6), s * 4.1, 11.2, 0);
+    mesh(K, G, NT.cylZ(0.32, 3.4, 0.1), s * 4.1, 12.85, 0.9); mesh(R, G, NT.cylZ(0.42, 0.4, 0.08), s * 4.1, 12.85, 2.9);
+    mesh(K, G, rb(1.8, 3.0, 2.0, 0.5), s * 4.3, 8.25, 0.2); mesh(S, G, rb(2.5, 2.6, 2.6, 0.6), s * 4.3, 5.15, 0.5);
+    mesh(K, G, NT.cylZ(0.5, 0.6, 0.1), s * 1.0, 10.0, -4.9);
+  }
+  mesh(S, G, rb(5.2, 1.4, 3.3, 0.5), 0, 7.9, 0);
+  mesh(K, G, NT.lxs([[-2.2, 9.0], [2.2, 9.0], [2.7, 9.8], [2.7, 11.7], [1.9, 12.5], [-1.9, 12.5], [-2.7, 11.7], [-2.7, 9.8]], -2.7, 2.7, 0.5, 0.8));
+  mesh(S, G, NT.lxs(NT.rect(3.0, 3.3, 9.7, 11.6), -1.7, 1.7, 0.1, 0.15)); mesh(R, G, NT.lxs(NT.rect(3.6, 3.7, 10.4, 10.9), -0.9, 0.9, 0.04, 0.05));
+  mesh(K, G, NT.lys(NT.rectP(-0.85, 0.85, -0.85, 0.85), 12.8, 14.0, 0.25, 0.35)); mesh(R, G, NT.lxs(NT.rect(1.15, 1.25, 13.2, 13.6), -0.55, 0.55, 0.04, 0.05));
+  mesh(S, G, rb(3.8, 3.4, 1.2, 0.4), 0, 10.6, -3.7);
+  G.scale.setScalar(0.85);
+})();
 /* ===== camera, HUD, game flow ===== */
 const camPosS = V3(0, 8, -60), camLookS = V3(0, 10, 0), _d = V3();
 let bannerT = 0;
@@ -4150,6 +4356,8 @@ function cycleTarget(dir) { if (G.jam) return; const l = aliveTargets(); if (!l.
 
 function updateCamera(dt) {
   if (IN.pressed.lock && !G.jam && aliveTargets().length) G.lockOn = !G.lockOn;
+  if (IN.pressed.view) G.front = !G.front;
+  try { $('t-view').classList.toggle('on', !!G.front); } catch (_) { }
   if (IN.pressed.next) cycleTarget(1);
   if (IN.pressed.prev) cycleTarget(-1);
   if (!B.parts[G.target] || (G.target !== 'core' && !B.parts[G.target].alive && !B.regen) || (B.noLock && B.noLock(G.target))) G.target = B.keys.includes('core') ? 'core' : (aliveTargets()[0] || B.keys[0]);
@@ -4178,6 +4386,13 @@ function updateCamera(dt) {
   else { camera.getWorldDirection(_d); aimPoint.copy(camera.position).addScaledVector(_d, clamp(camera.position.distanceTo(B.pp.core), 30, 140)); }
   const d = aimPoint.clone().sub(pc), len = Math.max(d.length(), 0.01);
   pl.aimYaw = Math.atan2(d.x, d.z); pl.aimPitch = clamp(Math.asin(d.y / len), pl.char === 'heli' ? -0.8 : -0.25, 1.1);
+  /* front view (toggle): only the rendered camera orbits to the front of the character; aiming/controls keep using the normal camera */
+  G.frontK = lerp(G.frontK || 0, G.front ? 1 : 0, damp(6, dt));
+  if (G.frontK > 0.003) {
+    const e = ease(G.frontK), hx = camera.position.x - pc.x, hz = camera.position.z - pc.z, a0 = Math.atan2(hx, hz), r = lerp(Math.max(Math.hypot(hx, hz), 1), dist * 0.95, e), a = a0 + angDiff(a0, pl.yaw) * e;
+    camera.position.set(pc.x + Math.sin(a) * r, Math.max(lerp(camera.position.y, pl.pos.y + 6, e), 1.8), pc.z + Math.cos(a) * r);
+    camera.lookAt(_d.copy(camLookS).lerp(V3(pc.x, pc.y + 1.5, pc.z), e));
+  }
 }
 
 
@@ -4269,11 +4484,12 @@ const TB_ICON = {
  down: '<path d="M12 24l12 12 12-12"/><path d="M12 12l12 12 12-12" opacity=".55"/>',
  rocket: '<g transform="rotate(45 24 24)"><path d="M24 2C30 10 31 20 30 30H18C17 20 18 10 24 2z" fill="currentColor" fill-opacity=".2"/><circle cx="24" cy="18" r="3"/><path d="M18 24l-7 9h7M30 24l7 9h-7"/><path d="M21 34l3 9 3-9" opacity=".75"/></g>',
  lock: '<path d="M6 16V8h8M34 8h8v8M42 32v8h-8M14 40H6v-8"/><circle cx="24" cy="24" r="6"/><circle cx="24" cy="24" r="1.500" fill="currentColor"/>',
+ view: '<path d="M4 24c6-10 14-14 20-14s14 4 20 14c-6 10-14 14-20 14S10 34 4 24z"/><circle cx="24" cy="24" r="5"/>',
  swap: '<path d="M8 17h28M30 10l7 7-7 7"/><path d="M40 31H12M18 24l-7 7 7 7"/>',
  evade: '<path d="M22 11l13 13-13 13"/><path d="M11 11l13 13-13 13" opacity=".55"/><path d="M5 20h5M3 28h7" opacity=".7"/>'
 };
 function tbIcon(id, key) { const el = document.getElementById(id); if (!el) return; if (!TB_ICON[key]) { el.textContent = '—'; el.dataset.ic = ''; return; } if (el.dataset.ic === key) return; el.dataset.ic = key; el.innerHTML = '<svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">' + TB_ICON[key] + '</svg>'; }
-function tbIconsInit() { tbIcon('t-fire', 'fire'); tbIcon('t-shield', 'shield'); tbIcon('t-trans', 'trans'); tbIcon('t-down', 'down'); tbIcon('t-evade', 'evade'); tbIcon('t-lock', 'lock'); tbIcon('t-next', 'swap'); }
+function tbIconsInit() { tbIcon('t-fire', 'fire'); tbIcon('t-shield', 'shield'); tbIcon('t-trans', 'trans'); tbIcon('t-down', 'down'); tbIcon('t-evade', 'evade'); tbIcon('t-lock', 'lock'); tbIcon('t-next', 'swap'); tbIcon('t-view', 'view'); }
 tbIconsInit();
 const tl = { m: '', d: '', dn: '' };
 function updateTouchLabels() {
@@ -4294,7 +4510,7 @@ function resetGame() {
   cleanFx(); setWarn('');
   B.reset(); mpAfterReset();
   clearProjectiles(); hideTele(); for (const s of shots.slice()) removeShot(s, shots);
-  G.camYaw = B.start.yaw; G.target = B.keys.includes('core') ? 'core' : B.keys[B.keys.length - 1]; G.lockOn = true; G.jam = false; G.time = 0; G.intro = 3.6; G.hitT = 0;
+  G.camYaw = B.start.yaw; G.target = B.keys.includes('core') ? 'core' : B.keys[B.keys.length - 1]; G.lockOn = true; G.front = false; G.frontK = 0; G.jam = false; G.time = 0; G.intro = 3.6; G.hitT = 0;
   camPosS.set(B.start.x, 8, B.start.z - 18); camLookS.set(B.pos.x, 14, B.pos.z);
 }
 function startGame() {
