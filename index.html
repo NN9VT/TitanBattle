@@ -104,8 +104,16 @@ html.rot body{position:fixed;left:0;top:0;width:var(--gw);height:var(--gh);trans
 #sndBtn{position:fixed;z-index:30;right:calc(max(14px,env(safe-area-inset-right,0px)) + 50px);top:max(10px,env(safe-area-inset-top,0px));width:42px;height:42px;border-radius:50%;border:2px solid var(--line);background:rgba(10,16,28,.7);color:var(--fg);font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0}
 #t-melee.chg{box-shadow:0 0 0 calc(2px + var(--c,0)*6px) rgba(255,160,60,.9),0 0 16px rgba(255,160,60,.6)}
 #t-melee.cd{opacity:.45}
-#quitBtn{position:fixed;z-index:30;left:max(14px,env(safe-area-inset-left,0px));top:max(10px,env(safe-area-inset-top,0px));height:42px;padding:0 14px;border-radius:21px;border:2px solid var(--line);background:rgba(10,16,28,.7);color:var(--fg);font:700 12px var(--font);letter-spacing:.14em;cursor:pointer}
+#quitBtn{position:fixed;z-index:40;left:max(2px,env(safe-area-inset-left,0px));top:max(2px,env(safe-area-inset-top,0px));width:34px;height:34px;padding:0;border:0;background:transparent;color:#e8554f;cursor:pointer;display:flex;align-items:center;justify-content:center;-webkit-tap-highlight-color:transparent}
+#quitBtn svg{width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:3;stroke-linecap:round}
 #quitBtn[hidden]{display:none}
+#pauseBtn{position:fixed;z-index:40;left:max(2px,env(safe-area-inset-left,0px));top:calc(max(2px,env(safe-area-inset-top,0px)) + 34px);width:34px;height:34px;padding:0;border:0;background:transparent;color:#c9d6e6;cursor:pointer;display:flex;align-items:center;justify-content:center;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
+#pauseBtn svg{width:14px;height:14px;fill:currentColor}
+#pauseBtn .ic-play{display:none}
+#pauseBtn.on .ic-pause{display:none}
+#pauseBtn.on .ic-play{display:block}
+body.shot>*:not(canvas):not(.screen):not(#pauseBtn):not(#quitBtn){visibility:hidden!important}
+#pauseBtn[hidden]{display:none}
 #quitDlg{z-index:60;align-items:center}
 #quitDlg button.alt,#quit2{font-family:var(--font);font-size:14px;letter-spacing:.14em;font-weight:700;color:var(--fg);background:transparent;border:2px solid var(--line);padding:12px 24px;cursor:pointer;margin:10px 6px 0}
 #rotBtn:focus-visible{outline:3px solid var(--cyan)}
@@ -115,7 +123,7 @@ input,textarea{-webkit-user-select:text;user-select:text;touch-action:auto}
 #mpBar[hidden]{display:none}
 #mpBar{display:flex;align-items:center;gap:12px;justify-content:space-between;border:1px solid var(--cyan);background:rgba(79,216,255,.1);padding:8px 12px;margin:0 0 14px;font-size:13px;letter-spacing:.1em}
 #mpBar button{font-family:var(--font);background:#3a4658;color:#fff;border:0;padding:6px 12px;cursor:pointer}
-#mate{left:max(14px,env(safe-area-inset-left,0px));top:calc(max(10px,env(safe-area-inset-top,0px)) + 50px);width:min(190px,calc(var(--vw,1vw)*28))}
+#mate{left:max(14px,env(safe-area-inset-left,0px));top:calc(max(10px,env(safe-area-inset-top,0px)) + 80px);width:min(190px,calc(var(--vw,1vw)*28))}
 .comm{position:fixed;z-index:12;pointer-events:auto}
 #comBtn{left:50%;transform:translateX(-50%);bottom:max(14px,env(safe-area-inset-bottom,0px));font:700 12px var(--font);color:transparent;background:transparent;border:0;border-radius:22px;width:190px;height:78px;padding:0;cursor:pointer;-webkit-tap-highlight-color:transparent;outline:0}
 #comBtn[hidden],#comWheel[hidden]{display:none}
@@ -137,7 +145,8 @@ button.cta:disabled{opacity:.5;cursor:not-allowed}
 <body>
 <canvas id="game"></canvas>
 <button id="rotBtn" title="Xoay màn hình" aria-label="Xoay màn hình">⟳</button>
-<button id="quitBtn" hidden>THOÁT</button>
+<button id="quitBtn" hidden aria-label="Thoát"><svg viewBox="0 0 20 20"><path d="M4 4l12 12M16 4L4 16"/></svg></button>
+<button id="pauseBtn" hidden aria-label="Tạm dừng"><svg class="ic-play" viewBox="0 0 20 20"><path d="M5 2.5l12 7.5-12 7.5z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg><svg class="ic-pause" viewBox="0 0 20 20"><rect x="3.5" y="3" width="4.5" height="14" rx="1"/><rect x="12" y="3" width="4.5" height="14" rx="1"/></svg></button>
 <button id="sndBtn" title="Âm thanh" aria-label="Tắt âm thanh">🔊</button>
 <div class="hud" id="bossbar" hidden>
   <div id="bossname"><span id="bossnm">Guardian</span><span id="phase">Giai đoạn 1</span></div>
@@ -156,7 +165,6 @@ button.cta:disabled{opacity:.5;cursor:not-allowed}
   <div class="row"><div class="lab"><span>NĂNG LƯỢNG</span><span id="env"></span></div><div class="bar" id="en"><i></i></div></div>
   <div class="row" id="heatRow" style="display:none"><div class="lab"><span>NHIỆT SÚNG</span><span id="heatv"></span></div><div class="bar" id="heat"><i></i></div></div>
 </div>
-<div class="hud" id="mode" hidden>DẠNG<b id="modev">XE TĂNG</b></div>
 <div class="hud" id="banner"><b id="bt"></b><span id="bs"></span></div>
 <div class="hud" id="warn"></div>
 <div class="hud" id="flash"></div>
@@ -669,7 +677,9 @@ const SABER = {
 };
 const SB = () => SABER[pl.char] || SABER.tank;
 const saber = new THREE.Mesh(UB, M.glow); saber.scale.set(0.3, 0.3, 7); saber.position.z = 3.5; saberPivot.add(saber);
-function applySaber() { const s = SB(); saber.material = s.mat; saber.scale.z = s.len; saber.position.z = s.len / 2; }
+const SABER_OL = new THREE.MeshBasicMaterial({ color: 0x1fe04a, side: THREE.BackSide });
+const saberOL = new THREE.Mesh(UB, SABER_OL); saberPivot.add(saberOL); saberOL.visible = false;
+function applySaber() { const s = SB(); saber.material = s.mat; saber.scale.z = s.len; saber.position.z = s.len / 2; saberOL.scale.set(0.8, 0.8, s.len + 0.5); saberOL.position.z = s.len / 2; }
 scene.add(pl.root);
 const shieldMesh = new THREE.Group();
 const shieldMat = regGlow(new THREE.MeshBasicMaterial({ color: 0x4fd8ff, transparent: true, opacity: 0.12, side: THREE.DoubleSide, depthWrite: false, blending: THREE.AdditiveBlending }), 0x4fd8ff);
@@ -725,7 +735,7 @@ function fireArty() {
     shots.push({ mesh: m, pos: mp.clone(), vel: d.multiplyScalar((robot ? 85 : 62) * (sv ? 1.4 : 1)), dmg, life: 3.2, r: robot ? 1.2 : 1.6, splash: robot ? 7 : 9, sdmg: dmg * 0.6, ab: true });
     burst(mp, robot ? 8 : 14, 12, 0xffc070, 0.3, 0);
   }
-  pl.fireCd = robot ? 1.2 : 4.1; pl.shotT = 0.3; shake(robot ? 0.12 : 0.3);
+  pl.fireCd = robot ? 1.2 : 3.8; pl.shotT = 0.3; shake(robot ? 0.12 : 0.3);
 }
 function artySplash(s, direct) {
   const p = s.pos; explode(p, s.splash * 0.14, 0xffa040); burst(p, 26, 16, 0xffd070, 0.5, 3); flatRing(p.x, p.z, 1, s.splash, 0xffa040, 0.4, 1); shake(0.35); rockSplash(p, s.splash, s.sdmg, true);
@@ -754,7 +764,18 @@ function airburst(s) {
   for (const k of B.keys) { const pt = B.parts[k]; if ((B.noCore && k === 'core') || (!pt.alive && !B.regen)) continue; if ((B._pv && B._pv[k] || 0) >= 15 && s.pos.distanceTo(B.pp[k]) < pt.r + 4) return true; }
   return false;
 }
+/* Pháo đánh dấu điểm yếu: bộ phận bị trúng (hoặc gần điểm nổ trên không nhất) nhận thêm 8% sát thương trong 3.5s */
+function markShot(s, hk) {
+  let key = hk;
+  if (!key) {
+    let bd = 1e9;
+    for (const k of B.keys) { const pt = B.parts[k]; if ((B.noCore && k === 'core') || (!pt.alive && !B.regen)) continue; const d = s.pos.distanceTo(B.pp[k]) - pt.r; if (d < bd) { bd = d; key = k; } }
+    if (bd > 4) key = null;
+  }
+  const pt = key && B.parts[key]; if (pt && (pt.alive || key === 'core' || B.regen)) pt.markT = 3.5;
+}
 function updateShots(dt) {
+  for (const k of B.keys) { const p = B.parts[k]; if (p.markT > 0) p.markT -= dt; }
   trackSpeeds(dt);
   for (let i = shots.length - 1; i >= 0; i--) {
     const s = shots[i]; s.life -= dt;
@@ -767,12 +788,12 @@ function updateShots(dt) {
       if (h) { bossDamage(h, s.dmg * (h === 'core' && s.coreMul ? s.coreMul : 1), s.pos); dead = true; hk = h; }
       else if (s.pos.y < 0.2 || s.pos.length() > ARENA_R * 2.3) { burst(s.pos, 4, 5, 0xffc070, 0.3); dead = true; }
       else if (rockHit(s.pos, s.dmg, true)) { burst(s.pos, 6, 7, 0xb0a090, 0.3, 4); dead = true; }
-      else if (s.ab && airburst(s)) { dead = true; }
+      else if (s.ab && airburst(s)) { dead = true; s.air = true; }
       else {
         for (const e of eproj) if (e.kind === 'missile' && e.pos.distanceTo(s.pos) < 1.8) { missileDie(e); dead = true; break; }
       }
     }
-    if (dead) { if (s.splash) artySplash(s, hk); removeShot(s, shots); continue; }
+    if (dead) { if (s.splash) artySplash(s, hk); if (s.ab && (hk || s.air)) markShot(s, hk); removeShot(s, shots); continue; }
     s.mesh.position.copy(s.pos); emit(s.pos.x, s.pos.y, s.pos.z, 0, 0, 0, pl.k > 0.5 ? 0x4fd8ff : 0xffb040, 0.2, 0);
   }
 }
@@ -838,7 +859,6 @@ function updatePlayer(dt) {
   { const tr = dt / (pl.char === 'heli' ? 0.55 : 1.1); pl.k += clamp(pl.kTarget - pl.k, -tr, tr); }
   const trans = pl.k !== 0 && pl.k !== 1;
   const robot = pl.k > 0.5, heliMode = pl.char === 'heli' && pl.k < 0.5;
-  $('modev').textContent = trans ? 'BIẾN HÌNH…' : robot ? 'ROBOT' : heliMode ? 'TRỰC THĂNG' : 'XE TĂNG';
   if (trans) { setLock('shield', false, autoLock.shield ? 'KHÓA KHIÊN: TẮT' : ''); setLock('fire', false, autoLock.fire ? 'AUTO BẮN: TẮT' : ''); }
   if (autoLock.shield && (pl.shState === 'broken' || !pl.alive)) setLock('shield', false, 'KHIÊN VỠ');
   if (autoLock.fire && (pl.ohT > 0 || !pl.alive || robot || pl.char !== 'heli')) setLock('fire', false, pl.ohT > 0 ? 'QUÁ NHIỆT: TẮT AUTO' : '');
@@ -1046,7 +1066,7 @@ function bb(mat, w, h, d, x, y, z, parent) { const m = new THREE.Mesh(UB, mat); 
 function cyl(mat, r, h, x, y, z, parent, rx, rz) { const m = new THREE.Mesh(new THREE.CylinderGeometry(r, r, h, 12), mat); m.position.set(x, y, z); if (rx) m.rotation.x = rx; if (rz) m.rotation.z = rz; m.castShadow = true; (parent || B.root).add(m); return m; }
 const mk = (parent, x, y, z) => { const o = new THREE.Object3D(); o.position.set(x, y, z); parent.add(o); return o; };
 const arms = {}, AA = {};
-B1.mats = AM; B1.coreMult = () => [0.6, 1.0, 1.2, 1.4][destroyedCount()]; B1.bodyTest = p => p.y < 26 && Math.hypot(p.x, p.z) < 7.5;
+B1.mats = AM; B1.coreMult = () => [0.6, 0.8, 1.0, 1.2][destroyedCount()]; B1.bodyTest = p => p.y < 26 && Math.hypot(p.x, p.z) < 7.5;
 B1.onDestroy = k => { if (k === 'head') BM.eye.color.setHex(0x222222); };
 (function buildBoss() {
   const R = B.root;
@@ -1116,7 +1136,7 @@ function bossDamage(key, dmg, pos) {
   if (key === 'body' || !B.alive || G.intro > 0) return;
   const pt = B.parts[key];
   if (key !== 'core' && !pt.alive && !B.regen) return;
-  G.hitT = 0.12; pt.flash = 0.12; dmg *= (B.vuln || 1);
+  G.hitT = 0.12; pt.flash = 0.12; dmg *= (B.vuln || 1); if (pt.markT > 0) dmg *= 1.08; /* Pháo đánh dấu: +8% */
   if (key === 'core') {
     dmg *= B.coreMult(); pt.hp -= dmg;
     const f = pt.hp / pt.max, ph = f < 0.33 ? 3 : f < 0.66 ? 2 : 1;
@@ -1794,7 +1814,7 @@ function atkJab() {
       if (b2Dist() > B2.colR + 3) { B2.pos.x += Math.sin(B2.yaw) * 44 * dt; B2.pos.z += Math.cos(B2.yaw) * 44 * dt; }
       if (!a.hit && a.t >= 0.05) {
         a.hit = true; freeFan(a.fan); shake(0.45);
-        mpHit(() => { const dx = pl.pos.x - B2.pos.x, dz = pl.pos.z - B2.pos.z; if (Math.hypot(dx, dz) < 25 && Math.abs(angDiff(B2.yaw, Math.atan2(dx, dz))) < 0.55 && pl.pos.y < 15) { if (hurtVenom(20, { shieldMul: 1.3 }, 2.0, 0.15)) b2Knock(14); } });
+        mpHit(() => { const dx = pl.pos.x - B2.pos.x, dz = pl.pos.z - B2.pos.z; if (Math.hypot(dx, dz) < 25 && Math.abs(angDiff(B2.yaw, Math.atan2(dx, dz))) < 0.55 && pl.pos.y < 15) { if (hurtVenom(18, { shieldMul: 1.3 }, 2.0, 0.15)) b2Knock(14); } });
       }
       if (a.t >= 0.15) { a.phase = 2; a.t = 0; c.target = -c.s * 0.18; }
     } else return a.t >= 0.18;
@@ -1819,7 +1839,7 @@ function atkSwipe() {
       if (!a.hit && a.t >= 0.09) {
         a.hit = true; freeFan(a.fan); shake(0.7);
         const hp = B2m.claws.clawL.hit.getWorldPosition(V3()); burst(hp, 16, 14, 0xcdbb9b, 0.5, 4);
-        mpHit(() => { const dx = pl.pos.x - B2.pos.x, dz = pl.pos.z - B2.pos.z; if (Math.hypot(dx, dz) < 27 && Math.abs(angDiff(B2.yaw, Math.atan2(dx, dz))) < 0.95 && pl.pos.y < 15) { if (hurtVenom(34, { shieldMul: 1.5 }, 2.0, 0.25)) b2Knock(26); } });
+        mpHit(() => { const dx = pl.pos.x - B2.pos.x, dz = pl.pos.z - B2.pos.z; if (Math.hypot(dx, dz) < 27 && Math.abs(angDiff(B2.yaw, Math.atan2(dx, dz))) < 0.95 && pl.pos.y < 15) { if (hurtVenom(30.6, { shieldMul: 1.5 }, 2.0, 0.25)) b2Knock(26); } });
       }
       if (a.t >= 0.18) { a.phase = 2; a.t = 0; c.target = -c.s * 0.18; }
     } else if (a.t >= 0.35) { a.i++; if (a.i >= n) { return true; } a.phase = 0; a.t = 0; a.fan = getFan(); }
@@ -1842,7 +1862,7 @@ function atkSpin() {
       B2.yaw = a.y0 + Math.min(1, a.t / 0.75) * TAU; shake(0.25);
       if (!a.hit && a.t >= 0.3) {
         a.hit = true; flatRing(B2.pos.x, B2.pos.z, 8, 28, 0xcdbb9b, 0.4, 2.5); burst(B2.pos.clone().setY(1), 30, 22, 0xcdbb9b, 0.6, 3);
-        mpHit(() => { const d = b2Dist(); if (d > 8 && d < 27.5 && pl.pos.y < 13) { if (hurtVenom(30, { shieldMul: 1.4 }, 2.0, 0.25)) b2Knock(22); } });
+        mpHit(() => { const d = b2Dist(); if (d > 8 && d < 27.5 && pl.pos.y < 13) { if (hurtVenom(27, { shieldMul: 1.4 }, 2.0, 0.25)) b2Knock(22); } });
       }
       if (a.t >= 0.75) { spinRing.visible = false; a.phase = 2; a.t = 0; }
     } else return a.t >= 0.4;
@@ -1870,7 +1890,7 @@ function atkLeap() {
       if (f >= 1) {
         B2.pos.y = 0; freeTele(a.tele); const c = V3(a.tx, 0, a.tz);
         explode(c, 3.6, 0xcdbb9b); burst(c, 40, 24, 0x7dff3a, 0.7, 3); flatRing(a.tx, a.tz, 2, a.R + 4, 0xffa040, 0.5, 2); crushRocks(a.tx, a.tz, a.R); shake(1.4);
-        mpHit(() => { const pc = pCenter(); if (Math.hypot(pc.x - a.tx, pc.z - a.tz) < a.R && pl.pos.y < 22) { if (hurtVenom(38, { shieldMul: 1.5, air: true }, 2.0, 0.45)) b2Knock(20); } });
+        mpHit(() => { const pc = pCenter(); if (Math.hypot(pc.x - a.tx, pc.z - a.tz) < a.R && pl.pos.y < 22) { if (hurtVenom(34.2, { shieldMul: 1.5, air: true }, 2.0, 0.45)) b2Knock(20); } });
         a.phase = 2; a.t = 0;
       }
     } else return a.t >= 0.6 / SPD();
@@ -1890,10 +1910,10 @@ function atkCharge() {
       line.material.opacity = 0.2 + 0.3 * Math.abs(Math.sin(a.t * 12)); line.visible = true;
       if (a.t >= T) { a.phase = 1; a.t = 0; line.visible = false; setWarn(''); }
     } else if (a.phase === 1) {
-      const sp = 108.8 * SPD(); B2.pos.x += Math.sin(a.yaw) * sp * dt; B2.pos.z += Math.cos(a.yaw) * sp * dt; a.trav += sp * dt; B2.walk += dt * 22;
+      const sp = 155.58 * SPD(); B2.pos.x += Math.sin(a.yaw) * sp * dt; B2.pos.z += Math.cos(a.yaw) * sp * dt; a.trav += sp * dt; B2.walk += dt * 22;
       crushRocks(B2.pos.x, B2.pos.z, 9); shake(0.3);
       emit(B2.pos.x + rnd(-6, 6), 1, B2.pos.z + rnd(-6, 6), rnd(-3, 3), rnd(2, 6), rnd(-3, 3), 0xb0a090, 0.7, 2);
-      mpHit(() => { const hk = AI.pass ? 'hitG' : 'hit'; if (!a[hk] && b2Dist() < 10 && pl.pos.y < 10) { a[hk] = true; if (hurtVenom(36, { shieldMul: 1.4 }, 2.0, 0.45)) b2Knock(30); } });
+      mpHit(() => { const hk = AI.pass ? 'hitG' : 'hit'; if (!a[hk] && b2Dist() < 15 && pl.pos.y < 10) { a[hk] = true; if (hurtPlayer(41.4, { shieldMul: 1.4 })) b2Knock(30); } });
       if (Math.hypot(B2.pos.x, B2.pos.z) > ARENA_R - 11 || a.t > 1.5) { b2Clamp(); a.phase = 2; a.t = 0; B2.vuln = 2.0; shake(0.9); burst(B2.pos.clone().setY(4), 24, 16, 0xcdbb9b, 0.6, 3); say('KIỆT SỨC', 'Bắn mạnh vào lúc này', 1.2); }
     } else { if (a.t >= 2.6) { B2.vuln = 1; return true; } emit(B2.pos.x + rnd(-4, 4), 11, B2.pos.z + rnd(-4, 4), 0, 3, 0, 0x888888, 0.8, -1); }
     return false;
@@ -1914,7 +1934,7 @@ function atkVolley() {
       const tgt = aimC().addScaledVector(aimV(), 0.25), base = tgt.sub(mp).normalize();
       for (let i = 0; i < n; i++) {
         const off = (i - (n - 1) / 2) * (1.15 / n), c = Math.cos(off), s = Math.sin(off);
-        spawnBullet(mp, V3(base.x * c + base.z * s, base.y + rnd(-0.03, 0.03), -base.x * s + base.z * c).normalize(), 86 * SPD(), 12, true);
+        spawnBullet(mp, V3(base.x * c + base.z * s, base.y + rnd(-0.03, 0.03), -base.x * s + base.z * c).normalize(), 86 * SPD(), 10.8, true);
       }
       burst(mp, 10, 12, 0x7dff3a, 0.25, 0); shake(0.2);
     }
@@ -1929,7 +1949,7 @@ function atkHoming() {
     a.t += dt; b2Face(dt, 3); const mp = tipPos();
     if (a.t < tele) { setWarn('Gai truy đuổi!'); emit(mp.x, mp.y, mp.z, 0, 8, 0, 0x7dff3a, 0.4, 0); return false; }
     setWarn('');
-    if (a.c < n && a.t > tele + a.c * gap) { spawnMissile(mp, V3(rnd(-8, 8), 18, rnd(-8, 8)), 46 * SPD(), 3.8, 5.6, 20); a.c++; burst(mp, 6, 9, 0x7dff3a, 0.3, 0); }
+    if (a.c < n && a.t > tele + a.c * gap) { spawnMissile(mp, V3(rnd(-8, 8), 18, rnd(-8, 8)), 46 * SPD(), 3.8, 5.6, 18); a.c++; burst(mp, 6, 9, 0x7dff3a, 0.3, 0); }
     return a.c >= n && a.t > tele + n * gap + 0.5;
   };
   a.cancel = () => setWarn('');
@@ -1946,11 +1966,11 @@ function atkRoll() {
       B2m.ball.scale.setScalar(clamp((f - 0.4) * 2, 0.05, 1));
       if (a.t >= T) { a.phase = 1; a.t = 0; a.yaw = Math.atan2(pl.pos.x - B2.pos.x, pl.pos.z - B2.pos.z); a.speed = 0; a.trav = 0; a.hit = a.hitG = false; setWarn(''); }
     } else if (a.phase === 1) {
-      B2.yaw = a.yaw; a.speed = lerp(a.speed, 118.3 * SPD(), damp(3, dt));
+      B2.yaw = a.yaw; a.speed = lerp(a.speed, 169.17 * SPD(), damp(3, dt));
       B2.pos.x += Math.sin(a.yaw) * a.speed * dt; B2.pos.z += Math.cos(a.yaw) * a.speed * dt; a.trav += a.speed * dt;
       B2m.ball.rotation.x += a.speed * dt / 6.4; crushRocks(B2.pos.x, B2.pos.z, 8); shake(0.25);
       emit(B2.pos.x + rnd(-5, 5), 0.6, B2.pos.z + rnd(-5, 5), rnd(-3, 3), rnd(1, 5), rnd(-3, 3), 0xb0a090, 0.6, 2);
-      mpHit(() => { const hk = AI.pass ? 'hitG' : 'hit'; if (!a[hk] && b2Dist() < 9.5 && pl.pos.y < 10) { a[hk] = true; if (hurtVenom(28, { shieldMul: 1.3 }, 2.0, 0.4)) b2Knock(28); } });
+      mpHit(() => { const hk = AI.pass ? 'hitG' : 'hit'; if (!a[hk] && b2Dist() < 14.5 && pl.pos.y < 10) { a[hk] = true; if (hurtPlayer(32.2, { shieldMul: 1.3 })) b2Knock(28); } });
       if (a.trav > 80 || Math.hypot(B2.pos.x, B2.pos.z) > ARENA_R * 0.6) { b2Clamp(); a.pass++; a.phase = a.pass >= passes ? 3 : 2; a.t = 0; }
     } else if (a.phase === 2) {
       a.speed *= Math.exp(-4 * dt); B2.pos.x += Math.sin(a.yaw) * a.speed * dt; B2.pos.z += Math.cos(a.yaw) * a.speed * dt; b2Clamp();
@@ -1990,7 +2010,7 @@ function atkRain() {
         const pil = new THREE.Mesh(new THREE.CylinderGeometry(s.R * 0.35, s.R * 0.35, 120, 10, 1, true), new THREE.MeshBasicMaterial({ color: 0x9dff6a, transparent: true, opacity: 0.8, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide }));
         pil.position.set(s.x, 60, s.z); addFx(pil, 0.3, (m, f) => { m.material.opacity = 0.8 * (1 - f); });
         flatRing(s.x, s.z, 1, s.R + 2, 0x7dff3a, 0.4, 1.2); crushRocks(s.x, s.z, s.R);
-        mpHit(() => { const pc2 = pCenter(); if (Math.hypot(pc2.x - s.x, pc2.z - s.z) < s.R) hurtPlayer(26, { shieldMul: 1.4, air: true }); });
+        mpHit(() => { const pc2 = pCenter(); if (Math.hypot(pc2.x - s.x, pc2.z - s.z) < s.R) hurtPlayer(23.4, { shieldMul: 1.4, air: true }); });
       }
     }
     return a.spawned >= N && !alive;
@@ -2782,6 +2802,7 @@ mkp(M.white, GV.robot, .95, .9, .95, 0, 4.2, 0); mkp(M.glow, GV.robot, .7, .18, 
 GV.robG = grp(GV.robot, 1.75, 3.4, .5); mkp(M.dark, GV.robG, .4, .4, 2.5, 0, 0, 1.2); mkp(M.yellow, GV.robG, .45, .45, .3, 0, 0, 2.5);
 GV.robShield = mkp(ART.olive, GV.robot, .5, 3.4, 2.5, -2.1, 3.1, .6);
 GV.saber = mkp(M.glow, GV.robot, .3, .3, 7, 1.8, 3.3, 4.2); GV.saber.visible = false;
+GV.saberO = mkp(SABER_OL, GV.robot, .8, .8, 7.5, 1.8, 3.3, 4.2); GV.saberO.visible = false;
 const ghostShield = new THREE.Mesh(new THREE.SphereGeometry(3.6, 16, 12), shieldMat); ghostShield.visible = false; scene.add(ghostShield);
 const ghostBar = barrierMesh.clone(true); ghostBar.visible = false; scene.add(ghostBar);
 const mpTr = [], trGeo = new THREE.SphereGeometry(0.5, 6, 5);
@@ -2806,7 +2827,7 @@ function mpUpdateGhost(dt) {
     GV.tankT.rotation.set(-gh.ap, rel, 0); GV.artyT.rotation.set(-gh.ap, rel, 0); GV.heliG.rotation.set(-gh.ap, rel, 0); GV.robG.rotation.set(-gh.ap, rel, 0);
     GV.heliR.rotation.y += dt * 30;
     GV.torsoW.visible = ch !== 'arty'; GV.torsoA.visible = ch === 'arty'; GV.robShield.visible = ch === 'arty'; GV.robot.scale.setScalar(ch === 'arty' ? 1.3 : 1.05);
-    GV.saber.visible = !!gh.m && rb; { const sb = SABER[ch] || SABER.tank; GV.saber.material = sb.mat; GV.saber.scale.z = sb.len; GV.saber.position.z = 0.7 + sb.len / 2; const lm = ch === 'tank' ? M.mint : M.blue; for (const l of GV.legs) l.material = lm; }
+    GV.saber.visible = !!gh.m && rb; { const sb = SABER[ch] || SABER.tank; GV.saber.material = sb.mat; GV.saber.scale.z = sb.len; GV.saber.position.z = 0.7 + sb.len / 2; GV.saberO.visible = GV.saber.visible && BRIGHT && ch === 'tank'; GV.saberO.scale.set(0.8, 0.8, sb.len + 0.5); GV.saberO.position.z = 0.7 + sb.len / 2; const lm = ch === 'tank' ? M.mint : M.blue; for (const l of GV.legs) l.material = lm; }
     ghostShield.visible = !!gh.sh; ghostShield.position.set(gh.pos.x, gh.pos.y + 2.4, gh.pos.z);
   } else ghostShield.visible = false;
   if (gh.bar) { ghostBar.visible = true; ghostBar.position.set(gh.bar[0], 0, gh.bar[1]); ghostBar.rotation.y = gh.bar[2]; } else ghostBar.visible = false;
@@ -3774,7 +3795,7 @@ function aiTick(dt) {
       } else if (rb) { AI.fireT = (AI.ch === 'arty' ? 1.2 : 0.55) * slow; aiHitR(30 * AI_DMG, 2); mpTracer(); }
       else if (heli) { AI.fireT = 0.08 * slow; aiHitR(2.8 * AI_DMG, 0); if (AI.shotN++ % 3 === 0) mpTracer(); AI.heat += 0.035; if (AI.heat >= 1) { AI.heat = 1; AI.ohT = 2; } }
       else if (AI.ch === 'tank') { AI.fireT = 1.0 * slow; aiHitR(33 * AI_DMG, 2); mpTracer(); }
-      else { AI.fireT = 4.1 * slow; aiHitR(92 * AI_DMG, 2); mpTracer(); }
+      else { AI.fireT = 3.8 * slow; aiHitR(92 * AI_DMG, 2); mpTracer(); }
     }
   }
 }
@@ -3980,8 +4001,11 @@ function stealthTry() {
   const p = (+sk.slice(4) === G.boss) ? 0.15 : 0.10; if (Math.random() >= p) return false;
   STL.t = 1.6; STL.cd = 5; STL.c = pCenter().clone(); for (const e of eproj) if (e.kind === 'missile' && !e.remote) e.lostT = Math.max(e.lostT || 0, 0.1); say('TÀNG HÌNH', 'Boss mất dấu bạn', 1.2, true); return true;
 }
+let silB = null;
 function skinFrame(dt) {
   const sk = curSkin();
+  saberOL.visible = BRIGHT && pl.char === 'tank';
+  if (silB !== BRIGHT) { silB = BRIGHT; SIL1.color.setHex(BRIGHT ? 0x9aa3b8 : 0xeef1f7); SIL1.emissive.setHex(BRIGHT ? 0x0a0c12 : 0x3a3f4c); SIL2.color.setHex(BRIGHT ? 0x6c758a : 0xb8c0d0); SIL2.emissive.setHex(BRIGHT ? 0x06080c : 0x2a2e38); SILD.color.setHex(BRIGHT ? 0x474e61 : 0x7c8498); SILD.emissive.setHex(BRIGHT ? 0x000000 : 0x1c1f28); }
   if (sk.startsWith('camo')) {
     STL.a = lerp(STL.a, STL.t > 0 ? 0.35 : 1, damp(10, dt)); const n = +sk.slice(4);
     for (const v of [0, 1]) { const m = camoMat(n, v), tr = STL.a < 0.98; m.opacity = STL.a; if (m.transparent !== tr) { m.transparent = tr; m.needsUpdate = true; } } if (STL.t > 0) emit(pl.pos.x + rnd(-1.5, 1.5), pl.pos.y + rnd(0.5, 3), pl.pos.z + rnd(-1.5, 1.5), 0, 1, 0, CAMO[n - 1].c[3] ? (n === 4 ? 0xaec4e6 : 0x9aeaff) : 0x9aeaff, 0.3, 0);
@@ -4177,7 +4201,8 @@ function updateTouchLabels() {
   if (tl.d !== d) { tl.d = d; tbIcon('t-dash', { 'LƯỚT': 'dash', 'ĐÂM': 'stab', 'SHIELD': 'barrier', 'BAY': 'up', 'LÊN': 'up' }[d]); }
   if (tl.dn !== dn) { tl.dn = dn; $('t-down').style.display = heli ? 'flex' : 'none'; $('t-evade').style.display = heli ? 'flex' : 'none'; }
 }
-function showHud(on) { $('quitBtn').hidden = !on; for (const id of ['bossbar', 'player', 'mode']) $(id).hidden = !on; $('cross').style.display = on ? '' : 'none'; if (!on) { $('lock').style.display = $('lockl').style.display = 'none'; setWarn(''); } }
+let shotPause = false;
+function showHud(on) { shotPause = false; document.body.classList.remove('shot'); $('quitBtn').hidden = !on; $('pauseBtn').hidden = !on || (MP.on && !MP.ai); $('pauseBtn').classList.remove('on'); for (const id of ['bossbar', 'player']) $(id).hidden = !on; $('cross').style.display = on ? '' : 'none'; if (!on) { $('lock').style.display = $('lockl').style.display = 'none'; setWarn(''); } }
 function resetGame() {
   for (const b of [B1, B2, B3, B4]) b.slowT = 0; F4.jet.slowT = 0; pl.pOn = false; pl.pCd = 0; pl.pCh = 0;
   autoLock.fire = autoLock.shield = false; syncLock();
@@ -4187,6 +4212,7 @@ function resetGame() {
   for (const b of [B1, B2, B3, B4]) { if (b.atk && b.atk.cancel) { try { b.atk.cancel(); } catch (_) { } } b.atk = null; }
   cleanFx(); setWarn('');
   B.reset(); mpAfterReset();
+  for (const b of [B1, B2, B3, B4]) for (const k in b.parts) b.parts[k].markT = 0;
   clearProjectiles(); hideTele(); for (const s of shots.slice()) removeShot(s, shots);
   G.camYaw = B.start.yaw; G.target = B.keys.includes('core') ? 'core' : B.keys[B.keys.length - 1]; G.lockOn = true; G.jam = false; G.time = 0; G.intro = 3.6; G.hitT = 0;
   camPosS.set(B.start.x, 8, B.start.z - 18); camLookS.set(B.pos.x, 14, B.pos.z);
@@ -4216,6 +4242,7 @@ function endGame(win) {
 function setPaused(on) {
   if (on && G.state === 'playing') { G.state = 'paused'; $('pause').hidden = false; try { document.exitPointerLock(); } catch (_) { } }
   else if (!on && G.state === 'paused') { G.state = 'playing'; $('pause').hidden = true; if (!isTouch) { try { const r = canvas.requestPointerLock(); if (r && r.catch) r.catch(() => { }); } catch (_) { } } }
+  try { syncPauseBtn(); } catch (_) { }
 }
 $('startBtn').addEventListener('click', () => { if (MP.room) mpStartClick(); else startGame(); });
 $('againBtn').addEventListener('click', startGame);
@@ -4238,8 +4265,25 @@ function quitToMenu(remote) {
   if (MP.room) { if (mp && !remote) setTimeout(() => { if (MP.room) mpLeave(); }, 500); else mpLeave(); }
   if (remote) say('ĐỒNG ĐỘI ĐÃ THOÁT VÁN', 'Ván online đã đóng', 3);
 }
-$('quitBtn').addEventListener('click', e => { e.stopPropagation(); quitAsk(); });
+let quitTapT = 0;
+$('quitBtn').addEventListener('touchstart', e => { e.preventDefault(); e.stopPropagation(); quitTapT = Date.now(); quitAsk(); }, { passive: false });
+$('quitBtn').addEventListener('click', e => { e.stopPropagation(); if (Date.now() - quitTapT < 700) return; quitAsk(); });
 $('quit2').addEventListener('click', quitAsk);
+/* nút tạm dừng: đóng băng ngay khung hình hiện tại, không hiện màn hình phụ (để chụp ảnh) */
+function syncPauseBtn() {
+  if (G.state !== 'paused') shotPause = false;
+  $('pauseBtn').classList.toggle('on', G.state === 'paused');
+  document.body.classList.toggle('shot', shotPause && G.state === 'paused');
+}
+function togglePauseBtn() {
+  if (MP.on && !MP.ai) return;
+  if (G.state === 'playing') { setPaused(true); $('pause').hidden = true; shotPause = true; }
+  else if (G.state === 'paused') setPaused(false);
+  syncPauseBtn();
+}
+let pauseTapT = 0; /* touchstart để vẫn bấm được khi ngón khác đang giữ nút điều khiển */
+$('pauseBtn').addEventListener('touchstart', e => { e.preventDefault(); e.stopPropagation(); pauseTapT = Date.now(); togglePauseBtn(); }, { passive: false });
+$('pauseBtn').addEventListener('click', e => { e.stopPropagation(); if (Date.now() - pauseTapT < 700) return; togglePauseBtn(); });
 $('quitYes').addEventListener('click', () => quitToMenu(false));
 $('quitNo').addEventListener('click', () => { $('quitDlg').hidden = true; if (quitPaused) { quitPaused = false; setPaused(false); } });
 $('codeBtn').addEventListener('click', () => {
