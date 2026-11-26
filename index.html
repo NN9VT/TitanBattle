@@ -848,6 +848,15 @@ function killPlayer() {
 
 /* ---------- per-frame ---------- */
 const aimPoint = V3(0, 10, 0);
+const tankUlt = () => pl.char === 'tank' && pl.alive && pl.hp > 0 && pl.hp <= pl.maxHp * 0.15;
+const ultCol = () => G.boss === 3 ? 0x4aa8ff : 0xff3030;
+function ultDashHit() {
+  if (!B || !B.alive) return; const c = pCenter();
+  for (const k of B.keys) {
+    const pt = B.parts[k]; if (!pt || (B.noCore && k === 'core') || (!pt.alive && k !== 'core' && !B.regen) || pl.ultHit[k]) continue;
+    if (c.distanceTo(B.pp[k]) < pt.r + 4) { pl.ultHit[k] = true; bossDamage(k, 50, B.pp[k]); burst(B.pp[k], 14, 14, ultCol(), 0.4, 2); }
+  }
+}
 function updatePlayer(dt) {
   if (!pl.alive) return;
   pl.hstun = Math.max(0, (pl.hstun || 0) - dt);
@@ -888,8 +897,10 @@ function updatePlayer(dt) {
     pl.yaw += angDiff(pl.yaw, pl.aimYaw) * damp((robot && pl.char === 'heli' ? 15 : 10) * (up && robot ? 0.7 : 1), dt);
     if (has) { const am = robot ? (pl.grounded ? 1 : 1.25) : 1; tvx = dx * spd * am; tvz = dz * spd * am; }
   }
-  if (IN.pressed.space && !robot && !heliMode && !trans && pl.en >= 35 && pl.dashT <= 0 && pl.dashCd <= 0 && !frozen) {
-    pl.en -= 35; pl.dashT = 0.3; pl.dashCd = 0.4; pl.burst = false;
+  if (IN.pressed.space && !robot && !heliMode && !trans && pl.en >= (tankUlt() ? 25 : 35) && pl.dashT <= 0 && pl.dashCd <= 0 && !frozen) {
+    const ult = tankUlt();
+    pl.en -= ult ? 25 : 35; pl.dashT = 0.3; pl.dashCd = 0.4; pl.burst = false;
+    if (ult) { pl.invuln = Math.max(pl.invuln, 0.15); pl.ultDash = true; pl.ultHit = {}; burst(pCenter(), 16, 16, ultCol(), 0.35, 0); } /* Xe tăng ≤15% máu: lướt 25 NL, bất tử 0.15s đầu, gây 50 sát thương */
     if (has) pl.dashDir.set(dx, 0, dz); else pl.dashDir.set(Math.sin(pl.yaw), 0, Math.cos(pl.yaw));
     burst(pCenter(), 20, 12, 0x7af0ff, 0.4, 0); shake(0.2);
   }
@@ -924,6 +935,7 @@ function updatePlayer(dt) {
   }
   if (pl.parT > 0) pl.dashT = 0;
   if (pl.dashT > 0) { pl.dashT -= dt; if (pl.dashT <= 0) { pl.burst = false; pl.stab = false; } const bs = pl.burst, sp2 = pl.stab ? 78 : bs ? 105 : 48; tvx = (bs && has ? dx : pl.dashDir.x) * sp2; tvz = (bs && has ? dz : pl.dashDir.z) * sp2; if (pl.stab) { tvx = pl.dashDir.x * 62; tvz = pl.dashDir.z * 62; } emit(pl.pos.x, 1, pl.pos.z, rnd(-2, 2), rnd(0, 2), rnd(-2, 2), 0x7af0ff, 0.35, 0); }
+  if (pl.ultDash) { if (pl.dashT > 0) ultDashHit(); else pl.ultDash = false; }
   const acc = pl.dashT > 0 ? (pl.burst ? 28 : 40) : heliMode ? 3.6 : 9;
   pl.vel.x = lerp(pl.vel.x, tvx, damp(acc, dt)); pl.vel.z = lerp(pl.vel.z, tvz, damp(acc, dt));
   pl.pos.x += pl.vel.x * dt; pl.pos.z += pl.vel.z * dt;
@@ -2278,7 +2290,7 @@ function atkDive() {
       if (Math.hypot(B3.pos.x, B3.pos.z) > ARENA_R - 11 || a.t > 1.6) { b3Clamp(); a.phase = 2; a.t = 0; B3.vuln = 1.8; shake(0.9); say('THỞ DỐC', 'Bắn mạnh vào lúc này', 1.2); }
     } else {
       B3.pitch = lerp(B3.pitch, 0, damp(4, dt)); b3Alt(7, dt, 4);
-      if (a.t >= 2.4) { B3.vuln = 1; return true; }
+      if (a.t >= 2.4 * (B3.parts.wingL.alive !== B3.parts.wingR.alive ? 1.25 : 1)) { B3.vuln = 1; return true; } /* hỏng 1 cánh: nằm dưới đất lâu hơn 25% */
       emit(B3.pos.x + rnd(-4, 4), B3.alt + 3, B3.pos.z + rnd(-4, 4), 0, 3, 0, 0x888888, 0.8, -1);
     }
     return false;
@@ -4112,7 +4124,7 @@ function updateCamera(dt) {
 
 
 /* ---------- character + difficulty select ---------- */
-const DIFFS = [{ spd: 0.8, dmg: 0.7, ex: 0, hp: 0.75, lead: 0.75 }, { spd: 1, dmg: 0.9, ex: 0, hp: 0.85, lead: 0.85 }, { spd: 1.2, dmg: 1.2, ex: 1, hp: 1, lead: 0.9 }];
+const DIFFS = [{ spd: 0.8, dmg: 0.7, ex: 0, hp: 0.75, lead: 0.75 }, { spd: 1, dmg: 0.9, ex: 0, hp: 0.85, lead: 0.85 }, { spd: 1.2, dmg: 0.9, ex: 1, hp: 0.85, lead: 0.9 }];
 G.char = 'tank'; G.diff = 1; G.boss = 1;
 let unlocked2 = false;
 try { unlocked2 = localStorage.getItem('tb_u2') === '1'; } catch (_) { }
@@ -4217,7 +4229,7 @@ function updateTouchLabels() {
 let shotPause = false;
 function showHud(on) { shotPause = false; document.body.classList.remove('shot'); $('quitBtn').hidden = !on; $('pauseBtn').hidden = !on || (MP.on && !MP.ai); $('pauseBtn').classList.remove('on'); for (const id of ['bossbar', 'player']) $(id).hidden = !on; $('cross').style.display = on ? '' : 'none'; if (!on) { $('lock').style.display = $('lockl').style.display = 'none'; setWarn(''); } }
 function resetGame() {
-  for (const b of [B1, B2, B3, B4]) b.slowT = 0; F4.jet.slowT = 0; pl.pOn = false; pl.pCd = 0; pl.pCh = 0;
+  for (const b of [B1, B2, B3, B4]) b.slowT = 0; F4.jet.slowT = 0; pl.pOn = false; pl.pCd = 0; pl.pCh = 0; pl.ultDash = false;
   autoLock.fire = autoLock.shield = false; syncLock();
   pl.char = G.char; applyChar();
   Object.assign(pl, { hp: pl.maxHp, sh: pl.shMax, shState: 'ready', shTimer: 0, shHit: 0, shFlash: 0, en: 100, k: 0, kTarget: 0, transCd: 0, fireCd: 0, dashT: 0, invuln: 0, meleeT: 0, meleeCd: 0, vy: 0, boosting: false, boostLock: false, alive: true, stun: 0, hstun: 0, yaw: 0, aimYaw: 0, mode: 'tank', rockets: 0, rocketT: 0, lean: 0, roll: 0, dashVy: 0, heat: 0, ohT: 0, slowT: 0, parT: 0, dashCd: 0, burst: false });
@@ -4307,6 +4319,29 @@ $('codeBtn').addEventListener('click', () => {
 });
 document.addEventListener('visibilitychange', () => { if (document.hidden && !(MP.on && !MP.ai)) setPaused(true); });
 
+/* tia điện nhỏ quanh Xe tăng khi ≤15% máu (đỏ; map Rồng: xanh dương) */
+const ULT_ARCS = [];
+for (let i = 0; i < 3; i++) {
+  const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.BufferAttribute(new Float32Array(5 * 3), 3));
+  const l = new THREE.Line(g, new THREE.LineBasicMaterial({ color: 0xff3030, transparent: true, opacity: 0.95, blending: THREE.AdditiveBlending, depthWrite: false }));
+  l.frustumCulled = false; l.visible = false; scene.add(l); ULT_ARCS.push({ l, t: 0 });
+}
+function updateUltFx(dt) {
+  const on = (G.state === 'playing' || G.state === 'ending') && pl.k === 0 && pl.root.visible && tankUlt();
+  if (!on) { for (const a of ULT_ARCS) a.l.visible = false; return; }
+  const pc = pCenter(), col = ultCol();
+  for (const a of ULT_ARCS) {
+    a.l.material.color.setHex(col); a.t -= dt;
+    if (a.t > 0) continue;
+    a.t = rnd(0.05, 0.12);
+    if (Math.random() < 0.3) { a.l.visible = false; continue; }
+    const p = a.l.geometry.attributes.position.array, th = rnd(0, TAU), r = rnd(1.4, 2.2);
+    let x = pc.x + Math.cos(th) * r, y = pc.y + rnd(-1.0, 1.4), z = pc.z + Math.sin(th) * r;
+    for (let i = 0; i < 5; i++) { p[i * 3] = x; p[i * 3 + 1] = y; p[i * 3 + 2] = z; x += rnd(-0.7, 0.7); y += rnd(-0.6, 0.6); z += rnd(-0.7, 0.7); }
+    a.l.geometry.attributes.position.needsUpdate = true; a.l.visible = true;
+    emit(x, y, z, rnd(-4, 4), rnd(0, 4), rnd(-4, 4), col, 0.25, 0);
+  }
+}
 let last = performance.now();
 function loop(now) {
   requestAnimationFrame(loop);
@@ -4321,7 +4356,7 @@ function loop(now) {
     G.time += dt; B.refresh(); B.idle(dt);
     if (G.state === 'menu') { const a = G.time * 0.12; camera.position.set(Math.sin(a) * 78, 22, Math.cos(a) * 78); camera.lookAt(0, 19, 0); }
   }
-  if (G.state !== 'paused') { updateFlat(dt); updateFx(dt); updateParticles(dt); }
+  if (G.state !== 'paused') { updateFlat(dt); updateFx(dt); updateParticles(dt); updateUltFx(dt); }
   if (run) { updateCamera(dt); updateHud(dt); if (isTouch) updateTouchLabels(); }
   clearInput();
   renderer.render(scene, camera);
