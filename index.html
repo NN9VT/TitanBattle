@@ -919,7 +919,7 @@ function olRender(dt) {
 }
 /* ===== Trực thăng vàng: GIÁNG GIÁO (máu <40%, đè nút Rocket 2s, tốn hết năng lượng, 1 lần/ván) ===== */
 const SP = { hold: 0, on: false, used: false, t: 0, pos: V3(), ring: null, mesh: null };
-const spearCan = () => pl.char === 'heli' && swordMode() && !SP.used && !SP.on && pl.alive && pl.hp > 0 && pl.hp < pl.maxHp * 0.4 && pl.en >= 50 && G.state === 'playing' && G.intro <= 0 && pl.hstun <= 0;
+const spearCan = () => pl.char === 'heli' && swordMode() && !SP.used && !SP.on && pl.alive && pl.hp > 0 && pl.hp < pl.maxHp * 0.4 && G.state === 'playing' && G.intro <= 0 && pl.hstun <= 0;
 function spearInit() {
   SP.ring = makeRing(0xffd24a, 1);
   const g = new THREE.Group(), m = new THREE.MeshBasicMaterial({ color: 0xffe9a0 });
@@ -934,16 +934,16 @@ function spearTick(dt) {
     if (held && spearCan()) {
       SP.hold += dt;
       if (SP.hold >= 2) {
-        SP.hold = 0; SP.on = true; SP.used = true; SP.t = 8; pl.en = 0; if (!SP.ring) spearInit();
-        SP.pos.copy(G.lockOn && B.pp[G.target] ? B.pp[G.target] : aimPoint);
-        say('GIÁNG GIÁO', 'Giáo sẽ rơi sau 8 giây', 2, true); burst(pCenter(), 30, 18, 0xffd24a, 0.6, 0); shake(0.3);
+        SP.hold = 0; SP.on = true; SP.used = true; SP.t = 4; pl.en = 0; if (!SP.ring) spearInit();
+        SP.pos.copy(G.lockOn && B.pp[G.target] ? B.pp[G.target] : pl.pos);
+        say('GIÁNG GIÁO', 'Giáo sẽ rơi sau 4 giây', 2, true); burst(pCenter(), 30, 18, 0xffd24a, 0.6, 0); shake(0.3);
       }
     } else SP.hold = 0;
     return;
   }
   if (G.state === 'over' || G.state === 'menu') { spearEnd(); return; }
   SP.t -= dt; const px = SP.pos.x, pz = SP.pos.z;
-  setRing(SP.ring, px, pz, 9.3, 10, 0.25 + 0.35 * (1 - SP.t / 8) + 0.15 * Math.sin(G.time * 12)); SP.ring.visible = true;
+  setRing(SP.ring, px, pz, 9.3, 10, 0.25 + 0.35 * (1 - SP.t / 4) + 0.15 * Math.sin(G.time * 12)); SP.ring.visible = true;
   if (SP.t < 0.6) { SP.mesh.visible = true; SP.mesh.position.set(px, SP.pos.y + lerp(90, 0, 1 - SP.t / 0.6), pz); }
   if (SP.t <= 0) {
     if (B && B.alive) for (const k of B.keys) {
