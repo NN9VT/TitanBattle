@@ -145,6 +145,8 @@ button.cta:disabled{opacity:.5;cursor:not-allowed}
 </head>
 <body>
 <canvas id="game"></canvas>
+<div class="hud" id="gaussFlash" style="inset:0;opacity:0;z-index:5;background:radial-gradient(circle,#fff 0,#fff 35%,rgba(220,232,255,.7) 100%)"></div>
+<div class="hud" id="gaussDark" style="inset:0;opacity:0;z-index:4"></div>
 <button id="rotBtn" title="Xoay màn hình" aria-label="Xoay màn hình">⟳</button>
 <button id="quitBtn" hidden aria-label="Thoát"><svg viewBox="0 0 20 20"><path d="M4 4l12 12M16 4L4 16"/></svg></button>
 <button id="pauseBtn" hidden aria-label="Tạm dừng"><svg class="ic-play" viewBox="0 0 20 20"><path d="M5 2.5l12 7.5-12 7.5z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg><svg class="ic-pause" viewBox="0 0 20 20"><rect x="3.5" y="3" width="4.5" height="14" rx="1"/><rect x="12" y="3" width="4.5" height="14" rx="1"/></svg></button>
@@ -783,7 +785,8 @@ function updateShots(dt) {
   for (let i = shots.length - 1; i >= 0; i--) {
     const s = shots[i]; s.life -= dt;
     if (s.life <= 0) { removeShot(s, shots); continue; }
-    const steps = Math.ceil(s.vel.length() * dt / 3);
+    if (s.gauss) { gaussStep(s, dt); continue; }
+    const steps =Math.ceil(s.vel.length() * dt / 3);
     let dead = false, hk = null;
     for (let j = 0; j < steps && !dead; j++) {
       s.pos.addScaledVector(s.vel, dt / steps);
@@ -809,9 +812,9 @@ function shieldLook(low) { /* stage 4 has a bright floor: use normal blending + 
   shieldWire.color.setHex(b ? (low < 0.3 ? 0xb83a22 : 0x0e6b9c) : (low < 0.3 ? 0xffb090 : 0x9aeaff));
   shieldWire.opacity = b ? 0.65 : 0.3; return b ? 0.2 : 0.1;
 }
-function shieldUp() { return IN.shield && pl.shState === 'ready' && pl.alive && pl.k % 1 === 0 && G.state === 'playing'; }
+function shieldUp() { return IN.shield && !SH.on && pl.shState === 'ready' && pl.alive && pl.k % 1 === 0 && G.state === 'playing'; }
 function hurtPlayer(amount, o) {
-  o = o || {}; if (MP.swapped) return MP.ai ? aiHurt(amount, o) : false; amount *= DIFFS[G.diff].dmg * (G.boss === 1 ? 0.9 : 1.1); if (pl.char === 'arty' && pl.k > 0.5) amount *= 0.75; if (pl.pOn) amount *= 0.7; pl.lastBlocked = false;
+  o = o || {}; if (MP.swapped) return MP.ai ? aiHurt(amount, o) : false; amount *= DIFFS[G.diff].dmg * (G.boss === 1 ? 0.9 : 1.1); if (pl.char === 'arty' && pl.k > 0.5) amount *= 0.75; if (pl.pOn) amount *= 0.7; if (gaussFocus()) amount *= 0.2; if (SH.over > 0) amount *= 0.5; pl.lastBlocked = false;
   if (!pl.alive || pl.invuln > 0 || G.state !== 'playing') return false;
   { const dk = domeAt(pl.pos, pl.pos.y); if (dk) { domeAbsorb(dk, amount, true); pl.lastBlocked = true; return true; } }
   if (!o.air && B.alive && barrierBlocksSeg(B.pos.x, B.pos.z, pl.pos.x, pl.pos.z)) {
@@ -848,6 +851,80 @@ function killPlayer() {
 
 /* ---------- per-frame ---------- */
 const aimPoint = V3(0, 10, 0);
+/* ===== Pháo bạc: tia Gauss (1 lần/ván, máu < 30%, giữ nút bắn 3s → tối sầm 2s → bắn) ===== */
+const GA = { hold: 0, t: 0, used: false, dk: 0 };
+const GAUSS_CORE = new THREE.MeshBasicMaterial({ color: 0xffffff });
+const GAUSS_GLOW = new THREE.MeshBasicMaterial({ color: 0xdfe8ff, transparent: true, opacity: 0.3, blending: THREE.AdditiveBlending, depthWrite: false });
+/* ===== Trực thăng thường: SUPER ROBOT (máu <30%, bấm đúp Biến hình, 1 lần/ván) ===== */
+const SH = { on: false, used: false, t: 0, tap: 0, rk: 4, over: 0, warned: false };
+const superCan = () => pl.char === 'heli' && !swordMode() && !SH.used && !SH.on && pl.alive && pl.hp > 0 && pl.hp < pl.maxHp * 0.3 && G.state === 'playing' && G.intro <= 0 && pl.hstun <= 0;
+function superTick(dt) {
+  SH.tap = Math.max(0, SH.tap - dt); SH.over = Math.max(0, SH.over - dt);
+  if (IN.pressed.transform) {
+    if (SH.tap > 0 && superCan()) {
+      SH.on = true; SH.used = true; SH.t = 0; SH.rk = 2; SH.over = 0; SH.warned = false; pl.kTarget = 1; pl.transCd = 0.6; SH.tap = 0;
+      setLock('shield', false, ''); setLock('fire', false, '');
+      say('SUPER ROBOT', 'Hồi phục · tên lửa tự động', 2, true); burst(pCenter(), 50, 24, 0xffd24a, 0.8, 0); flatRing(pl.pos.x, pl.pos.z, 1, 12, 0xffd24a, 0.6, 1); shake(0.5);
+    } else SH.tap = 0.3;
+  }
+  if (!SH.on) return;
+  if (!pl.alive || G.state === 'over' || G.state === 'menu') { SH.on = false; return; }
+  pl.transCd = Math.max(pl.transCd, 0.5); pl.kTarget = 1;
+  if (pl.hp < pl.maxHp * 0.5) pl.hp = Math.min(pl.maxHp * 0.5, pl.hp + pl.maxHp * 0.07 * dt);
+  pl.en = Math.min(100, pl.en + 35 * dt);
+  if (Math.random() < dt * 20) emit(pl.pos.x + rnd(-1.5, 1.5), pl.pos.y + rnd(0.5, 4), pl.pos.z + rnd(-1.5, 1.5), 0, rnd(1, 4), 0, 0xffd24a, 0.5, 0);
+  SH.t += dt;
+  if (SH.t >= 12 && !SH.warned) { SH.warned = true; say('QUÁ TẢI!', 'Sắp choáng', 1, true); }
+  if (SH.warned && Math.random() < dt * 30) emit(pl.pos.x + rnd(-1.5, 1.5), pl.pos.y + rnd(0.5, 4), pl.pos.z + rnd(-1.5, 1.5), rnd(-3, 3), rnd(0, 4), rnd(-3, 3), 0xff3030, 0.4, 0);
+  if (SH.t >= 15) { SH.t = 0; SH.warned = false; SH.over = 2.5; pl.hstun = Math.max(pl.hstun, 2.5); burst(pCenter(), 40, 18, 0xff3030, 0.6, 0); shake(0.6); say('QUÁ TẢI', 'Choáng 2.5s', 1.5, true); }
+  else if (SH.over <= 0) { SH.rk -= dt; if (SH.rk <= 0 && pl.rockets <= 0) { SH.rk = 4; pl.rockets = 4; pl.rocketT = 0; } }
+}
+const gaussFocus = () => artySilver() && (GA.hold > 0 || GA.t > 0);
+const gaussCan = () => artySilver() && pl.alive && pl.hp > 0 && pl.hp < pl.maxHp * 0.3 && !GA.used && G.state === 'playing' && G.intro <= 0;
+function fireGauss() {
+  pl.root.updateMatrixWorld(true);
+  const robot = pl.k > 0.5, mp = muzzle.getWorldPosition(V3()), d = aimPoint.clone().sub(mp).normalize();
+  const sp = (robot ? 85 : 62) * 1.4 * 5, dmg = (robot ? 30 : 85) * 5;
+  const g = new THREE.Group(), c = new THREE.Mesh(UB, GAUSS_CORE), w = new THREE.Mesh(UB, GAUSS_GLOW), w2 = new THREE.Mesh(UB, GAUSS_GLOW);
+  g.add(c); g.add(w); g.add(w2); g.position.copy(mp); g.lookAt(mp.clone().add(d)); scene.add(g);
+  const lt = new THREE.PointLight(0xdfe8ff, 6, 160); lt.position.copy(mp); scene.add(lt);
+  shots.push({ mesh: g, parts: [c, w, w2], lt, org: mp.clone(), pos: mp.clone(), vel: d.clone().multiplyScalar(sp), dir: d.clone(), dmg, life: 99, gauss: true, hitK: {}, hitR: {}, end: false, fade: 0.8 });
+  GA.flash = 1; burst(mp, 50, 34, 0xffffff, 0.7, 0); shake(1.6); pl.fireCd = 1.0; pl.shotT = 0.3;
+}
+function gaussBeam(s, k) {
+  const len = Math.max(0.1, s.pos.distanceTo(s.org)), th = k;
+  s.parts[0].scale.set(1.8 * th, 1.8 * th, len); s.parts[1].scale.set(4.2 * th, 4.2 * th, len); s.parts[2].scale.set(7 * th, 7 * th, len);
+  for (const p of s.parts) p.position.z = len / 2;
+}
+function gaussStep(s, dt) {
+  if (s.end) {
+    s.fade -= dt; const k = Math.max(0, s.fade / 0.8);
+    gaussBeam(s, k); s.lt.intensity = 6 * k;
+    if (s.fade <= 0) { scene.remove(s.lt); removeShot(s, shots); }
+    return;
+  }
+  const n = Math.max(1, Math.ceil(s.vel.length() * dt / 2.5)), a0 = s.pos.clone();
+  for (let j = 0; j < n; j++) {
+    s.pos.addScaledVector(s.vel, dt / n);
+    const h = bossTest(s.pos, 2.6);
+    if (h && h !== 'body' && !s.hitK[h]) { s.hitK[h] = 1; bossDamage(h, s.dmg, s.pos); explode(s.pos, 1.8, 0xffffff); shake(0.6); }
+    for (const e of eproj.slice()) if (e.pos.distanceTo(s.pos) < 4.5) { if (e.kind === 'missile') missileDie(e); else killE(e); }
+  }
+  rockSeg(a0, s.pos, s.dmg, s.hitR);
+  gaussBeam(s, 1); s.lt.position.copy(s.pos).lerp(s.org, 0.5);
+  emit(s.pos.x, s.pos.y, s.pos.z, rnd(-3, 3), rnd(-3, 3), rnd(-3, 3), 0xffffff, 0.3, 0);
+  if (s.pos.length() > ARENA_R * 2.3 || s.pos.y < -2) s.end = true;
+}
+function updateGaussFx(dt) {
+  if (!pl.alive || G.state === 'over' || G.state === 'menu') GA.t = 0;
+  GA.dk += ((GA.t > 0 ? 1 : 0) - GA.dk) * damp(GA.t > 0 ? 6 : 5, dt); if (GA.dk < 0.01) GA.dk = 0;
+  const fl = $('gaussFlash'); GA.flash = Math.max(0, (GA.flash || 0) - dt * 2.2); fl.style.opacity = GA.flash;
+  const el = $('gaussDark'); el.style.opacity = GA.dk;
+  if (GA.dk <= 0) return;
+  _d.copy(pCenter()).project(camera);
+  if (_d.z < 1) { const x = (_d.x * 0.5 + 0.5) * VW, y = (-_d.y * 0.5 + 0.5) * VH; el.style.background = 'radial-gradient(circle at ' + x.toFixed(0) + 'px ' + y.toFixed(0) + 'px, rgba(0,0,0,0) 0, rgba(0,0,0,0) 36px, rgba(0,0,0,.94) 150px)'; }
+  else el.style.background = 'rgba(0,0,0,.94)';
+}
 const tankUlt = () => pl.char === 'tank' && pl.alive && pl.hp > 0 && pl.hp <= pl.maxHp * 0.15;
 const ultCol = () => G.boss === 3 ? 0x4aa8ff : 0xff3030;
 function ultDashHit() {
@@ -863,8 +940,9 @@ function updatePlayer(dt) {
   const frozen = G.intro > 0 || pl.hstun > 0;
   pl.invuln = Math.max(0, pl.invuln - dt); pl.slowT = Math.max(0, (pl.slowT || 0) - dt); pl.parT = Math.max(0, (pl.parT || 0) - dt); pl.dashCd = Math.max(0, (pl.dashCd || 0) - dt); pl.fireCd -= dt; pl.shotT = Math.max(0, (pl.shotT || 0) - dt); pl.castT = Math.max(0, (pl.castT || 0) - dt); if (pl.ohT > 0) { pl.ohT -= dt; pl.heat = Math.max(0, pl.ohT / 3); } else if (pl.heat > 0 && !IN.fire) pl.heat = Math.max(0, pl.heat - 0.3 * dt); pl.meleeCd -= dt; pl.transCd -= dt; pl.stun = Math.max(0, pl.stun - dt);
   const fireBusy = !!IN.fire || pl.shotT > 0; /* firing and sword/stab/punch are mutually exclusive */
+  superTick(dt);
   /* transform */
-  if (IN.pressed.transform && pl.transCd <= 0 && pl.k === pl.kTarget && !frozen) {
+  if (IN.pressed.transform && !SH.on && pl.transCd <= 0 && pl.k === pl.kTarget && !frozen) {
     pl.kTarget = pl.kTarget ? 0 : 1; pl.transCd = pl.char === 'heli' ? 1.1 : 2.2; burst(pCenter(), 24, 10, 0x9aeaff, 0.5, 0); flatRing(pl.pos.x, pl.pos.z, 1, 7, 0x9aeaff, 0.5, 0.8);
     say(pl.kTarget ? 'DẠNG ROBOT' : 'DẠNG XE TĂNG', '', 1.2, true);
   }
@@ -884,7 +962,7 @@ function updatePlayer(dt) {
   let dx = sy * IN.my - cy * IN.mx, dz = cy * IN.my + sy * IN.mx; // forward=(sin,cos) right=(-cos,sin)
   const dl = Math.hypot(dx, dz); if (dl > 0.01) { dx /= dl; dz /= dl; }
   const has = dl > 0.01 && !frozen && !(pl.parT > 0) && !(pl.castT > 0);
-  let spd = (robot ? (pl.char === 'arty' ? 8 : pl.char === 'heli' ? 15.6 : 10) : heliMode ? 21 : (pl.char === 'arty' ? 10.5 : 17)) * (up && !heliMode ? 0.7 : 1) * (trans ? 0.4 : 1) * (pl.stun > 0 ? 0.5 : 1) * (pl.slowT > 0 ? 0.7 : 1);
+  let spd = (robot ? (pl.char === 'arty' ? 8 : pl.char === 'heli' ? 15.6 : 10) : heliMode ? 21 : (pl.char === 'arty' ? 10.5 : 17)) * (up && !heliMode ? 0.7 : 1) * (trans ? 0.4 : 1) * (pl.stun > 0 ? 0.5 : 1) * (pl.slowT > 0 ? 0.7 : 1) * (gaussFocus() ? 0.5 : 1) * (tankUlt() ? 1.15 : 1) * (SH.on ? 1.3 : 1);
   let tvx = 0, tvz = 0;
   if (!robot && !heliMode) {
     if (has) {
@@ -897,9 +975,9 @@ function updatePlayer(dt) {
     pl.yaw += angDiff(pl.yaw, pl.aimYaw) * damp((robot && pl.char === 'heli' ? 15 : 10) * (up && robot ? 0.7 : 1), dt);
     if (has) { const am = robot ? (pl.grounded ? 1 : 1.25) : 1; tvx = dx * spd * am; tvz = dz * spd * am; }
   }
-  if (IN.pressed.space && !robot && !heliMode && !trans && pl.en >= (tankUlt() ? 25 : 35) && pl.dashT <= 0 && pl.dashCd <= 0 && !frozen) {
+  if (IN.pressed.space && !robot && !heliMode && !trans && pl.en >= (tankUlt() ? 20 : 35) && pl.dashT <= 0 && pl.dashCd <= 0 && !frozen) {
     const ult = tankUlt();
-    pl.en -= ult ? 25 : 35; pl.dashT = 0.3; pl.dashCd = 0.4; pl.burst = false;
+    pl.en -= ult ? 20 : 35; pl.dashT = ult ? 0.2 : 0.3; pl.dashCd = 0.4; pl.burst = false;
     if (ult) { pl.invuln = Math.max(pl.invuln, 0.15); pl.ultDash = true; pl.ultHit = {}; burst(pCenter(), 16, 16, ultCol(), 0.35, 0); } /* Xe tăng ≤15% máu: lướt 25 NL, bất tử 0.15s đầu, gây 50 sát thương */
     if (has) pl.dashDir.set(dx, 0, dz); else pl.dashDir.set(Math.sin(pl.yaw), 0, Math.cos(pl.yaw));
     burst(pCenter(), 20, 12, 0x7af0ff, 0.4, 0); shake(0.2);
@@ -934,16 +1012,16 @@ function updatePlayer(dt) {
     pl.dashVy = vy; burst(pCenter(), 20, 12, 0x7af0ff, 0.4, 0); shake(0.2);
   }
   if (pl.parT > 0) pl.dashT = 0;
-  if (pl.dashT > 0) { pl.dashT -= dt; if (pl.dashT <= 0) { pl.burst = false; pl.stab = false; } const bs = pl.burst, sp2 = pl.stab ? 78 : bs ? 105 : 48; tvx = (bs && has ? dx : pl.dashDir.x) * sp2; tvz = (bs && has ? dz : pl.dashDir.z) * sp2; if (pl.stab) { tvx = pl.dashDir.x * 62; tvz = pl.dashDir.z * 62; } emit(pl.pos.x, 1, pl.pos.z, rnd(-2, 2), rnd(0, 2), rnd(-2, 2), 0x7af0ff, 0.35, 0); }
+  if (pl.dashT > 0) { pl.dashT -= dt; if (pl.dashT <= 0) { pl.burst = false; pl.stab = false; } const bs = pl.burst, sp2 = pl.stab ? 78 : bs ? 105 : pl.ultDash ? 72 : 48; tvx = (bs && has ? dx : pl.dashDir.x) * sp2; tvz = (bs && has ? dz : pl.dashDir.z) * sp2; if (pl.stab) { tvx = pl.dashDir.x * 62; tvz = pl.dashDir.z * 62; } emit(pl.pos.x, 1, pl.pos.z, rnd(-2, 2), rnd(0, 2), rnd(-2, 2), 0x7af0ff, 0.35, 0); }
   if (pl.ultDash) { if (pl.dashT > 0) ultDashHit(); else pl.ultDash = false; }
-  const acc = pl.dashT > 0 ? (pl.burst ? 28 : 40) : heliMode ? 3.6 : 9;
+  const acc = pl.dashT > 0 ? (pl.burst ? 28 : pl.ultDash ? 60 : 40) : heliMode ? 3.6 : 9;
   pl.vel.x = lerp(pl.vel.x, tvx, damp(acc, dt)); pl.vel.z = lerp(pl.vel.z, tvz, damp(acc, dt));
   pl.pos.x += pl.vel.x * dt; pl.pos.z += pl.vel.z * dt;
   /* vertical (robot boost) */
   pl.boosting = false;
   if (robot && !trans && IN.boost && !up && !frozen && pl.char === 'heli') {
     if (pl.boostLock && pl.en > 14) pl.boostLock = false;
-    if (!pl.boostLock && pl.en > 0) { pl.boosting = true; pl.vy = Math.min(pl.vy + 70 * dt, 13); pl.en -= 24 * dt; if (pl.en <= 0) { pl.en = 0; pl.boostLock = true; } }
+    if (!pl.boostLock && pl.en > 0) { pl.boosting = true; pl.vy = Math.min(pl.vy + 70 * dt, 13 * (SH.on ? 1.3 : 1)); pl.en -= 24 * dt; if (pl.en <= 0) { pl.en = 0; pl.boostLock = true; } }
   }
   if (heliMode) {
     const want = (frozen || pl.parT > 0) ? 0 : (IN.boost ? 1 : 0) - ((keys.KeyC || touch.held.down) ? 1 : 0);
@@ -964,7 +1042,12 @@ function updatePlayer(dt) {
   { const bx = pl.pos.x - B.pos.x, bz = pl.pos.z - B.pos.z, br = Math.hypot(bx, bz), lim = B.colR + 2.4; if (B.alive && br < lim && pl.pos.y < B.colH) { const k = lim / Math.max(br, 0.01); pl.pos.x = B.pos.x + bx * k; pl.pos.z = B.pos.z + bz * k; } }
   collideRocks(pl.pos);
   /* weapons */
-  if (IN.fire && !up && !trans && !pl.pOn && !(pl.meleeT > 0 || pl.charging || (pl.stab && pl.dashT > 0)) && !(swordMode() && robot) && pl.fireCd <= 0 && !(pl.ohT > 0) && !frozen && G.state === 'playing') fireShot();
+  if (GA.t > 0) { GA.t -= dt; if (GA.t <= 0) { GA.t = 0; fireGauss(); } }
+  else if (gaussCan() && IN.fire && !up && !trans && !frozen) {
+    GA.hold += dt; if (Math.random() < 0.3 + 0.7 * GA.hold / 3) emit(pl.pos.x + rnd(-2.5, 2.5), pl.pos.y + rnd(0.5, 3.5), pl.pos.z + rnd(-2.5, 2.5), 0, rnd(1, 4), 0, 0xffffff, 0.35, 0);
+    if (GA.hold >= 3) { GA.hold = 0; GA.t = 2; GA.used = true; say('GAUSS', 'Tập trung...', 2, true); shake(0.4); }
+  } else GA.hold = 0;
+  if (IN.fire && !SH.on && !gaussFocus() && !up && !trans && !pl.pOn && !(pl.meleeT > 0 || pl.charging || (pl.stab && pl.dashT > 0)) && !(swordMode() && robot) && pl.fireCd <= 0 && !(pl.ohT > 0) && !frozen && G.state === 'playing') fireShot();
   if (IN.pressed.melee && heliMode && pl.en >= 50 && pl.rockets <= 0 && !up && !frozen) { pl.en -= 50; pl.rockets = 6; pl.rocketT = 0; }
   if (pl.rockets > 0) { pl.rocketT -= dt; if (pl.rocketT <= 0) { fireRocket(pl.rockets % 2 ? 1 : -1); pl.rockets--; pl.rocketT = 0.07; } }
   /* arty punch: hold to charge, release to send the wave */
@@ -979,7 +1062,7 @@ function updatePlayer(dt) {
     }
   }
   { const mb = document.getElementById('t-melee'); if (mb && pl.char === 'arty') { mb.classList.toggle('chg', !!pl.pOn); mb.classList.toggle('cd', pl.pCd > 0 && !pl.pOn); mb.style.setProperty('--c', (pl.pOn ? pl.pCh / 2 : 0).toFixed(2)); } }
-  if (IN.pressed.melee && robot && !trans && pl.char !== 'arty' && !swordMode() && !fireBusy && pl.meleeCd <= 0 && !up && !frozen) { const md = pl.char === 'heli' ? 0.32 : 0.4; pl.meleeT = md; pl.meleeDur = md; pl.meleeCd = SB().cd * md / (pl.char === 'heli' ? 0.32 : 0.4); pl.meleeHit = false; }
+  if (IN.pressed.melee && robot && !trans && pl.char !== 'arty' && !swordMode() && !fireBusy && pl.meleeCd <= 0 && !up && !frozen) { const md = (pl.char === 'heli' ? 0.32 : 0.4) / (SH.on ? 1.3 : 1); pl.meleeT = md; pl.meleeDur = md; pl.meleeCd = SB().cd * md / (pl.char === 'heli' ? 0.32 : 0.4); pl.meleeHit = false; }
   if (pl.meleeT > 0) {
     pl.meleeT -= dt; const f = 1 - pl.meleeT / (pl.meleeDur || 0.4);
     saberPivot.visible = pl.meleeT > 0; saberPivot.rotation.y = lerp(1.1, -1.1, f); saberPivot.rotation.x = -0.15;
@@ -1017,9 +1100,9 @@ function fireRocket(side) {
   pl.root.updateMatrixWorld(true);
   const mp = muzzle.getWorldPosition(V3()), right = V3(-Math.cos(pl.aimYaw), 0, Math.sin(pl.aimYaw));
   mp.addScaledVector(right, side * 1.3);
-  const d = aimPoint.clone().sub(mp).normalize(); d.x += rnd(-0.03, 0.03); d.y += rnd(-0.03, 0.03); d.z += rnd(-0.03, 0.03); d.normalize();
+  const d = (SH.on && G.lockOn && B.pp[G.target] ? B.pp[G.target] : aimPoint).clone().sub(mp).normalize(); d.x += rnd(-0.03, 0.03); d.y += rnd(-0.03, 0.03); d.z += rnd(-0.03, 0.03); d.normalize();
   const m = new THREE.Mesh(shellGeo, rocketMat); m.scale.set(1.6, 1.6, 1.6); m.position.copy(mp); m.lookAt(mp.clone().add(d)); scene.add(m);
-  shots.push({ mesh: m, pos: mp.clone(), vel: d.multiplyScalar(80), dmg: 14, life: 2 });
+  shots.push({ mesh: m, pos: mp.clone(), vel: d.multiplyScalar(80 * (SH.on ? 1.3 : 1)), dmg: 14, life: 2 });
   burst(mp, 6, 8, 0xffa040, 0.3, 0); shake(0.08);
 }
 const punchRing = makeRing(0xff9a3c, 1);
@@ -4229,7 +4312,7 @@ function updateTouchLabels() {
 let shotPause = false;
 function showHud(on) { shotPause = false; document.body.classList.remove('shot'); $('quitBtn').hidden = !on; $('pauseBtn').hidden = !on || (MP.on && !MP.ai); $('pauseBtn').classList.remove('on'); for (const id of ['bossbar', 'player']) $(id).hidden = !on; $('cross').style.display = on ? '' : 'none'; if (!on) { $('lock').style.display = $('lockl').style.display = 'none'; setWarn(''); } }
 function resetGame() {
-  for (const b of [B1, B2, B3, B4]) b.slowT = 0; F4.jet.slowT = 0; pl.pOn = false; pl.pCd = 0; pl.pCh = 0; pl.ultDash = false;
+  for (const b of [B1, B2, B3, B4]) b.slowT = 0; F4.jet.slowT = 0; pl.pOn = false; pl.pCd = 0; pl.pCh = 0; pl.ultDash = false; GA.t = 0; GA.hold = 0; SH.on = false; SH.used = false; SH.t = 0; SH.over = 0; SH.warned = false; SH.tap = 0; GA.used = false; GA.dk = 0; GA.flash = 0; for (const s of shots) if (s.lt) scene.remove(s.lt);
   autoLock.fire = autoLock.shield = false; syncLock();
   pl.char = G.char; applyChar();
   Object.assign(pl, { hp: pl.maxHp, sh: pl.shMax, shState: 'ready', shTimer: 0, shHit: 0, shFlash: 0, en: 100, k: 0, kTarget: 0, transCd: 0, fireCd: 0, dashT: 0, invuln: 0, meleeT: 0, meleeCd: 0, vy: 0, boosting: false, boostLock: false, alive: true, stun: 0, hstun: 0, yaw: 0, aimYaw: 0, mode: 'tank', rockets: 0, rocketT: 0, lean: 0, roll: 0, dashVy: 0, heat: 0, ohT: 0, slowT: 0, parT: 0, dashCd: 0, burst: false });
@@ -4356,7 +4439,7 @@ function loop(now) {
     G.time += dt; B.refresh(); B.idle(dt);
     if (G.state === 'menu') { const a = G.time * 0.12; camera.position.set(Math.sin(a) * 78, 22, Math.cos(a) * 78); camera.lookAt(0, 19, 0); }
   }
-  if (G.state !== 'paused') { updateFlat(dt); updateFx(dt); updateParticles(dt); updateUltFx(dt); }
+  if (G.state !== 'paused') { updateFlat(dt); updateFx(dt); updateParticles(dt); updateUltFx(dt); updateGaussFx(dt); }
   if (run) { updateCamera(dt); updateHud(dt); if (isTouch) updateTouchLabels(); }
   clearInput();
   renderer.render(scene, camera);
