@@ -85,7 +85,7 @@ button.cta:focus-visible{outline:3px solid var(--cyan);outline-offset:3px}
 #t-trans{right:max(104px,env(safe-area-inset-right,0px));bottom:max(100px,env(safe-area-inset-bottom,0px));width:58px;height:58px}
 #t-lock{right:max(8px,env(safe-area-inset-right,0px));top:66px;width:42px;height:42px}
 #t-next{right:max(56px,env(safe-area-inset-right,0px));top:66px;width:42px;height:42px}
-#t-view{right:max(104px,env(safe-area-inset-right,0px));top:66px;width:42px;height:42px}
+#t-view{right:max(120px,env(safe-area-inset-right,0px));top:66px;width:42px;height:42px}
 #t-melee{right:max(178px,env(safe-area-inset-right,0px));bottom:max(96px,env(safe-area-inset-bottom,0px));width:52px;height:52px}
 html.compact #parts .part{font-size:9px}html.compact #bossbar .bar{height:12px}html.compact #player{width:calc(var(--vw,1vw)*24);bottom:auto;top:calc(max(10px,env(safe-area-inset-top,0px)) + 100px)}html.compact .lab{font-size:9px}html.compact .bar{height:9px}html.compact #banner{top:18%}html.compact h1{font-size:clamp(28px,calc(var(--vw,1vw)*6),52px)}html.compact .keys{font-size:12px;gap:3px 14px;margin-bottom:10px}html.compact .sub{margin:4px 0 10px}
 .pick{display:flex;gap:10px;margin:0 0 12px;flex-wrap:wrap}
@@ -876,7 +876,7 @@ function superTick(dt) {
   SH.t += dt;
   if (SH.t >= 7 && !SH.warned) { SH.warned = true; say('QUÁ TẢI!', 'Sắp choáng', 1, true); }
   if (SH.warned && Math.random() < dt * 30) emit(pl.pos.x + rnd(-1.5, 1.5), pl.pos.y + rnd(0.5, 4), pl.pos.z + rnd(-1.5, 1.5), rnd(-3, 3), rnd(0, 4), rnd(-3, 3), 0xff3030, 0.4, 0);
-  if (SH.t >= 10) { SH.t = 0; SH.warned = false; SH.over = 2.5; pl.hstun = Math.max(pl.hstun, 2.5); burst(pCenter(), 40, 18, 0xff3030, 0.6, 0); shake(0.6); say('QUÁ TẢI', 'Choáng 2.5s', 1.5, true); }
+  if (SH.t >= 10) { SH.t = 0; SH.warned = false; SH.over = 1.5 + Math.random() * 1.5; pl.hstun = Math.max(pl.hstun, SH.over); burst(pCenter(), 40, 18, 0xff3030, 0.6, 0); shake(0.6); say('QUÁ TẢI', 'Choáng ' + SH.over.toFixed(1) + 's', 1.5, true); }
   else if (SH.over <= 0) { SH.rk -= dt; if (SH.rk <= 0 && pl.rockets <= 0) { SH.rk = 4; pl.rockets = 4; pl.rocketT = 0; } }
 }
 /* ===== Pháo thường: LÀM SUY YẾU ĐỐI THỦ (máu <30%, bấm đúp nút SHIELD lá chắn lớn ở dạng robot, 1 lần/ván) ===== */
@@ -904,7 +904,7 @@ function olInit() {
   OL.sc = new THREE.Scene(); OL.cam = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1); OL.sc.add(new THREE.Mesh(new THREE.PlaneBufferGeometry(2, 2), OL.mat));
 }
 function olRender(dt) {
-  if (!WK.on || G.state === 'menu') return;
+  if (!(WK.on || AIU.wk > 0) || G.state === 'menu') return;
   if (!OL.rt) olInit();
   const w = Math.max(64, Math.round(VW * 0.5)), h = Math.max(64, Math.round(VH * 0.5));
   if (OL.rt.width !== w || OL.rt.height !== h) { OL.rt.setSize(w, h); OL.mat.uniforms.px.value.set(1 / w, 1 / h); }
@@ -919,7 +919,7 @@ function olRender(dt) {
 }
 /* ===== Trực thăng vàng: GIÁNG GIÁO (máu <40%, đè nút Rocket 2s, tốn hết năng lượng, 1 lần/ván) ===== */
 const SP = { hold: 0, on: false, used: false, t: 0, pos: V3(), ring: null, mesh: null };
-const spearCan = () => pl.char === 'heli' && swordMode() && !SP.used && !SP.on && pl.alive && pl.hp > 0 && pl.hp < pl.maxHp * 0.4 && G.state === 'playing' && G.intro <= 0 && pl.hstun <= 0;
+const spearCan = () => pl.char === 'heli' && swordMode() && !SP.used && !SP.on && pl.alive && pl.hp > 0 && pl.hp < pl.maxHp * 0.44 && G.state === 'playing' && G.intro <= 0 && pl.hstun <= 0;
 function spearInit() {
   SP.ring = makeRing(0xffd24a, 1);
   const g = new THREE.Group(), m = new THREE.MeshBasicMaterial({ color: 0xffe9a0 });
@@ -1308,7 +1308,7 @@ function bossDamage(key, dmg, pos) {
   if (key === 'body' || !B.alive || G.intro > 0) return;
   const pt = B.parts[key];
   if (key !== 'core' && !pt.alive && !B.regen) return;
-  G.hitT = 0.12; pt.flash = 0.12; dmg *= (B.vuln || 1); if (pt.markT > 0) dmg *= 1.08; if (WK.on) dmg *= 1.25; /* Pháo đánh dấu: +8% */
+  G.hitT = 0.12; pt.flash = 0.12; dmg *= (B.vuln || 1); if (pt.markT > 0) dmg *= 1.08; if (WK.on || AIU.wk > 0) dmg *= 1.25; /* Pháo đánh dấu: +8% */
   if (key === 'core') {
     dmg *= B.coreMult(); pt.hp -= dmg;
     const f = pt.hp / pt.max, ph = f < 0.33 ? 3 : f < 0.66 ? 2 : 1;
@@ -3033,7 +3033,7 @@ function mpTick(dt) {
   }
   if (pl.alive && !gh.alive && !gh.left && MP.revUsed[MP.other] < 1 && G.state === 'playing') {
     if (Math.hypot(pl.pos.x - gh.pos.x, pl.pos.z - gh.pos.z) < 10) {
-      MP.revT += dt;
+      MP.revT += dt; pl.hp = Math.min(pl.maxHp, pl.hp + 25 * dt);
       if (MP.revT >= (pl.char === 'arty' ? 2 : 3)) { MP.revUsed[MP.other]++; mpSend({ t: 'rv', to: MP.other }); gh.alive = true; gh.hp = 50; MP.revT = 0; say('HỒI SINH THÀNH CÔNG', '', 1.4); }
     } else MP.revT = 0;
   } else MP.revT = 0;
@@ -3823,6 +3823,17 @@ const AI = { want: false, mode: 'atk', ch: 'heli', hp: 1, max: 1, sh: 1, shMax: 
 const AIM = { atk: 'TẤN CÔNG', fol: 'THEO TÔI', def: 'PHÒNG THỦ', chg: 'XUNG PHONG', foc: 'TẬP TRUNG', cau: 'CẨN THẬN' };
 const AI_STAT = { tank: [220, 120, 17, 42], heli: [180, 100, 21, 48], arty: [260, 150, 10.5, 62] }; /* maxHp, shield, speed, range */
 const AI_DMG = 0.75;
+/* Ultimate của AI: Pháo thường (Làm suy yếu), Trực thăng thường (Super Robot), Xe tăng (lướt ≤15% máu) */
+const AIU = { used: false, wk: 0, sr: false, srT: 0, rkc: 4, stun: 0, ud: false, hit: {} };
+const aiUReset = () => { AIU.used = false; AIU.wk = 0; AIU.sr = false; AIU.srT = 0; AIU.rkc = 4; AIU.stun = 0; AIU.ud = false; AIU.hit = {}; };
+const tankU = () => AI.ch === 'tank' && MP.ai && gh.alive && !AI.dead && AI.hp > 0 && AI.hp <= AI.max * 0.15;
+function aiUltHit() {
+  const C = gh.pos;
+  for (const k of B.keys) {
+    const pt = B.parts[k]; if (!pt || (B.noCore && k === 'core') || (!pt.alive && k !== 'core' && !B.regen) || AIU.hit[k]) continue;
+    if (C.distanceTo(B.pp[k]) < pt.r + 4) { AIU.hit[k] = true; const was = MP.applying, h = G.hitT; MP.applying = true; try { bossDamage(k, 50 * AI_DMG, B.pp[k].clone()); } finally { MP.applying = was; G.hitT = h; } burst(B.pp[k], 12, 14, G.boss === 3 ? 0x4aa8ff : 0xff3030, 0.4, 2); }
+  }
+}
 try { AI.want = localStorage.getItem('tb_ai') === '1'; } catch (_) { }
 
 function aiBtnSync() { const b = $('aiBtn'); b.textContent = 'Đồng đội AI: ' + (AI.want ? 'BẬT' : 'TẮT'); b.setAttribute('aria-pressed', AI.want ? 'true' : 'false'); b.style.background = AI.want ? 'var(--green,#6dff9a)' : '#3a4658'; b.style.color = AI.want ? '#06210f' : '#fff'; }
@@ -3839,7 +3850,7 @@ function aiGo() {
   const o = CHARS.filter(c => c !== G.char); AI.ch = o[(Math.random() * o.length) | 0]; const st = AI_STAT[AI.ch];
   AI.starting = true; MP.on = true; MP.ai = true; MP.host = true; MP.me = 'h'; MP.other = 'g'; MP.tgt = 'h'; MP.evRef = null; MP.swapped = false; MP.applying = false;
   MP.revUsed = { h: 0, g: 0 }; MP.revT = 0; MP.deadAt = 0; MP.fireN = 0; MP.ringT = 0;
-  Object.assign(AI, { mode: 'atk', max: st[0], hp: st[0], shMax: st[1], sh: st[1], shState: 'ready', shT: 0, shHit: 0, shOn: false, inv: 0, dead: false, fireT: 1.2, heat: 0, ohT: 0, shotN: 0,
+  aiUReset(); Object.assign(AI, { mode: 'atk', max: st[0], hp: st[0], shMax: st[1], sh: st[1], shState: 'ready', shT: 0, shHit: 0, shOn: false, inv: 0, dead: false, fireT: 1.2, heat: 0, ohT: 0, shotN: 0,
     focus: null, key: 'core', keyT: 0, dir: Math.random() < 0.5 ? 1 : -1, dirT: 2, formCd: 0, transT: 0, revT: 0, meleeT: 0, mFlash: 0, evade: 0, evDir: 1, evCd: 0,
     en: 100, holdRobot: 0, cauWant: 0, dashT: 0, dashCd: 0, dspd: 0, react: 0, thr: false, liftT: 0, rk: 0, rkT: 0, sS: 'idle', sT: 0, sHit: false, stab: false, pOn: false, pCh: 0, pT: 0, pCd: 3, pRingT: 0 });
   Object.assign(gh, { ch: AI.ch, alive: true, left: false, hp: 100, k: 0, tk: 0, sh: 0, bar: 0, m: 0, fireN: 0, first: false, last: performance.now() });
@@ -3848,7 +3859,7 @@ function aiGo() {
   $('mate').hidden = false;
 }
 function aiStop() {
-  MP.on = false; MP.ai = false; MP.swapped = false; gh.alive = false; ghostG.visible = false; ghostShield.visible = false; ghostBar.visible = false; $('mate').hidden = true;
+  aiUReset(); MP.on = false; MP.ai = false; MP.swapped = false; gh.alive = false; ghostG.visible = false; ghostShield.visible = false; ghostBar.visible = false; $('mate').hidden = true;
   try { comOpen(false); } catch (_) { }
 }
 
@@ -3870,7 +3881,7 @@ function aiHurt(amount, o) {
     return true;
   }
   AI.hp -= amount; AI.inv = 0.12; gh.hp = Math.max(0, Math.round(AI.hp / AI.max * 100)); burst(MP.ghostC, 6, 8, 0xff8030, 0.3, 0);
-  if (AI.hp <= 0) { AI.hp = 0; AI.dead = true; gh.alive = false; gh.hp = 0; AI.shOn = false; gh.sh = 0; gh.m = 0; explode(MP.ghostC, 1.6, 0xffb050); say('ĐỒNG ĐỘI AI ĐÃ GỤC', MP.revUsed.g < 1 ? 'Đến gần 3 giây để hồi sinh' : '', 2.4); }
+  if (AI.hp <= 0) { AI.hp = 0; AI.dead = true; AIU.sr = false; AI.holdRobot = 0; AIU.stun = 0; gh.alive = false; gh.hp = 0; AI.shOn = false; gh.sh = 0; gh.m = 0; explode(MP.ghostC, 1.6, 0xffb050); say('ĐỒNG ĐỘI AI ĐÃ GỤC', MP.revUsed.g < 1 ? 'Đến gần 3 giây để hồi sinh' : '', 2.4); }
   return true;
 }
 
@@ -3909,6 +3920,17 @@ function aiTick(dt) {
   if (AI.kx || AI.kz) { gh.tp.x += AI.kx * dt; gh.tp.z += AI.kz * dt; const dk = Math.exp(-3 * dt); AI.kx *= dk; AI.kz *= dk; if (Math.abs(AI.kx) + Math.abs(AI.kz) < 0.3) AI.kx = AI.kz = 0; }
   AI.formCd -= dt; AI.transT -= dt; AI.keyT -= dt; AI.dirT -= dt; AI.evCd -= dt; AI.mFlash -= dt; AI.shHit -= dt; AI.dashCd -= dt; AI.holdRobot -= dt; AI.pCd -= dt; AI.rkT -= dt; AI.liftT -= dt;
   if (AI.dashT <= 0 && !AI.stab) AI.en = Math.min(100, AI.en + (gh.tk > 0.5 ? 20 : AI.ch === 'heli' ? 22 : AI.ch === 'arty' ? 12 : 15) * dt);
+  AIU.stun = Math.max(0, AIU.stun - dt); AIU.wk = Math.max(0, AIU.wk - dt);
+  if (!AIU.used && AI.hp < AI.max * 0.3) {
+    if (AI.ch === 'arty') { AIU.used = true; AIU.wk = 8; AIU.stun = 1.5; say('AI: LÀM SUY YẾU', 'Boss nhận +25% sát thương', 1.6, true); burst(MP.ghostC, 30, 18, 0xb070ff, 0.6, 0); }
+    else if (AI.ch === 'heli') { AIU.used = true; AIU.sr = true; AIU.srT = 0; AIU.rkc = 2; AI.holdRobot = 1e9; AI.formCd = 0; say('AI: SUPER ROBOT', '', 1.6, true); burst(MP.ghostC, 40, 22, 0xffd24a, 0.7, 0); }
+  }
+  if (AIU.sr) {
+    if (AI.hp < AI.max * 0.3) { AI.hp = Math.min(AI.max * 0.3, AI.hp + AI.max * 0.07 * dt); gh.hp = Math.round(AI.hp / AI.max * 100); }
+    AI.en = Math.min(100, AI.en + 35 * dt); AIU.srT += dt; AIU.rkc -= dt;
+    if (AIU.rkc <= 0 && AI.rk <= 0 && AIU.stun <= 0) { AIU.rkc = 4; AI.rk = 4; AI.rkT = 0; }
+    if (AIU.srT >= 10) { AIU.srT = 0; AIU.stun = 1.5 + Math.random() * 1.5; burst(MP.ghostC, 30, 16, 0xff3030, 0.6, 0); }
+  }
   const st = AI_STAT[AI.ch], heli = AI.ch === 'heli', robot = gh.tk > 0.5, trans = AI.transT > 0;
   if (AI.keyT <= 0 || !AI.key || (AI.key !== 'core' && !(B.parts[AI.key] && B.parts[AI.key].alive))) { AI.key = aiPickKey(); AI.keyT = 3.5; }
   if (!AI.key) return;
@@ -3920,13 +3942,15 @@ function aiTick(dt) {
   if (AI.shState === 'broken') { AI.shT -= dt; if (AI.shT <= 0) { AI.shState = 'ready'; AI.sh = AI.shMax * 0.4; } }
   else if (!AI.shOn && AI.shHit <= 0) AI.sh = Math.min(AI.shMax, AI.sh + 16 * dt);
   const wantSh = rescue ? (rd < 10 && threat) : (AI.mode === 'cau' || (threat && (AI.mode === 'def' || AI.hp < AI.max * 0.4)));
-  AI.shOn = wantSh && AI.shState === 'ready' && AI.sh > 0 && !trans; if (AI.shOn) AI.sh = Math.max(0, AI.sh - 6 * dt); gh.sh = AI.shOn ? 1 : 0;
+  AI.shOn = wantSh && AI.shState === 'ready' && AI.sh > 0 && !trans && !AIU.sr && AIU.stun <= 0; if (AI.shOn) AI.sh = Math.max(0, AI.sh - 6 * dt); gh.sh = AI.shOn ? 1 : 0;
   /* evade: when the boss locks onto us, sprint sideways */
-  if (threat && !AI.thr) AI.react = 0.3 + Math.random() * 0.2; AI.thr = threat; if (threat) AI.react -= dt;
+  if (threat && !AI.thr) AI.react = (AIU.sr ? 0.1 : 0.3) + Math.random() * 0.2; AI.thr = threat; if (threat) AI.react -= dt;
   if (threat && AI.react <= 0 && AI.evCd <= 0) { if (rescue) { AI.ringDir = -(AI.ringDir || 1); AI.evCd = 1.2; } else aiDodge(dx, dz, heli, robot); }
   AI.evade = Math.max(0, AI.evade - dt);
   /* form */
-  const wantRobot = !rescue && (AI.holdRobot > 0 || (AI.mode === 'chg' ? dist < (heli ? 18 : 30) : dist < 13));
+  let wantRobot = !rescue && (AI.holdRobot > 0 || (AI.mode === 'chg' ? dist < (heli ? 18 : 30) : dist < 13));
+  if (tankU() && !rescue && AI.holdRobot <= 0) wantRobot = dist < 20 && (robot ? AI.en < 40 : AI.en < 20);
+  if (AIU.sr) wantRobot = true;
   if (wantRobot !== robot && (AI.formCd <= 0 || AI.holdRobot > 0)) { gh.tk = wantRobot ? 1 : 0; AI.formCd = 4; AI.transT = heli ? 0.6 : 1.1; burst(MP.ghostC, 14, 9, 0x9aeaff, 0.4, 0); }
   const rb = gh.tk > 0.5;
   /* movement target */
@@ -3936,8 +3960,9 @@ function aiTick(dt) {
   if (AI.mode === 'fol') {
     const sy = Math.sin(pl.yaw), cy = Math.cos(pl.yaw); tx = pl.pos.x + cy * 12 - sy * 4; tz = pl.pos.z - sy * 12 - cy * 4;
   } else {
-    let R = st[3] * (AI.mode === 'def' || AI.mode === 'cau' ? 1.45 : 1);
+    let R = st[3] * (AI.mode === 'def' || AI.mode === 'cau' || AIU.wk > 0 ? 1.45 : 1);
     if (AI.mode === 'chg') R = rb ? 6.5 : 14;
+    if (AIU.sr) { if (AIU.srT >= 7) R = st[3] * 1.6; else if (!threat && (AI.mode === 'atk' || AI.mode === 'chg' || AI.mode === 'foc')) R = 7; }
     const a = aw + AI.dir * 0.5; tx = tp.x + Math.sin(a) * R; tz = tp.z + Math.cos(a) * R;
   }
   if (AI.evade > 0) { const pa = Math.atan2(dx, dz) + AI.evDir * Math.PI / 2; tx = gh.pos.x + Math.sin(pa) * 30; tz = gh.pos.z + Math.cos(pa) * 30; }
@@ -3948,26 +3973,27 @@ function aiTick(dt) {
   if (Math.hypot(pl.pos.x - tx, pl.pos.z - tz) < 9 && pl.alive) { const ax = tx - pl.pos.x, az = tz - pl.pos.z, al = Math.max(0.1, Math.hypot(ax, az)); tx = pl.pos.x + ax / al * 11; tz = pl.pos.z + az / al * 11; }
   const lim = ARENA_R - 8, lim2 = rescue ? ARENA_R : lim, tr = Math.hypot(tx, tz); if (tr > lim2) { tx *= lim2 / tr; tz *= lim2 / tr; }
   const mx = tx - gh.tp.x, mz = tz - gh.tp.z, ml = Math.hypot(mx, mz);
-  let spd = (rb ? (AI.ch === 'arty' ? 8 : heli ? 15.6 : 10) : st[2]) * 0.85 * (AI.shOn ? 0.5 : 1) * (trans ? 0.4 : 1) * (AI.evade > 0 ? 1.25 : 1) * (rescue && rd > 7 ? 1.3 : 1);
+  let spd = (rb ? (AI.ch === 'arty' ? 8 : heli ? 15.6 : 10) : st[2]) * 0.85 * (AI.shOn ? 0.5 : 1) * (trans ? 0.4 : 1) * (AI.evade > 0 ? 1.25 : 1) * (rescue && rd > 7 ? 1.3 : 1) * (AIU.sr ? 1.3 : 1) * (tankU() ? 1.15 : 1);
   if (AI.dashT > 0) { AI.dashT -= dt; gh.tp.x += AI.dvx * AI.dspd * dt; gh.tp.z += AI.dvz * AI.dspd * dt; const rr = Math.hypot(gh.tp.x, gh.tp.z); if (rr > lim) { gh.tp.x *= lim / rr; gh.tp.z *= lim / rr; } }
-  else if (!(AI.sS === 'ch' || AI.pOn) && ml > 0.5) { const s = Math.min(ml, spd * dt) / ml; gh.tp.x += mx * s; gh.tp.z += mz * s; }
+  else if (!(AI.sS === 'ch' || AI.pOn) && ml > 0.5 && AIU.stun <= 0) { const s = Math.min(ml, spd * dt) / ml; gh.tp.x += mx * s; gh.tp.z += mz * s; }
   let wy = heli && !rb ? (G.boss === 2 ? 22 : clamp(tp.y, 6, 16)) : 0; if (AI.liftT > 0 && heli) { wy = Math.max(wy, rb ? 16 : 22); if (rb) { AI.en = Math.max(0, AI.en - 24 * dt); if (AI.en <= 0) AI.liftT = 0; } } gh.tp.y += clamp(wy - gh.tp.y, -14 * dt, 14 * dt);
   gh.ty = Math.atan2(dx, dz); gh.ay = gh.ty; gh.ap = Math.atan2(tp.y - (gh.pos.y + 2), dist);
   /* revive the player */
   if (!pl.alive && MP.revUsed.h < 1) {
-    if (Math.hypot(pl.pos.x - gh.pos.x, pl.pos.z - gh.pos.z) < 8) { AI.revT += dt; if (AI.revT >= (AI.ch === 'arty' ? 2 : 3)) { AI.revT = 0; mpOnEvent({ t: 'rv', to: 'h', f: 'g' }); } } else AI.revT = 0;
+    if (Math.hypot(pl.pos.x - gh.pos.x, pl.pos.z - gh.pos.z) < 8) { AI.revT += dt; AI.hp = Math.min(AI.max, AI.hp + 25 * dt); gh.hp = Math.round(AI.hp / AI.max * 100); if (AI.revT >= (AI.ch === 'arty' ? 2 : 3)) { AI.revT = 0; mpOnEvent({ t: 'rv', to: 'h', f: 'g' }); } } else AI.revT = 0;
     return;
   } AI.revT = 0;
   /* attack */
-  AI.fireT -= dt; const busy = aiSkills(dt, dist, rb, heli, tp); gh.m = AI.mFlash > 0 || AI.stab ? 1 : 0;
-  if (!AI.shOn && !trans && !busy && dist < (AI_MAXR[AI.ch] || 70)) {
-    const slow = AI.mode === 'def' ? 1.6 : 1;
+  AI.fireT -= dt; const busy = AIU.stun > 0 ? true : aiSkills(dt, dist, rb, heli, tp); gh.m = AI.mFlash > 0 || AI.stab ? 1 : 0;
+  if (!AI.shOn && !trans && !busy && !(AIU.wk > 0) && dist < (AI_MAXR[AI.ch] || 70)) {
+    const slow = (AI.mode === 'def' ? 1.6 : 1) / (AIU.sr ? 1.3 : 1);
     if (AI.ohT > 0) { AI.ohT -= dt; if (AI.ohT <= 0) AI.heat = 0.3; }
     else if (heli && !rb && AI.heat > 0) AI.heat = Math.max(0, AI.heat - 0.12 * dt);
     if (AI.fireT <= 0 && AI.ohT <= 0) {
       const reach = AI.ch === 'tank' ? 7.5 : heli ? 11 : 0;
       if (rb && reach && dist < reach + 4 + (tp.y > 0 ? 0 : 0) && AI.mode !== 'def') {
         const d = AI.ch === 'tank' ? 75 : 60; AI.fireT = (AI.ch === 'tank' ? 0.95 : 0.76) * slow; AI.mFlash = 0.35; aiHit(d * AI_DMG, true); burst(tp, 16, 14, 0x9aeaff, 0.5, 2);
+      } else if (rb && AIU.sr) { AI.fireT = 0.2;
       } else if (rb) { AI.fireT = (AI.ch === 'arty' ? 1.2 : 0.55) * slow; aiHitR(30 * AI_DMG, 2); mpTracer(); }
       else if (heli) { AI.fireT = 0.08 * slow; aiHitR(2.8 * AI_DMG, 0); if (AI.shotN++ % 3 === 0) mpTracer(); AI.heat += 0.035; if (AI.heat >= 1) { AI.heat = 1; AI.ohT = 2; } }
       else if (AI.ch === 'tank') { AI.fireT = 1.0 * slow; aiHitR(33 * AI_DMG, 2); mpTracer(); }
@@ -3982,16 +4008,16 @@ function clearInv() { if (AI.pass) { if (AI.inv > 0 && AI.inv <= 0.13) AI.inv = 
 
 /* ---- skills: dash (Lướt), heli boost-dodge, tank stab (Đâm), arty Punch, heli rockets — same costs/cooldowns as the player ---- */
 function aiDodge(dx, dz, heli, rb) {
-  AI.evade = 1.3; AI.evDir = Math.random() < 0.5 ? 1 : -1; AI.evCd = G.boss === 4 ? 2.6 : 3.2;
+  AI.evade = 1.3; AI.evDir = Math.random() < 0.5 ? 1 : -1; AI.evCd = (G.boss === 4 ? 2.6 : 3.2) * (AIU.sr ? 0.5 : 1);
   const pa = Math.atan2(dx, dz) + AI.evDir * Math.PI / 2; let sp = 0, cost = 0, t = 0;
   if (AI.sS === 'ch') AI.sS = 'idle'; AI.pOn = false;
   if (!AI.shOn && AI.dashCd <= 0 && AI.dashT <= 0 && !rb && !AI.stab) {
     if (heli && AI.en >= 33) { sp = 105; t = 0.4; cost = 33; for (const e of eproj) if (e.kind === 'missile' && e.pos.distanceTo(MP.ghostC) < 14) e.lostT = 0.1; }
-    else if (!heli && AI.en >= 35) { sp = 48; t = 0.3; cost = 35; }
+    else if (!heli && AI.en >= (tankU() ? 20 : 35)) { const u = tankU(); sp = u ? 72 : 48; t = u ? 0.2 : 0.3; cost = u ? 20 : 35; if (u) AI.inv = Math.max(AI.inv, 0.15); }
   }
   if (sp) { AI.en -= cost; AI.dashT = t; AI.dspd = sp; AI.dvx = Math.sin(pa); AI.dvz = Math.cos(pa); AI.dashCd = heli ? 0.5 : 0.4; burst(MP.ghostC, 20, 12, 0x7af0ff, 0.4, 0); }
   if (heli && !rb && Math.random() < 0.7) AI.liftT = 1.6;
-  else if (heli && rb && AI.en >= 20 && Math.random() < 0.7) AI.liftT = 1.2;
+  else if (heli && rb && AI.en >= 20 && Math.random() < (AIU.sr ? 1 : 0.7)) AI.liftT = 1.2;
 }
 function aiPunch() {
   const f = AI.pCh / 2, R = 13 + 13 * f, dmg = (50 + 50 * f) * AI_DMG, C = gh.pos; let slow = false;
@@ -4018,6 +4044,11 @@ function aiSkills(dt, dist, rb, heli, tp) {
       if (AI.sT <= 0) { AI.sS = 'idle'; AI.en -= 70; AI.dashCd = 0.5; AI.sHit = false; AI.stab = true; const L = Math.hypot(tp.x - gh.tp.x, tp.z - gh.tp.z) || 1; AI.dashT = clamp(L / 78, 0.143, 0.38); AI.dspd = 78; AI.dvx = (tp.x - gh.tp.x) / L; AI.dvz = (tp.z - gh.tp.z) / L; burst(MP.ghostC, 24, 14, 0x9aeaff, 0.4, 0); }
     }
   } else if (AI.sS === 'ch') AI.sS = 'idle';
+  if (tankU() && !rb && AI.transT <= 0 && !AI.shOn && !AI.stab && AI.dashCd <= 0 && AI.dashT <= 0 && AI.en >= 20 && dist < 20 && dist > 4 && (AI.mode === 'atk' || AI.mode === 'chg' || AI.mode === 'foc')) {
+    AI.en -= 20; AI.dashT = 0.2; AI.dspd = 72; AI.dashCd = 0.4; AI.inv = Math.max(AI.inv, 0.15); AIU.ud = true; AIU.hit = {};
+    const L = Math.hypot(tp.x - gh.tp.x, tp.z - gh.tp.z) || 1; AI.dvx = (tp.x - gh.tp.x) / L; AI.dvz = (tp.z - gh.tp.z) / L; burst(MP.ghostC, 20, 16, G.boss === 3 ? 0x4aa8ff : 0xff3030, 0.4, 0);
+  }
+  if (AIU.ud) { if (AI.dashT > 0) aiUltHit(); else AIU.ud = false; }
   if (AI.stab) {
     if (AI.dashT <= 0) AI.stab = false;
     else if (!AI.sHit) { const pt = B.parts[AI.key]; if (pt && gh.pos.distanceTo(tp) < pt.r + 7.5 + 1.8) { AI.sHit = true; aiHit(156 * AI_DMG, true); burst(tp, 36, 22, 0x9aeaff, 0.6, 2); } }
@@ -4025,7 +4056,7 @@ function aiSkills(dt, dist, rb, heli, tp) {
   if (AI.ch === 'arty') { /* Lá chắn: on "Cẩn thận" when near the player (changes to robot first), or when targeted while in robot form */
     if (AI.cauWant > 0) { AI.cauWant -= dt; if (AI.mode !== 'cau') AI.cauWant = 0; }
     const nearP = pl.alive && Math.hypot(pl.pos.x - gh.pos.x, pl.pos.z - gh.pos.z) < 45;
-    if (!barrier.active && AI.en >= 95 && AI.dashT <= 0 && !AI.pOn && ((AI.cauWant > 0 && nearP) || (rb && aiThreat()))) {
+    if (!barrier.active && AI.en >= 95 && AI.dashT <= 0 && !AI.pOn && ((AI.cauWant > 0 && nearP) || (rb && aiThreat()) || AIU.wk > 0)) {
       if (!rb) AI.holdRobot = 2;
       else if (AI.transT <= 0) { aiBarrier(tp); AI.cauWant = 0; AI.holdRobot = 0.9; AI.formCd = 0; }
     }
@@ -4040,7 +4071,7 @@ function aiSkills(dt, dist, rb, heli, tp) {
       if (AI.pT <= 0) aiPunch();
     }
   } else AI.pOn = false;
-  return AI.sS === 'ch' || AI.pOn || (AI.stab && AI.dashT > 0);
+  return AI.sS === 'ch' || AI.pOn || (AI.stab && AI.dashT > 0) || (AIU.ud && AI.dashT > 0);
 }
 
 function aiBarrier(tp) {
@@ -4386,7 +4417,7 @@ function updateTouchLabels() {
 let shotPause = false;
 function showHud(on) { shotPause = false; document.body.classList.remove('shot'); $('quitBtn').hidden = !on; $('pauseBtn').hidden = !on || (MP.on && !MP.ai); $('pauseBtn').classList.remove('on'); for (const id of ['bossbar', 'player']) $(id).hidden = !on; $('cross').style.display = on ? '' : 'none'; if (!on) { $('lock').style.display = $('lockl').style.display = 'none'; setWarn(''); } }
 function resetGame() {
-  for (const b of [B1, B2, B3, B4]) b.slowT = 0; F4.jet.slowT = 0; pl.pOn = false; pl.pCd = 0; pl.pCh = 0; pl.ultDash = false; GA.t = 0; GA.hold = 0; WK.on = false; WK.used = false; WK.tap = 0; SP.used = false; SP.hold = 0; spearEnd(); SH.on = false; SH.used = false; SH.t = 0; SH.over = 0; SH.warned = false; SH.tap = 0; GA.used = false; GA.dk = 0; GA.flash = 0; for (const s of shots) if (s.lt) scene.remove(s.lt);
+  for (const b of [B1, B2, B3, B4]) b.slowT = 0; F4.jet.slowT = 0; pl.pOn = false; pl.pCd = 0; pl.pCh = 0; pl.ultDash = false; GA.t = 0; GA.hold = 0; WK.on = false; AIU.wk = 0; WK.used = false; WK.tap = 0; SP.used = false; SP.hold = 0; spearEnd(); SH.on = false; SH.used = false; SH.t = 0; SH.over = 0; SH.warned = false; SH.tap = 0; GA.used = false; GA.dk = 0; GA.flash = 0; for (const s of shots) if (s.lt) scene.remove(s.lt);
   autoLock.fire = autoLock.shield = false; syncLock();
   pl.char = G.char; applyChar();
   Object.assign(pl, { hp: pl.maxHp, sh: pl.shMax, shState: 'ready', shTimer: 0, shHit: 0, shFlash: 0, en: 100, k: 0, kTarget: 0, transCd: 0, fireCd: 0, dashT: 0, invuln: 0, meleeT: 0, meleeCd: 0, vy: 0, boosting: false, boostLock: false, alive: true, stun: 0, hstun: 0, yaw: 0, aimYaw: 0, mode: 'tank', rockets: 0, rocketT: 0, lean: 0, roll: 0, dashVy: 0, heat: 0, ohT: 0, slowT: 0, parT: 0, dashCd: 0, burst: false });
