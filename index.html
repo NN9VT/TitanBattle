@@ -310,8 +310,8 @@ function skyTex(st) {
   g.fillStyle = gr; g.fillRect(0, 0, 8, 256);
   return new THREE.CanvasTexture(c);
 }
-const SKIES = [null, skyTex(['#0b1230', '#5a3a5e', '#d98652', '#f0b070']), skyTex(['#14100a', '#4f3e22', '#a98438', '#cdb078']), skyTex(['#1a0508', '#5e1a22', '#d1432b', '#ff7a4a']), skyTex(['#8fa6c4', '#c9d6e8', '#eef2f8', '#ffffff']), skyTex(['#4f86c8', '#7fb0e6', '#b9d8f2', '#eaf4fb'])];
-const FOGS = [0, 0x7a5662, 0x6e5a36, 0x6a2420, 0xdde4ee, 0xcfe3f2];
+const SKIES = [null, skyTex(['#0b1230', '#5a3a5e', '#d98652', '#f0b070']), skyTex(['#14100a', '#4f3e22', '#a98438', '#cdb078']), skyTex(['#1a0508', '#5e1a22', '#d1432b', '#ff7a4a']), skyTex(['#8fa6c4', '#c9d6e8', '#eef2f8', '#ffffff']), skyTex(['#000000', '#000000', '#050506', '#0a0a0c'])];
+const FOGS = [0, 0x7a5662, 0x6e5a36, 0x6a2420, 0xdde4ee, 0x000000];
 scene.background = SKIES[1]; scene.fog = new THREE.Fog(FOGS[1], 90, 260);
 
 scene.add(new THREE.HemisphereLight(0xffd9b0, 0x2a2f45, 0.85));
@@ -329,7 +329,7 @@ const THEMES = {
   2: { bg: '#6b5428', c: [105, 82, 38], line: 'rgba(230,200,120,.2)', outer: 0x3a2e1a, rim: 0xd9aa3a },
   3: { bg: '#2a0e0e', c: [55, 18, 16], line: 'rgba(255,80,60,.35)', outer: 0x3a1210, rim: 0xff3b2a },
   4: { bg: '#e4e8ef', c: [190, 196, 208], line: 'rgba(120,140,170,.35)', outer: 0x2c3340, rim: 0xffffff },
-  5: { bg: '#b9bcc0', c: [175, 178, 182], line: 'rgba(0,0,0,0)', outer: 0xa4a8ad, rim: 0xffd24a }
+  5: { bg: '#34363a', c: [52, 54, 58], line: 'rgba(0,0,0,0)', outer: 0x000000, rim: 0xffd24a }
 };
 function buildArena(R, nP, n) {
   const th = THEMES[n];
@@ -355,7 +355,7 @@ function buildArena(R, nP, n) {
   scene.add(grp); return grp;
 }
 arenas[1] = buildArena(62, 0, 1); arenas[2] = buildArena(110, 0, 2); arenas[2].visible = false; arenas[3] = buildArena(135, 34, 3); arenas[3].visible = false; arenas[4] = buildArena(160, 0, 4); arenas[4].visible = false; arenas[5] = buildArena(200, 0, 5); arenas[5].visible = false; arenas[5] = buildArena(200, 0, 5); arenas[5].visible = false;
-function setArena(n) { arenas[1].visible = n === 1; arenas[2].visible = n === 2; arenas[3].visible = n === 3; arenas[4].visible = n === 4; arenas[5].visible = n === 5; ARENA_R = n === 1 ? 62 : n === 2 ? 110 : n === 3 ? 135 : n === 4 ? 160 : 200; scene.background = SKIES[n]; scene.fog.color.setHex(FOGS[n]); applyBright(n === 4 || n === 5); scene.fog.near = n === 5 ? 160 : 90; scene.fog.far = n === 5 ? 520 : 260; }
+function setArena(n) { arenas[1].visible = n === 1; arenas[2].visible = n === 2; arenas[3].visible = n === 3; arenas[4].visible = n === 4; arenas[5].visible = n === 5; ARENA_R = n === 1 ? 62 : n === 2 ? 110 : n === 3 ? 135 : n === 4 ? 160 : 200; scene.background = SKIES[n]; scene.fog.color.setHex(FOGS[n]); applyBright(n === 4); scene.fog.near = n === 5 ? 190 : 90; scene.fog.far = n === 5 ? 430 : 260; }
 scene.add(sun.target);
 
 let ROT = false, VW = window.innerWidth, VH = window.innerHeight, manualRot = null;
@@ -1006,6 +1006,7 @@ function updateGaussFx(dt) {
   { const row = document.querySelector('#player .row'), on = ultReady(); if (row && row.classList.contains('ultrdy') !== on) row.classList.toggle('ultrdy', on); }
   if (GA.auto && (!pl.alive || G.state !== 'playing')) { GA.auto = false; GA.hold = 0; }
   if (!pl.alive || G.state === 'over' || G.state === 'menu') GA.t = 0;
+  if (!pl.alive) { SH.on = false; WK.on = false; }
   GA.dk += ((GA.t > 0 ? 1 : 0) - GA.dk) * damp(GA.t > 0 ? 6 : 5, dt); if (GA.dk < 0.01) GA.dk = 0;
   const fl = $('gaussFlash'); GA.flash = Math.max(0, (GA.flash || 0) - dt * 2.2); fl.style.opacity = GA.flash;
   const el = $('gaussDark'); el.style.opacity = GA.dk;
@@ -2867,6 +2868,7 @@ function mpOnEvent(e) {
   else if (e.t === 'c') comRecv(e);
   else if (e.t === 'rv' && e.to === MP.me) {
     pl.alive = true; pl.hp = pl.maxHp * 0.5; pl.sh = pl.shMax; pl.shState = 'ready'; pl.shTimer = 0; pl.root.visible = true; pl.invuln = 2.5; pl.vel.set(0, 0, 0); pl.stun = 0; pl.hstun = 0;
+    SH.on = false; SH.over = 0; SH.warned = false; SH.t = 0; WK.on = false; /* hồi sinh: Ultimate đã dùng thì không chạy tiếp */
     MP.revUsed[MP.me]++; say('ĐƯỢC HỒI SINH', 'Đồng đội đã cứu bạn', 1.8); burst(pCenter(), 40, 16, 0x6dff9a, 0.8, 3);
   }
 }
@@ -3142,6 +3144,8 @@ function sfx(n, a) {
     case 'transform': for (let i = 0; i < 4; i++) { noise(0.06, { ft: 'bandpass', f: 1400, q: 4, vol: 0.14, at: i * 0.22 }); tone(120, 0.08, { type: 'square', vol: 0.1, at: i * 0.22 }); } tone(180, 0.9, { type: 'sawtooth', to: 520, vol: 0.06, lp: 1500, vib: [9, 60] }); break;
     case 'gtick': { const k = a || 0; tone(260 + k * 1300, 0.1, { type: 'sine', vol: 0.09 + 0.08 * k, lp: 3000 }); noise(0.08, { ft: 'highpass', f: 2500 + k * 3000, vol: 0.04 + 0.05 * k }); break; }
     case 'gdark': tone(70, 1.5, { type: 'sawtooth', to: 45, vol: 0.14, lp: 300, send: 0.3 }); tone(900, 1.5, { type: 'sine', to: 2400, vol: 0.05, a: 1.2, vib: [14, 30] }); break;
+    case 'lasHum': tone(80, 3.2, { type: 'sawtooth', vol: 0.12, lp: 650, vib: [7, 12], hold: true, a: 0.15, rel: 0.3 }); tone(160, 3.2, { type: 'square', vol: 0.035, lp: 900, vib: [11, 8], hold: true, a: 0.15, rel: 0.3 }); for (let i = 0; i < 7; i++) noise(0.6, { ft: 'bandpass', f: 1800, q: 2, vol: 0.04, at: i * 0.45, a: 0.2 }); break;
+    case 'lasZap': for (let i = 0; i < 6; i++) { const at = i * 0.035 + Math.random() * 0.02; noise(0.03, { ft: 'highpass', f: 2500 + Math.random() * 3000, vol: 0.2, at }); tone(1200 + Math.random() * 2500, 0.025, { type: 'square', vol: 0.06, at, lp: 4000 }); } break;
     case 'gfire': noise(0.7, { ft: 'bandpass', f: 4500, to: 300, q: 0.7, vol: 0.45, send: 0.5 }); tone(1800, 0.5, { type: 'sine', to: 90, vol: 0.28, send: 0.4 }); tone(55, 0.9, { type: 'sine', to: 30, vol: 0.35 }); break;
     case 'weak': tone(150, 0.9, { type: 'sawtooth', to: 70, vol: 0.2, lp: 700, vib: [6, 50], send: 0.4 }); tone(660, 0.6, { type: 'square', to: 220, vol: 0.06, lp: 1500 }); noise(0.4, { ft: 'bandpass', f: 400, to: 1800, q: 2, vol: 0.12 }); break;
     case 'superOn': for (let i = 0; i < 5; i++) { tone(220 * Math.pow(1.26, i), 0.18, { type: 'square', vol: 0.09, at: i * 0.08, lp: 2400 }); } noise(0.6, { ft: 'bandpass', f: 600, to: 3000, q: 1, vol: 0.22, at: 0.3 }); tone(80, 0.8, { type: 'sawtooth', to: 160, vol: 0.18, lp: 600, at: 0.2 }); break;
@@ -3941,9 +3945,9 @@ function tr5Gen(from) {
   for (let i = 0; i < N; i++) { const a = pts[(i - 1 + N) % N], b = pts[(i + 1) % N], tx = b.x - a.x, tz = b.z - a.z, l = Math.hypot(tx, tz) || 1; TR5.tan.push({ x: tx / l, z: tz / l }); }
   for (let i = 0; i < N; i++) {
     const a = pts[(i - 6 + N) % N], b = pts[i], c = pts[(i + 6) % N], cr = Math.abs((b.x - a.x) * (c.z - b.z) - (b.z - a.z) * (c.x - b.x));
-    const R = cr < 1e-6 ? 1e9 : a.distanceTo(b) * b.distanceTo(c) * c.distanceTo(a) / (2 * cr); TR5.vp.push(clamp(Math.sqrt(34 * R), 28, 70));
+    const R = cr < 1e-6 ? 1e9 : a.distanceTo(b) * b.distanceTo(c) * c.distanceTo(a) / (2 * cr); TR5.vp.push(clamp(Math.sqrt(28 * R), 30, 85));
   }
-  for (let pass = 0; pass < 3; pass++) for (let i = N - 1; i >= -N; i--) { const k = (i + N) % N, nx = TR5.vp[(k + 1) % N]; TR5.vp[k] = Math.min(TR5.vp[k], Math.sqrt(nx * nx + 2 * 50 * TR5.ds)); }
+  for (let pass = 0; pass < 3; pass++) for (let i = N - 1; i >= -N; i--) { const k = (i + N) % N, nx = TR5.vp[(k + 1) % N]; TR5.vp[k] = Math.min(TR5.vp[k], Math.sqrt(nx * nx + 2 * 60 * TR5.ds)); }
 }
 function tr5At(s, lane, o) {
   const N = TR5.N, L = TR5.len, f = (((s % L) + L) % L) / TR5.ds, i = Math.floor(f) % N, j = (i + 1) % N, k = f - Math.floor(f), a = TR5.pts[i], b = TR5.pts[j], ta = TR5.tan[i], tb = TR5.tan[j];
@@ -3961,7 +3965,7 @@ function tr5Build(from) {
   tr5Gen(from);
   const G5 = TR5.group; for (const ch of G5.children.slice()) { G5.remove(ch); if (ch.geometry && ch.geometry !== UB) ch.geometry.dispose(); }
   const W = TR5.W / 2;
-  G5.add(tr5Ribbon(-W, W, 0.07, M5.road)); G5.add(tr5Ribbon(-W, -W + 0.9, 0.1, M5.line)); G5.add(tr5Ribbon(W - 0.9, W, 0.1, M5.line));
+  G5.add(tr5Ribbon(-W, W, 0.07, M5.road)); G5.add(tr5Ribbon(-W, -W + 1.4, 0.1, M5.line)); G5.add(tr5Ribbon(W - 1.4, W, 0.1, M5.line));
   G5.add(tr5Ribbon(-W - 1.4, -W, 0.09, M5.kerb)); G5.add(tr5Ribbon(W, W + 1.4, 0.09, M5.kerb));
   const o = {}; tr5At(0, 0, o); TR5.p0.set(o.x, 0, o.z); TR5.yaw0 = o.yaw;
   const sl = b5b(G5, M5.line, TR5.W, 0.05, 3, o.x, 0.12, o.z); sl.rotation.y = o.yaw;
@@ -3987,11 +3991,11 @@ function f1Step(c, dt) {
   if (c.st === 'run') {
     const rem = 2 * L - c.s, idx = Math.floor((c.s % L) / TR5.ds) % TR5.N;
     let vt = TR5.vp[idx] * spm * (c.slowT > 0 ? 0.6 : 1) * c.hs; vt = Math.min(vt, Math.sqrt(2 * 55 * Math.max(0, rem - 1)));
-    if (c.v < vt) c.v = Math.min(vt, c.v + 45 * dt); else c.v = Math.max(vt, c.v - 100 * dt);
+    if (c.v < vt) c.v = Math.min(vt, c.v + 55 * dt); else c.v = Math.max(vt, c.v - 100 * dt);
     const before = Math.floor(c.s / L); c.s += c.v * dt;
     if (rem <= 1.5 || c.s >= 2 * L - 0.4) { c.s = 2 * L; c.v = 0; c.st = 'wait'; }
     if (Math.floor(c.s / L) > before) b5Lap(c);
-    if (Math.random() < dt * (c.v / 70) * 22) emit(c.pos.x, 0.6, c.pos.z, rnd(-3, 3), rnd(1, 4), rnd(-3, 3), 0xffd9a0, 0.3, 0);
+    if (Math.random() < dt * (c.v / 85) * 22) emit(c.pos.x, 0.6, c.pos.z, rnd(-3, 3), rnd(1, 4), rnd(-3, 3), 0xffd9a0, 0.3, 0);
   }
   f1Pose(c, dt);
   if (c.slowT > 0 && Math.random() < dt * 14) emit(c.pos.x + rnd(-2, 2), 2 + rnd(0, 2), c.pos.z + rnd(-2, 2), 0, 1, 0, 0xff9a3c, 0.5, 0);
@@ -4040,15 +4044,15 @@ function nasLaser(n, dt) {
   if (L.st === 'deploy') { L.t -= dt; if (L.t <= 0) { L.st = 'aim'; L.aimT = 0; } }
   else if (L.st === 'retract') { L.t -= dt; if (L.t <= 0) { L.st = 'off'; tur.visible = false; } }
   else if (L.st === 'aim' || L.st === 'cool') {
-    if (L.st === 'cool') { L.t -= dt; if (L.t <= 0) { L.st = 'aim'; L.aimT = 0; } } else if (air) { L.aimT += dt; if (L.aimT >= 1.2) { L.st = 'charge'; L.t = 1.0; S5('charge'); } } else L.aimT = 0;
+    if (L.st === 'cool') { L.t -= dt; if (L.t <= 0) { L.st = 'aim'; L.aimT = 0; } } else if (air) { L.aimT += dt; if (L.aimT >= 1.2) { L.st = 'charge'; L.t = 1.0; } } else L.aimT = 0;
     if (L.noT > 3) { L.st = 'retract'; L.t = 0.5; }
-  } else if (L.st === 'charge') { L.t -= dt; if (L.t <= 0) { L.st = 'fire'; L.t = 3.2; L.tick = 0; L.gT = 0; S5('gfire'); } }
+  } else if (L.st === 'charge') { L.t -= dt; if (L.t <= 0) { L.st = 'fire'; L.t = 3.2; L.tick = 0; L.gT = 0; S5('lasHum'); } }
   else if (L.st === 'fire') {
     L.t -= dt; L.gT = air ? 0 : L.gT + dt; L.tick -= dt;
     const d = V3(Math.sin(L.yaw) * Math.cos(L.pit), Math.sin(L.pit), Math.cos(L.yaw) * Math.cos(L.pit));
     if (L.tick <= 0) {
       L.tick = 0.25; const rel = pc.clone().sub(o), t = clamp(rel.dot(d), 0, 240), cl = o.clone().addScaledVector(d, t);
-      if (pl.alive && pl.pos.y > 3.5 && cl.distanceTo(pc) < 2.8) { hurtPlayer(5.5, { air: true }); burst(pc, 6, 10, 0xff6060, 0.3, 0); }
+      if (pl.alive && pl.pos.y > 3.5 && cl.distanceTo(pc) < 2.8) { hurtPlayer(5.5, { air: true }); burst(pc, 6, 10, 0xff6060, 0.3, 0); S5('lasZap'); }
     }
     if (L.t <= 0 || L.gT > 0.6) { L.st = 'cool'; L.t = 3; }
   }
@@ -4228,7 +4232,7 @@ function aiHurt(amount, o) {
     return true;
   }
   AI.hp -= amount; AI.inv = 0.12; gh.hp = Math.max(0, Math.round(AI.hp / AI.max * 100)); burst(MP.ghostC, 6, 8, 0xff8030, 0.3, 0);
-  if (AI.hp <= 0) { AI.hp = 0; AI.dead = true; AIU.sr = false; AI.holdRobot = 0; AIU.stun = 0; gh.alive = false; gh.hp = 0; AI.shOn = false; gh.sh = 0; gh.m = 0; explode(MP.ghostC, 1.6, 0xffb050); say('ĐỒNG ĐỘI AI ĐÃ GỤC', MP.revUsed.g < 1 ? 'Đến gần 3 giây để hồi sinh' : '', 2.4); }
+  if (AI.hp <= 0) { AI.hp = 0; AI.dead = true; AIU.sr = false; AIU.wk = 0; AI.holdRobot = 0; AIU.stun = 0; gh.alive = false; gh.hp = 0; AI.shOn = false; gh.sh = 0; gh.m = 0; explode(MP.ghostC, 1.6, 0xffb050); say('ĐỒNG ĐỘI AI ĐÃ GỤC', MP.revUsed.g < 1 ? 'Đến gần 3 giây để hồi sinh' : '', 2.4); }
   return true;
 }
 
